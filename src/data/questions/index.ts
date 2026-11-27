@@ -11,6 +11,8 @@ import { ENT_NEW_SUBJECTS } from './entNew';
 import { SAT_QUESTIONS } from './sat';
 import { IELTS_QUESTIONS } from './ielts';
 import { GENERATED_QUESTIONS } from './generated';
+import { ENT_HISTORY_QUESTIONS } from './entHistory';
+import { ENT_READING_QUESTIONS } from './entReading';
 
 /** Весь встроенный банк LexEdu Academy: оригинальные демо-вопросы + сгенерированные по шаблонам. */
 export const DEMO_QUESTIONS: Question[] = [
@@ -28,6 +30,8 @@ export const DEMO_QUESTIONS: Question[] = [
   ...ENT_NEW_SUBJECTS,
   ...SAT_QUESTIONS,
   ...IELTS_QUESTIONS,
+  ...ENT_HISTORY_QUESTIONS,
+  ...ENT_READING_QUESTIONS,
   ...GENERATED_QUESTIONS,
 ];
 
