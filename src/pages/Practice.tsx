@@ -13,6 +13,7 @@ import { fmtDateTime, fmtDuration } from '@/lib/date';
 import { cn, pct, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Difficulty, PracticeSessionResult, SubjectId } from '@/types';
+import { MathText } from '@/components/MathText';
 
 const COUNTS = [5, 10, 15, 20];
 const TIMERS = [5, 10, 20, 30];
@@ -365,7 +366,7 @@ export default function Practice() {
               return (
                 <button key={i} onClick={() => (setHistoryItem(null), setPreview(q.id))} className="flex w-full items-start gap-3 rounded-lg border p-3 text-left text-sm hover:bg-secondary/50">
                   <span className={cn('mt-1 size-2 shrink-0 rounded-full', a.correct ? 'bg-success' : 'bg-danger')} />
-                  <span className="line-clamp-2">{q.question}</span>
+                  <span className="line-clamp-2"><MathText text={q.question} noSub={q.subject === 'informatics'} /></span>
                 </button>
               );
             })}
@@ -391,7 +392,7 @@ function BookmarkRow({ id, title, subject, onOpen }: { id: string; title: string
     <div className="flex items-center gap-3 p-3">
       <SubjectIcon subject={subject} className="size-8" />
       <button onClick={onOpen} className="min-w-0 flex-1 text-left text-sm hover:text-primary">
-        <span className="line-clamp-2">{title}</span>
+        <span className="line-clamp-2"><MathText text={title} noSub={subject === 'informatics'} /></span>
       </button>
       <Button
         variant="ghost"

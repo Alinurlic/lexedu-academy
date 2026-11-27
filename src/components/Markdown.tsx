@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { mathNodes } from './MathText';
 
 /**
  * Лёгкий и безопасный рендер Markdown для ответов Lexi.
@@ -8,20 +9,23 @@ import { Fragment, type ReactNode } from 'react';
 
 function inline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  // **жирный**, __жирный__, *курсив*, _курсив_, `код`
-  const re = /(\*\*|__)(.+?)\1|(\*|_)(?!\s)(.+?)(?<!\s)\3|`([^`]+?)`/g;
+  // **жирный**, __жирный__, *курсив*, _курсив_, `код`.
+  // Подчёркивания внутри слова не выделяют текст (как в CommonMark): x_1, y_max — это индексы, а не курсив.
+  const re = /\*\*(.+?)\*\*|(?<![\p{L}\p{N}])__(.+?)__(?![\p{L}\p{N}])|\*(?!\s)(.+?)(?<!\s)\*|(?<![\p{L}\p{N}])_(?!\s)(.+?)(?<!\s)_(?![\p{L}\p{N}])|`([^`]+?)`/gu;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
   while ((m = re.exec(text))) {
-    if (m.index > last) nodes.push(text.slice(last, m.index));
+    if (m.index > last) nodes.push(...mathNodes(text.slice(last, m.index), { keyPrefix: `${keyPrefix}-t${i}-` }));
     const key = `${keyPrefix}-${i++}`;
-    if (m[2] !== undefined) nodes.push(<strong key={key}>{m[2]}</strong>);
-    else if (m[4] !== undefined) nodes.push(<em key={key}>{m[4]}</em>);
+    const bold = m[1] ?? m[2];
+    const em = m[3] ?? m[4];
+    if (bold !== undefined) nodes.push(<strong key={key}>{mathNodes(bold, { keyPrefix: `${key}-b` })}</strong>);
+    else if (em !== undefined) nodes.push(<em key={key}>{mathNodes(em, { keyPrefix: `${key}-i` })}</em>);
     else if (m[5] !== undefined) nodes.push(<code key={key} className="rounded bg-secondary px-1 py-0.5 text-[0.85em]">{m[5]}</code>);
     last = m.index + m[0].length;
   }
-  if (last < text.length) nodes.push(text.slice(last));
+  if (last < text.length) nodes.push(...mathNodes(text.slice(last), { keyPrefix: `${keyPrefix}-e-` }));
   return nodes;
 }
 

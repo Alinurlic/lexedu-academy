@@ -224,11 +224,22 @@ def latex(s: str) -> str:
         else:
             out.append(s[i])
             i += 1
-    return re.sub(r'\s{2,}', ' ', ''.join(out)).strip()
+    return space_functions(re.sub(r'\s{2,}', ' ', ''.join(out)).strip())
+
+
+INVISIBLE = re.compile('[\u00ad\u200b\u200c\u200d\u2060\ufeff]')  # мягкие переносы и символы нулевой ширины
+FUNC = r'(?:arcsin|arccos|arctg|arcctg|sin|cos|tg|ctg|log|lg|ln)'
+
+
+def space_functions(s: str) -> str:
+    """«12√2cosx» → «12√2 cos x»: пробелы вокруг названий функций, слипшихся с числами и переменными."""
+    s = re.sub(r'(?<=[0-9π√)²³])(?=' + FUNC + ')', ' ', s)
+    s = re.sub(r'(?<![A-Za-z])(' + FUNC + r')(?=[A-Za-zα-ωπ0-9])', r'\1 ', s)
+    return s
 
 
 def clean(s: str) -> str:
-    s = (s or '').replace('\xa0', ' ').strip()
+    s = INVISIBLE.sub('', (s or '').replace('\xa0', ' ')).strip()
     if '\\' in s or '$' in s:
         try:
             s = latex(s)

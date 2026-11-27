@@ -9,6 +9,7 @@ import { Lexi } from '@/components/lexi/Lexi';
 import { lexiSay } from '@/lib/lexi';
 import { LANG_LABEL, LANG_SHORT, questionLang } from '@/data/questions/lang';
 import { useAppStore } from '@/store/useAppStore';
+import { MathText } from './MathText';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
@@ -57,6 +58,8 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
     return () => window.removeEventListener('keydown', onKey);
   }, [q, value, onChange, keyboard, locked]);
 
+  // в информатике «_» — часть имён переменных в коде, нижние индексы не рисуем
+  const code = q.subject === 'informatics';
   return (
     <div>
       {q.audio && <AudioPlayer script={q.audio} groupKey={q.group ?? q.id} reveal={reveal} />}
@@ -65,12 +68,14 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
           <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Текст</div>
           {q.passage.split('\n').map((p, i) => (
             <p key={i} className="mb-2 last:mb-0">
-              {p}
+              <MathText text={p} noSub={code} />
             </p>
           ))}
         </div>
       )}
-      <p className="whitespace-pre-line text-[17px] font-medium leading-relaxed">{q.type === 'essay' ? q.question.split('\n\n|')[0] : q.question}</p>
+      <p className="whitespace-pre-line text-[17px] font-medium leading-relaxed">
+        <MathText text={q.type === 'essay' ? q.question.split('\n\n|')[0] : q.question} noSub={code} />
+      </p>
       {q.type === 'essay' && q.question.includes('|') && <MarkdownTable text={q.question} />}
       {q.type === 'multiple' && <p className="mt-1 text-sm text-muted-foreground">Выберите все верные варианты</p>}
 
@@ -112,7 +117,9 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
                   >
                     {state === 'correct' ? <Check className="size-4" /> : state === 'wrong' ? <X className="size-4" /> : LETTERS[i]}
                   </span>
-                  <span className="flex-1">{opt}</span>
+                  <span className="flex-1">
+                    <MathText text={opt} noSub={code} />
+                  </span>
                 </button>
               );
             })}
@@ -153,7 +160,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
               {q.options.map((o, i) => (
                 <div key={i}>
                   <span className="mr-1.5 font-semibold">{LETTERS[i]}.</span>
-                  {o}
+                  <MathText text={o} noSub={code} />
                 </div>
               ))}
             </div>
@@ -163,7 +170,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
                 <div key={pi} className="rounded-xl border p-3">
                   <div className="mb-2 text-sm">
                     <span className="mr-1.5 font-semibold">{pi + 1}.</span>
-                    {p}
+                    <MathText text={p} noSub={code} />
                   </div>
                   <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Соответствие для пункта ${pi + 1}`}>
                     {q.options.map((_, oi) => {
@@ -245,7 +252,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
       {reveal && (
         <div className="mt-4 rounded-xl border bg-surface-2/60 p-3 text-sm">
           <span className="text-muted-foreground">Правильный ответ: </span>
-          <span className="font-semibold">{formatCorrect(q)}</span>
+          <span className="font-semibold"><MathText text={formatCorrect(q)} noSub={q.subject === 'informatics'} /></span>
         </div>
       )}
     </div>
@@ -262,7 +269,9 @@ export function Explanation({ q, correct, lexi }: { q: Question; correct: boolea
           {correct ? <Check className="size-4" /> : <X className="size-4" />}
           {line ? line.text : correct ? 'Верно!' : 'Неверно'}
         </div>
-        <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">{q.explanation}</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
+          <MathText text={q.explanation} noSub={q.subject === 'informatics'} />
+        </p>
         {q.sourceNote && (
           <p className="mt-2 text-[11px] text-muted-foreground">
             {q.sourceNote}

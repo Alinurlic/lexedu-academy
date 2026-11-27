@@ -15,6 +15,7 @@ import { SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
 import { fmtDate, fmtDateTime, fmtDuration } from '@/lib/date';
 import { cn, pct } from '@/lib/utils';
 import { Markdown } from '@/components/Markdown';
+import { MathText } from '@/components/MathText';
 
 type Filter = 'all' | 'wrong' | 'empty' | 'flagged';
 
@@ -160,7 +161,7 @@ export default function ExamResult() {
               return (
                 <div key={id} className="space-y-3">
                   <div className="text-sm font-medium">{q.task === 'writing1' ? 'Task 1' : 'Task 2'}</div>
-                  <p className="whitespace-pre-line rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">{q.question.split('\n\n|')[0]}</p>
+                  <p className="whitespace-pre-line rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground"><MathText text={q.question.split('\n\n|')[0]} /></p>
                   <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border p-3 text-sm">{text || <span className="text-muted-foreground">Ответ не написан</span>}</div>
                   <EssayGrader q={q} text={text} existing={exam.essays?.[id]} onGraded={(g) => gradeEssay(exam.id, id, { band: g.band, feedback: g.feedback, self: g.source === 'self' })} />
                   {exam.essays?.[id]?.feedback && <Markdown text={exam.essays[id].feedback!} className="text-sm text-muted-foreground" />}
@@ -278,7 +279,7 @@ export default function ExamResult() {
               {rows.map((r) => (
                 <button key={r.qid} onClick={() => setOpen(open === r.qid ? null : r.qid)} className="flex w-full items-center gap-3 p-3 text-left hover:bg-secondary/50">
                   <span className={cn('grid size-8 shrink-0 place-items-center rounded-lg text-xs font-semibold tabular', r.correct ? 'bg-success/15 text-success' : r.answered ? 'bg-danger/15 text-danger' : 'bg-secondary text-muted-foreground')}>{r.i + 1}</span>
-                  <span className="line-clamp-1 flex-1 text-sm">{r.q?.question ?? 'Вопрос удалён'}</span>
+                  <span className="line-clamp-1 flex-1 text-sm">{r.q ? <MathText text={r.q.question} noSub={r.q.subject === 'informatics'} /> : 'Вопрос удалён'}</span>
                   {r.flagged && <Flag className="size-3.5 shrink-0 fill-warning text-warning" />}
                   <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">{r.q ? SUBJECT_MAP[r.q.subject].short : ''}</span>
                 </button>

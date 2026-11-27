@@ -14,6 +14,7 @@ import { fmtClock, fmtDuration } from '@/lib/date';
 import { cn, pct, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Answer, PracticeSessionResult } from '@/types';
+import { MathText } from '@/components/MathText';
 
 export default function PracticeSession() {
   const practice = useSession((s) => s.practice);
@@ -369,15 +370,15 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
                 if (!q) return null;
                 return (
                   <div key={a.questionId} className="rounded-xl border p-4">
-                    <p className="text-sm font-medium">{q.question}</p>
+                    <p className="text-sm font-medium"><MathText text={q.question} noSub={q.subject === 'informatics'} /></p>
                     <div className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
                       <div>
                         <span className="text-muted-foreground">Ваш ответ: </span>
-                        <span className="text-danger">{formatAnswer(q, a.answer)}</span>
+                        <span className="text-danger"><MathText text={formatAnswer(q, a.answer)} noSub={q.subject === 'informatics'} /></span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Правильный: </span>
-                        <span className="text-success">{formatCorrect(q)}</span>
+                        <span className="text-success"><MathText text={formatCorrect(q)} noSub={q.subject === 'informatics'} /></span>
                       </div>
                     </div>
                     <p className="mt-2 text-[13px] text-muted-foreground">{q.explanation}</p>

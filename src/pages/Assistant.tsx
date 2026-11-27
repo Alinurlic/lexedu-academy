@@ -17,6 +17,7 @@ import { Markdown } from '@/components/Markdown';
 import { fmtDate } from '@/lib/date';
 import { toast } from '@/store/toast';
 import type { ChatMessage } from '@/types';
+import { MathText } from '@/components/MathText';
 
 const SUGGESTIONS = ['Объясни мои ошибки', 'Что мне повторить?', 'Реши x^2 - 5x + 6 = 0', 'Дай задачу на проценты', 'Объясни теорему Виета', 'Законы Ньютона'];
 
@@ -160,7 +161,7 @@ export default function Assistant() {
                 return (
                   <button key={m.id} onClick={() => send(`Объясни ошибку #${m.id}`)} className="flex items-center gap-2 rounded-xl border bg-card p-2.5 text-left text-sm transition-colors hover:border-primary/50">
                     <SubjectIcon subject={q.subject} className="size-7" />
-                    <span className="line-clamp-1 flex-1">{q.question}</span>
+                    <span className="line-clamp-1 flex-1"><MathText text={q.question} noSub={q.subject === 'informatics'} /></span>
                     <ArrowRight className="size-4 text-muted-foreground" />
                   </button>
                 );
@@ -298,7 +299,7 @@ function GeneratedCard({ card, onMore }: { card: Extract<NonNullable<ChatMessage
         <SubjectIcon subject={card.subject} className="size-6" /> {SUBJECT_MAP[card.subject].name} · {TOPIC_MAP[card.topic]?.name}
         <Badge variant="violet">Сгенерировано</Badge>
       </div>
-      <p className="font-medium">{card.question}</p>
+      <p className="font-medium"><MathText text={card.question} /></p>
       <form
         className="mt-3 flex flex-wrap items-center gap-2"
         onSubmit={(e) => {

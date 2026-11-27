@@ -14,6 +14,7 @@ import { useSubjectSummary } from '@/hooks/useStats';
 import { cn, fmtNum } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Difficulty, Question, SubjectId, TopicStatus } from '@/types';
+import { MathText } from '@/components/MathText';
 
 const STATUS: Record<TopicStatus, { label: string; icon: typeof Circle; cls: string }> = {
   not_started: { label: 'Не начата', icon: Circle, cls: 'text-muted-foreground' },
@@ -330,7 +331,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                 return (
                   <div key={q.id} className="flex items-center gap-3 p-3">
                     <button onClick={() => setParams({ ...Object.fromEntries(params), q: q.id }, { replace: true })} className="min-w-0 flex-1 text-left">
-                      <div className="line-clamp-2 text-sm hover:text-primary">{q.question}</div>
+                      <div className="line-clamp-2 text-sm hover:text-primary"><MathText text={q.question} noSub={q.subject === 'informatics'} /></div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                         <span>{TOPIC_MAP[q.topic]?.name}</span>·<span>{DIFFICULTY_LABEL[q.difficulty]}</span>·<span>{TYPE_LABEL[q.type]}</span>
                         {q.source !== 'demo' && <Badge variant={q.source === 'user' ? 'violet' : q.source === 'open' ? 'outline' : 'success'}>{SOURCE_LABEL[q.source]}</Badge>}

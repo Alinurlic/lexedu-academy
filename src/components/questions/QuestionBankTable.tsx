@@ -14,6 +14,7 @@ import { cn, downloadJson, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Difficulty, Question, QuestionSource, QuestionType, SubjectId, VerificationStatus, QuestionLang } from '@/types';
 import { questionLang } from '@/data/questions/lang';
+import { MathText } from '@/components/MathText';
 
 const PAGE = 40;
 
@@ -217,7 +218,7 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
               <div key={x.id} className="flex items-start gap-3 p-3 transition-colors hover:bg-secondary/40">
                 <SubjectIcon subject={x.subject} className="mt-0.5 size-8" />
                 <button onClick={() => setPreview(x)} className="min-w-0 flex-1 text-left">
-                  <div className="line-clamp-2 text-sm">{x.question}</div>
+                  <div className="line-clamp-2 text-sm"><MathText text={x.question} noSub={x.subject === 'informatics'} /></div>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                     <span>{TOPIC_MAP[x.topic]?.name ?? x.topic}</span>·<span>{DIFFICULTY_LABEL[x.difficulty]}</span>·<span>{TYPE_LABEL[x.type]}</span>
                     <Badge variant={x.source === 'verified' ? 'success' : x.source === 'user' ? 'violet' : 'outline'}>{SOURCE_LABEL[x.source]}</Badge>
@@ -276,7 +277,7 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
           <div className="mt-2 space-y-1.5">
             {deletedDemo.map((d) => (
               <div key={d.id} className="flex items-center gap-2">
-                <span className="line-clamp-1 flex-1 text-muted-foreground">{d.question}</span>
+                <span className="line-clamp-1 flex-1 text-muted-foreground"><MathText text={d.question} noSub={d.subject === 'informatics'} /></span>
                 <Button size="sm" variant="ghost" onClick={() => (restore(d.id), toast.success('Вопрос восстановлен'))}>
                   <RotateCcw /> Восстановить
                 </Button>

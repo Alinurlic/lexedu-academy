@@ -12,6 +12,7 @@ import { fmtDate } from '@/lib/date';
 import { cn, plural, shuffle } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Answer, Mistake, MistakeStatus, SubjectId } from '@/types';
+import { MathText } from '@/components/MathText';
 
 export const STATUS_META: Record<MistakeStatus, { label: string; variant: 'danger' | 'warning' | 'success' }> = {
   new: { label: 'Новая', variant: 'danger' },
@@ -195,7 +196,7 @@ export default function Mistakes() {
                     <button onClick={() => setExpanded(open ? null : m.id)} className="flex w-full items-center gap-3 p-3 text-left" aria-expanded={open}>
                       <SubjectIcon subject={q.subject} className="size-8" />
                       <div className="min-w-0 flex-1">
-                        <div className={cn('text-sm', !open && 'line-clamp-1')}>{q.question}</div>
+                        <div className={cn('text-sm', !open && 'line-clamp-1')}><MathText text={q.question} noSub={q.subject === 'informatics'} /></div>
                         <div className="mt-0.5 text-[11px] text-muted-foreground">
                           {SUBJECT_MAP[q.subject].name} · {TOPIC_MAP[q.topic]?.name} · {fmtDate(m.date)}
                           {m.reviewCount > 0 && ` · повторений: ${m.reviewCount}`}
@@ -211,11 +212,11 @@ export default function Mistakes() {
                         <div className="grid gap-3 text-sm sm:grid-cols-2">
                           <div className="rounded-lg border border-danger/30 bg-danger/5 p-3">
                             <div className="text-xs text-muted-foreground">Ваш ответ</div>
-                            <div className="mt-0.5 font-medium text-danger">{formatAnswer(q, m.studentAnswer)}</div>
+                            <div className="mt-0.5 font-medium text-danger"><MathText text={formatAnswer(q, m.studentAnswer)} noSub={q.subject === 'informatics'} /></div>
                           </div>
                           <div className="rounded-lg border border-success/30 bg-success/5 p-3">
                             <div className="text-xs text-muted-foreground">Правильный ответ</div>
-                            <div className="mt-0.5 font-medium text-success">{formatCorrect(q)}</div>
+                            <div className="mt-0.5 font-medium text-success"><MathText text={formatCorrect(q)} noSub={q.subject === 'informatics'} /></div>
                           </div>
                         </div>
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{q.explanation}</p>
