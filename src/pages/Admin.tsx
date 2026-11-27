@@ -4,6 +4,7 @@ import { KeyRound, Lock, Plus, RotateCcw, Save, ShieldAlert, ShieldCheck, Trash2
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, ConfirmDialog, EmptyState, FieldError, Input, Label, Segmented, Select } from '@/components/ui';
 import { Lexi } from '@/components/lexi/Lexi';
 import { QuestionBankTable } from '@/components/questions/QuestionBankTable';
+import { ReportsQueue } from '@/components/questions/ReportsQueue';
 import { DEFAULT_EXAM_FORMAT, SUBJECTS, SUBJECT_MAP, formatMax, isBuiltinTopic } from '@/data/subjects';
 import { useAllQuestions, useAppStore } from '@/store/useAppStore';
 import { useAuth, hashPin } from '@/lib/auth';
@@ -112,10 +113,11 @@ function PinGate({ hasPin, onUnlock }: { hasPin: boolean; onUnlock: () => void }
   );
 }
 
-type Tab = 'questions' | 'taxonomy' | 'format' | 'users' | 'security';
+type Tab = 'questions' | 'reports' | 'taxonomy' | 'format' | 'users' | 'security';
 
 function AdminPanel({ serverMode, onLock }: { serverMode?: boolean; onLock?: () => void }) {
   const [tab, setTab] = useState<Tab>('questions');
+  const [reportCount, setReportCount] = useState(0);
   const questions = useAllQuestions();
   const custom = useAppStore((s) => s.customQuestions);
   const overrides = useAppStore((s) => s.questionOverrides);
@@ -150,6 +152,7 @@ function AdminPanel({ serverMode, onLock }: { serverMode?: boolean; onLock?: () 
           onChange={setTab}
           options={[
             { value: 'questions', label: 'Вопросы' },
+            { value: 'reports', label: reportCount ? `Жалобы (${reportCount})` : 'Жалобы' },
             { value: 'taxonomy', label: 'Предметы и темы' },
             { value: 'format', label: 'Формат ЕНТ' },
             { value: 'users', label: 'Пользователи' },
@@ -165,6 +168,12 @@ function AdminPanel({ serverMode, onLock }: { serverMode?: boolean; onLock?: () 
           </p>
         </Card>
       )}
+      {/* очередь жалоб держим смонтированной, чтобы счётчик на вкладке был виден сразу */}
+      <div className={tab === 'reports' ? '' : 'hidden'}>
+        <Card className="p-5">
+          <ReportsQueue onCount={setReportCount} />
+        </Card>
+      </div>
       {tab === 'taxonomy' && <TaxonomyEditor />}
       {tab === 'format' && <FormatEditor />}
       {tab === 'users' && <UsersTab serverMode={!!serverMode} />}

@@ -131,7 +131,9 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
     if (!res.success) for (const i of res.error.issues) e[String(i.path[0])] ??= i.message;
     setErrors(e);
     if (Object.keys(e).length || !res.success) return;
-    onSave(res.data as Question);
+    // поля, которых нет в форме (язык, аудио, группа заданий), сохраняем из исходного вопроса
+    const keep = question ? { lang: question.lang, audio: question.audio, group: question.group, context: question.context } : {};
+    onSave({ ...keep, ...(res.data as Question) } as Question);
   };
 
   const subj = SUBJECT_MAP[f.subject];

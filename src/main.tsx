@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { loadBank } from './data/questions/bank';
 import { useAppStore } from './store/useAppStore';
+import { loadModeration } from './lib/moderation';
 import './index.css';
 
 // После выкладки новой версии старые файлы страниц исчезают: если вкладка была открыта во время обновления,
@@ -22,6 +23,8 @@ window.addEventListener('vite:preloadError', (event) => {
 // открытый банк заданий начинает грузиться сразу, параллельно с интерфейсом
 // сначала — задания на языке сдачи ЕНТ из сохранённого профиля
 void loadBank(useAppStore.getState().profile.entLang ?? 'ru');
+// общие правки банка от администратора (скрытые и исправленные задания) — для всех учеников
+void loadModeration();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

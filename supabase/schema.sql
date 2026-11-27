@@ -223,3 +223,61 @@ grant select, insert, update, delete on public.attempts, public.practice_session
 grant select, insert on public.ai_usage to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
 grant execute on function public.is_admin() to authenticated;
+
+-- ===== Жалобы на задания и общие правки банка (v4) =====
+-- Ученик сообщает об ошибке в задании; администратор исправляет, скрывает или отклоняет.
+create table if not exists public.question_reports (
+  id bigint generated always as identity primary key,
+  question_id text not null check (char_length(question_id) between 1 and 120),
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+  reason text not null check (reason in ('wrong_answer','wording','options','explanation','other')),
+  comment text check (char_length(comment) <= 1000),
+  status text not null default 'new' check (status in ('new','fixed','hidden','rejected')),
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+create index if not exists question_reports_status_created on public.question_reports (status, created_at desc);
+-- одна открытая жалоба от ученика на задание
+create unique index if not exists question_reports_one_open on public.question_reports (question_id, user_id) where status = 'new';
+alter table public.question_reports enable row level security;
+drop policy if exists "insert own report" on public.question_reports;
+create policy "insert own report" on public.question_reports for insert with check (auth.uid() = user_id and status = 'new' and resolved_at is null);
+drop policy if exists "read own or admin reports" on public.question_reports;
+create policy "read own or admin reports" on public.question_reports for select using (auth.uid() = user_id or public.is_admin());
+drop policy if exists "admins update reports" on public.question_reports;
+create policy "admins update reports" on public.question_reports for update using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admins delete reports" on public.question_reports;
+create policy "admins delete reports" on public.question_reports for delete using (public.is_admin());
+
+-- не больше 50 жалоб за сутки от одного ученика
+create or replace function public.limit_question_reports() returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if (select count(*) from public.question_reports where user_id = new.user_id and created_at > now() - interval '1 day') >= 50 then
+    raise exception 'Слишком много жалоб за сутки' using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists question_reports_limit on public.question_reports;
+create trigger question_reports_limit before insert on public.question_reports for each row execute function public.limit_question_reports();
+
+-- Общие правки банка: скрытые задания и исправленные версии — видны всем ученикам
+create table if not exists public.question_moderation (
+  question_id text primary key check (char_length(question_id) between 1 and 120),
+  hidden boolean not null default false,
+  override jsonb,
+  note text check (char_length(note) <= 500),
+  updated_by uuid default auth.uid() references auth.users on delete set null,
+  updated_at timestamptz not null default now()
+);
+alter table public.question_moderation enable row level security;
+drop policy if exists "everyone reads moderation" on public.question_moderation;
+create policy "everyone reads moderation" on public.question_moderation for select using (true);
+drop policy if exists "admins manage moderation" on public.question_moderation;
+create policy "admins manage moderation" on public.question_moderation for all using (public.is_admin()) with check (public.is_admin());
+
+grant select, insert on public.question_reports to authenticated;
+grant update, delete on public.question_reports to authenticated;
+grant select on public.question_moderation to anon, authenticated;
+grant insert, update, delete on public.question_moderation to authenticated;
+grant usage, select on all sequences in schema public to authenticated;

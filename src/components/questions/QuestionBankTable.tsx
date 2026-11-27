@@ -5,7 +5,7 @@ import { SubjectIcon } from '@/components/icons';
 import { Explanation, QuestionMeta, QuestionView } from '@/components/QuestionView';
 import { QuestionEditor } from './QuestionEditor';
 import { AiGenerateDialog } from './AiGenerateDialog';
-import { builtinQuestions } from '@/data/questions/bank';
+import { builtinQuestions, getModerationRows, useBank } from '@/data/questions/bank';
 import { DIFFICULTY_LABEL, SOURCE_LABEL, TYPE_LABEL, VERIFICATION_LABEL } from '@/data/questions';
 import { SUBJECTS, SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
 import { isDemoQuestionId, useAllQuestions, useAppStore } from '@/store/useAppStore';
@@ -15,6 +15,8 @@ import { toast } from '@/store/toast';
 import type { Difficulty, Question, QuestionSource, QuestionType, SubjectId, VerificationStatus, QuestionLang } from '@/types';
 import { questionLang } from '@/data/questions/lang';
 import { MathText } from '@/components/MathText';
+import { moderate } from '@/lib/moderation';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 const PAGE = 40;
 
@@ -46,6 +48,7 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
   const [editing, setEditing] = useState<Question | 'new' | null>(null);
   const [toDelete, setToDelete] = useState<Question | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  useBank((st) => st.version); // перерисовка после загрузки/изменения общих правок
 
   const stats = useMemo(() => {
     const m = new Map<string, { n: number; c: number }>();
@@ -105,7 +108,19 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
   };
 
   const subj = subject === 'all' ? null : SUBJECT_MAP[subject];
-  const deletedDemo = builtinQuestions().filter((d) => deletedIds.includes(d.id));
+  // С Supabase правки встроенных заданий администратор делает для всех учеников (question_moderation)
+  const globalMode = admin && isSupabaseConfigured;
+  const hiddenIds = globalMode ? getModerationRows().filter((r) => r.hidden).map((r) => r.question_id) : deletedIds;
+  const deletedDemo = builtinQuestions().filter((d) => hiddenIds.includes(d.id));
+  const restoreQ = async (id: string) => {
+    try {
+      if (globalMode) await moderate(id, { hidden: false });
+      else restore(id);
+      toast.success(globalMode ? 'Вопрос снова виден всем ученикам' : 'Вопрос восстановлен');
+    } catch (e) {
+      toast.error('Не удалось восстановить', e instanceof Error ? e.message : undefined);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -273,12 +288,12 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
 
       {admin && deletedDemo.length > 0 && (
         <details className="rounded-xl border p-3 text-sm">
-          <summary className="cursor-pointer font-medium">Скрытые демо-вопросы ({deletedDemo.length})</summary>
+          <summary className="cursor-pointer font-medium">{globalMode ? 'Скрыты для всех учеников' : 'Скрытые демо-вопросы'} ({deletedDemo.length})</summary>
           <div className="mt-2 space-y-1.5">
             {deletedDemo.map((d) => (
               <div key={d.id} className="flex items-center gap-2">
                 <span className="line-clamp-1 flex-1 text-muted-foreground"><MathText text={d.question} noSub={d.subject === 'informatics'} /></span>
-                <Button size="sm" variant="ghost" onClick={() => (restore(d.id), toast.success('Вопрос восстановлен'))}>
+                <Button size="sm" variant="ghost" onClick={() => void restoreQ(d.id)}>
                   <RotateCcw /> Восстановить
                 </Button>
               </div>
@@ -305,6 +320,12 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
           defaultSubject={subject === 'all' ? 'math' : subject}
           onClose={() => setEditing(null)}
           onSave={(qq) => {
+            if (globalMode && editing !== 'new' && isDemoQuestionId(qq.id)) {
+              void moderate(qq.id, { override: qq })
+                .then(() => (toast.success('Исправление сохранено для всех учеников'), setEditing(null)))
+                .catch((e) => toast.error('Не удалось сохранить', e instanceof Error ? e.message : undefined));
+              return;
+            }
             upsert(qq);
             toast.success(editing === 'new' ? 'Вопрос добавлен' : 'Вопрос сохранён');
             setEditing(null);
@@ -320,10 +341,15 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
         description={toDelete && isDemoQuestionId(toDelete.id) ? 'Демо-вопрос будет скрыт из банка. Его можно восстановить ниже. История ответов сохранится.' : 'Пользовательский вопрос будет удалён без возможности восстановления. История ответов сохранится.'}
         confirmLabel="Удалить"
         onConfirm={() => {
-          if (toDelete) {
-            del(toDelete.id);
-            toast.success('Вопрос удалён');
+          if (!toDelete) return;
+          if (globalMode && isDemoQuestionId(toDelete.id)) {
+            void moderate(toDelete.id, { hidden: true })
+              .then(() => toast.success('Вопрос скрыт для всех учеников'))
+              .catch((e) => toast.error('Не удалось скрыть', e instanceof Error ? e.message : undefined));
+            return;
           }
+          del(toDelete.id);
+          toast.success('Вопрос удалён');
         }}
       />
     </div>

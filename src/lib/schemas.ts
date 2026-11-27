@@ -138,6 +138,7 @@ export const importSchema = z.object({
   assistantHistory: z.array(z.any()).optional(),
   chatThreads: z.array(z.any()).optional(),
   activeChatId: z.string().nullable().optional(),
+  localReports: z.array(z.any()).optional(),
   weekly: z.any().optional(),
   lastSyncAt: z.string().nullable().optional(),
   essayAttempts: z.array(z.any()).optional(),

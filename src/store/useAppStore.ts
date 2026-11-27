@@ -25,7 +25,7 @@ import type {
   XpEvent,
 } from '@/types';
 import { checkAnswer as checkCorrect } from '@/data/questions';
-import { builtinQuestions, isBuiltinQuestionId, useBank } from '@/data/questions/bank';
+import { builtinQuestions, globalOverride, isBuiltinQuestionId, isGloballyHidden, useBank } from '@/data/questions/bank';
 import { forStudy, type EntLang } from '@/data/questions/lang';
 import { importSchema } from '@/lib/schemas';
 import { ACHIEVEMENTS, LEVEL_RU, XP, levelFor } from '@/data/gamification';
@@ -88,11 +88,22 @@ export interface PersistedState {
   assistantHistory: ChatMessage[];
   chatThreads: ChatThread[];
   activeChatId: string | null;
+  /** Жалобы на задания в локальном режиме (без Supabase) */
+  localReports: LocalReport[];
   weekly: WeeklyGoalState;
   adminPinHash: string | null;
   lastSyncAt: string | null;
   /** Эссе и ответы Speaking из «Студии» с оценкой ИИ или самооценкой */
   essayAttempts: EssayAttempt[];
+}
+
+export interface LocalReport {
+  id: string;
+  questionId: string;
+  reason: string;
+  comment?: string;
+  date: string;
+  status: 'new' | 'fixed' | 'hidden' | 'rejected';
 }
 
 export interface EssayAttempt {
@@ -151,6 +162,9 @@ interface Actions {
   selectChat: (id: string) => void;
   deleteChat: (id: string) => void;
   renameChat: (id: string, title: string) => void;
+  // жалобы на задания (локальный режим)
+  addLocalReport: (r: Pick<LocalReport, 'questionId' | 'reason' | 'comment'>) => boolean;
+  resolveLocalReports: (questionId: string, status: LocalReport['status']) => void;
   // недельные цели
   syncWeeklyGoals: () => void;
   markSynced: () => void;
@@ -197,6 +211,7 @@ function emptyState(profile: Profile = DEFAULT_PROFILE): PersistedState {
     assistantHistory: [],
     chatThreads: [],
     activeChatId: null,
+    localReports: [],
     weekly: { week: dayKey(startOfWeek()), rewarded: [] },
     adminPinHash: null,
     lastSyncAt: null,
@@ -249,14 +264,17 @@ function initialState(): PersistedState {
 /** Единый банк вопросов: демо-вопросы с правками администратора + пользовательские, без удалённых. */
 export function allQuestions(b: QuestionBankSlice): Question[] {
   const deleted = new Set(b.deletedQuestionIds);
-  const demo = builtinQuestions().filter((q) => !deleted.has(q.id)).map((q) => b.questionOverrides[q.id] ?? q);
+  // правки администратора на этом устройстве важнее общих правок банка; скрытые для всех задания не показываем
+  const demo = builtinQuestions()
+    .filter((q) => !deleted.has(q.id) && !isGloballyHidden(q.id))
+    .map((q) => b.questionOverrides[q.id] ?? globalOverride(q.id) ?? q);
   return [...demo, ...b.customQuestions.filter((q) => !deleted.has(q.id))];
 }
 
 /** Карта для поиска по id — включает удалённые вопросы, чтобы история и ошибки не «ломались». */
 export function questionById(b: QuestionBankSlice) {
   const map = new Map<string, Question>();
-  for (const q of builtinQuestions()) map.set(q.id, b.questionOverrides[q.id] ?? q);
+  for (const q of builtinQuestions()) map.set(q.id, b.questionOverrides[q.id] ?? globalOverride(q.id) ?? q);
   for (const q of b.customQuestions) map.set(q.id, q);
   return map;
 }
@@ -297,7 +315,7 @@ function evaluateAchievements(s: PersistedState): string[] {
 const PERSISTED_KEYS: (keyof PersistedState)[] = [
   'profile', 'attempts', 'sessions', 'exams', 'mistakes', 'bookmarks', 'tasks', 'daily', 'xp', 'xpEvents', 'achievements',
   'notifications', 'customQuestions', 'topicStatus', 'studyLog', 'lastStreakAward', 'lastReminderDay', 'dataMode',
-  'questionOverrides', 'deletedQuestionIds', 'taxonomy', 'examFormat', 'assistantHistory', 'chatThreads', 'activeChatId', 'weekly', 'adminPinHash', 'lastSyncAt', 'essayAttempts',
+  'questionOverrides', 'deletedQuestionIds', 'taxonomy', 'examFormat', 'assistantHistory', 'chatThreads', 'activeChatId', 'localReports', 'weekly', 'adminPinHash', 'lastSyncAt', 'essayAttempts',
 ];
 
 export function pickPersisted(s: PersistedState): PersistedState {
@@ -594,6 +612,15 @@ export const useAppStore = create<AppState>()(
             return { chatThreads: [t, ...st.chatThreads], activeChatId: t.id };
           }),
         selectChat: (id) => set({ activeChatId: id }),
+        addLocalReport: (r) => {
+          const open = get().localReports.some((x) => x.questionId === r.questionId && x.status === 'new');
+          if (open) return false;
+          const rep: LocalReport = { id: uid('rep'), date: new Date().toISOString(), status: 'new', ...r };
+          set({ localReports: [rep, ...get().localReports].slice(0, 500) });
+          return true;
+        },
+        resolveLocalReports: (questionId, status) =>
+          set({ localReports: get().localReports.map((x) => (x.questionId === questionId && x.status === 'new' ? { ...x, status } : x)) }),
         deleteChat: (id) =>
           set((st) => {
             const threads = st.chatThreads.filter((t) => t.id !== id);
