@@ -30,8 +30,8 @@ function expand({ subject, lang = 'ru', rows }: File): Question[] {
     options,
     correctAnswer: key,
     explanation: kk
-      ? `Дұрыс жауап: ${strip(options[key])}. Бұл тапсырманың толық талдауы әлі қосылмаған — шешімін Lexi-ден сұра.`
-      : `Верный ответ: ${strip(options[key])}. Подробный разбор для этого задания пока не добавлен — попроси Lexi объяснить решение.`,
+      ? `Дұрыс жауап: ${strip(options[key])}. Шешімін қадам бойынша көру үшін «Подробный разбор от Lexi» батырмасын бас.`
+      : `Верный ответ: ${strip(options[key])}. Решение по шагам — в «Подробном разборе от Lexi».`,
     source: 'open',
     sourceNote: kk ? `Ашық дереккөз: ${OPEN_BANK_LICENSE}. Түпнұсқа: ${host(ref)}.` : `Открытый источник: ${OPEN_BANK_LICENSE}. Первоисточник: ${host(ref)}.`,
     sourceRef: ref,

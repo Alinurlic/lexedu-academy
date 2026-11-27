@@ -108,3 +108,28 @@ export function useAiStatus() {
   }, []);
   return st;
 }
+
+export interface ExplainPayload {
+  questionId: string;
+  subject: string;
+  lang: 'ru' | 'kk' | 'en';
+  type: 'single' | 'multiple' | 'numeric' | 'boolean' | 'matching' | 'text';
+  question: string;
+  passage?: string;
+  options?: string[];
+  prompts?: string[];
+  correctAnswer: unknown;
+  unit?: string;
+}
+
+export interface ExplainReply {
+  explanation: string;
+  keyLooksWrong: boolean;
+  comment: string;
+  cached?: boolean;
+}
+
+/** Подробный разбор задания (сервер сначала ищет готовый разбор в общем кэше). */
+export function aiExplain(payload: ExplainPayload) {
+  return call<ExplainReply>({ action: 'explain', ...payload });
+}

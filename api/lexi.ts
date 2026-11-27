@@ -15,6 +15,7 @@ import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import * as z from 'zod/v4';
 import { createClient } from '@supabase/supabase-js';
 import { GEMINI_KEY, GEMINI_MODEL, GENERATED_SCHEMA, GRADE_SCHEMA, GeminiError, gemini } from './_gemini.js';
+import { EXPLAINER, EXPLAIN_SCHEMA, ExplainBody, ExplainOut, cleanResult, explainHash, explainPrompt, readCache, serviceClient, writeCache, type ExplainInput, type ExplainResult } from './_explain.js';
 
 const MODEL = process.env.LEXI_MODEL || 'claude-opus-5-5';
 const API_KEY = process.env.ANTHROPIC_API_KEY?.trim();
@@ -26,6 +27,8 @@ const env = (...names: string[]) => names.map((n) => process.env[n]?.trim()).fin
 const SB_URL = env('SUPABASE_URL', 'VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
 const SB_KEY = env('SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
 const DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT || 60);
+/** Только для сервера: запись общего кэша разборов. Никогда не добавляйте префикс VITE_. */
+const SB_SERVICE = env('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY');
 /** Без Supabase ИИ доступен всем, кто знает адрес — только для локальной разработки */
 const ALLOW_ANON = process.env.AI_ALLOW_ANONYMOUS === '1';
 // Отказ модели по соображениям безопасности сервер автоматически перезапускает на рекомендованной резервной модели
@@ -74,7 +77,7 @@ const ChatBody = z.object({
 const GradeBody = z.object({ action: z.literal('grade'), task: z.enum(['writing1', 'writing2', 'speaking']), prompt: z.string().min(5).max(4000), answer: z.string().min(1).max(12000) });
 const GenerateBody = z.object({ action: z.literal('generate'), subject: z.string().max(80), topic: z.string().max(120), count: z.number().int().min(1).max(10), language: z.string().max(20), difficulty: z.string().max(20) });
 const AnalyzeBody = z.object({ action: z.literal('analyze'), summary: z.string().min(20).max(8000) });
-const Body = z.discriminatedUnion('action', [ChatBody, GradeBody, GenerateBody, AnalyzeBody]);
+const Body = z.discriminatedUnion('action', [ChatBody, GradeBody, GenerateBody, AnalyzeBody, ExplainBody]);
 
 const Grade = z.object({
   band: z.number(),
@@ -114,7 +117,7 @@ async function authorize(req: Request): Promise<{ ok: true } | { ok: false; res:
 export async function GET() {
   if (!PROVIDER) return json({ enabled: false, reason: NO_KEY });
   if (!(SB_URL && SB_KEY) && !ALLOW_ANON) return json({ enabled: false, reason: 'Не настроены аккаунты (SUPABASE_URL / SUPABASE_ANON_KEY).' });
-  return json({ enabled: true, provider: PROVIDER, model: PROVIDER === 'claude' ? MODEL : GEMINI_MODEL, requiresAuth: Boolean(SB_URL && SB_KEY) });
+  return json({ enabled: true, provider: PROVIDER, model: PROVIDER === 'claude' ? MODEL : GEMINI_MODEL, requiresAuth: Boolean(SB_URL && SB_KEY), explainCache: Boolean(SB_URL && SB_SERVICE) });
 }
 
 /* ---------------------------- общая постобработка ---------------------------- */
@@ -150,6 +153,12 @@ async function viaGemini(body: z.infer<typeof Body>, fetchImpl?: typeof fetch): 
     if (body.action === 'analyze') {
       return json({ reply: await gemini({ system: ANALYST, messages: [{ role: 'user', content: body.summary }], maxTokens: 4096, fetchImpl }) });
     }
+    if (body.action === 'explain') {
+      const raw = await gemini({ system: EXPLAINER, messages: [{ role: 'user', content: explainPrompt(body) }], schema: EXPLAIN_SCHEMA, maxTokens: 4096, fetchImpl });
+      const out = ExplainOut.safeParse(JSON.parse(raw));
+      const clean = out.success ? cleanResult(out.data) : null;
+      return clean ? json(clean) : json({ error: 'Не удалось подготовить разбор, попробуйте ещё раз' }, 502);
+    }
     if (body.action === 'grade') {
       const raw = await gemini({ system: GRADER, messages: [{ role: 'user', content: gradePrompt(body) }], schema: GRADE_SCHEMA, fetchImpl });
       const g = Grade.safeParse(JSON.parse(raw));
@@ -164,6 +173,56 @@ async function viaGemini(body: z.infer<typeof Body>, fetchImpl?: typeof fetch): 
     return json({ error: 'Внутренняя ошибка сервера' }, 500);
   }
 }
+/**
+ * Разбор задания: сначала общий кэш (без расхода лимита), затем генерация и сохранение для всех учеников.
+ * Хэш содержимого считает сервер — поэтому разбор нельзя «подложить» под настоящее задание.
+ */
+async function explain(req: Request, body: ExplainInput): Promise<Response> {
+  const hash = explainHash(body);
+  const service = serviceClient(SB_URL, SB_SERVICE);
+  const reader = service ?? (SB_URL && SB_KEY ? createClient(SB_URL, SB_KEY, { auth: { persistSession: false } }) : null);
+  const hit = await readCache(reader, body.questionId, hash);
+  if (hit) return json({ explanation: hit.explanation, keyLooksWrong: hit.key_suspect, comment: hit.note ?? '', cached: true });
+
+  const auth = await authorize(req);
+  if (!auth.ok) return auth.res;
+  let res: Response;
+  if (PROVIDER === 'gemini') res = await viaGemini(body);
+  else res = await explainWithClaude(body);
+  if (!res.ok) return res;
+  const out = (await res.json()) as ExplainResult;
+  const saved = await writeCache(service, {
+    question_id: body.questionId,
+    content_hash: hash,
+    lang: body.lang,
+    explanation: out.explanation,
+    key_suspect: out.keyLooksWrong,
+    note: out.comment || null,
+    model: PROVIDER === 'claude' ? MODEL : GEMINI_MODEL,
+  });
+  return json({ ...out, cached: false, saved });
+}
+
+async function explainWithClaude(body: ExplainInput): Promise<Response> {
+  const client = new Anthropic({ apiKey: API_KEY });
+  try {
+    const msg = await client.beta.messages.parse({
+      model: MODEL,
+      max_tokens: 4000,
+      ...FALLBACK,
+      output_config: { effort: 'medium', format: betaZodOutputFormat(ExplainOut) },
+      system: EXPLAINER,
+      messages: [{ role: 'user', content: explainPrompt(body) }],
+    });
+    const clean = msg.parsed_output && msg.stop_reason !== 'refusal' ? cleanResult(msg.parsed_output) : null;
+    return clean ? json(clean) : json({ error: 'Не удалось подготовить разбор' }, 502);
+  } catch (e) {
+    if (e instanceof Anthropic.RateLimitError) return json({ error: 'ИИ перегружен, попробуйте через минуту' }, 429);
+    if (e instanceof Anthropic.APIError) return json({ error: `Ошибка ИИ (${e.status ?? 'сеть'})` }, 502);
+    return json({ error: 'Внутренняя ошибка сервера' }, 500);
+  }
+}
+
 export const __test = { viaGemini };
 
 export async function POST(req: Request) {
@@ -174,6 +233,7 @@ export async function POST(req: Request) {
   } catch {
     return json({ error: 'Некорректный запрос' }, 400);
   }
+  if (body.action === 'explain') return explain(req, body);
   const auth = await authorize(req);
   if (!auth.ok) return auth.res;
 

@@ -33,7 +33,7 @@ type Turn = { role: 'user' | 'assistant'; content: string };
 
 /** Схема ответа в формате Gemini (подмножество OpenAPI). */
 export type GSchema = {
-  type: 'OBJECT' | 'ARRAY' | 'STRING' | 'NUMBER' | 'INTEGER';
+  type: 'OBJECT' | 'ARRAY' | 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN';
   properties?: Record<string, GSchema>;
   required?: string[];
   items?: GSchema;

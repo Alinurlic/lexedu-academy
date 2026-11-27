@@ -11,6 +11,7 @@ import { LANG_LABEL, LANG_SHORT, questionLang } from '@/data/questions/lang';
 import { useAppStore } from '@/store/useAppStore';
 import { MathText } from './MathText';
 import { ReportButton } from './ReportButton';
+import { LexiExplain } from './LexiExplain';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
@@ -273,7 +274,10 @@ export function Explanation({ q, correct, lexi }: { q: Question; correct: boolea
         <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
           <MathText text={q.explanation} noSub={q.subject === 'informatics'} />
         </p>
-        <ReportButton q={q} className="mt-2" />
+        <LexiExplain q={q} />
+        <div>
+          <ReportButton q={q} className="mt-2" />
+        </div>
         {q.sourceNote && (
           <p className="mt-2 text-[11px] text-muted-foreground">
             {q.sourceNote}

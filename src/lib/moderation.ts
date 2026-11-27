@@ -57,7 +57,13 @@ export async function loadOpenReports(): Promise<QuestionReport[]> {
   if (!sb) return [];
   const { data, error } = await sb.from('question_reports').select('id, question_id, reason, comment, created_at, status').eq('status', 'new').order('created_at', { ascending: false }).limit(1000);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => ({ id: String(r.id), questionId: r.question_id, reason: r.reason as ReportReason, comment: r.comment ?? undefined, createdAt: r.created_at, status: r.status as ReportStatus }));
+  const reports: QuestionReport[] = (data ?? []).map((r) => ({ id: String(r.id), questionId: r.question_id, reason: r.reason as ReportReason, comment: r.comment ?? undefined, createdAt: r.created_at, status: r.status as ReportStatus }));
+  // задания, где Lexi при разборе усомнился в ключе ответа
+  const { data: sus } = await sb.from('question_explanations').select('question_id, note, created_at').eq('key_suspect', true).order('created_at', { ascending: false }).limit(300);
+  for (const r of sus ?? []) {
+    reports.push({ id: `ai-${r.question_id}-${r.created_at}`, questionId: r.question_id, reason: 'wrong_answer', comment: `Lexi (ИИ): ${r.note ?? 'сомневается в правильном ответе'}`, createdAt: r.created_at, status: 'new' });
+  }
+  return reports;
 }
 
 /** Закрывает все открытые жалобы на задание с указанным решением. */
@@ -70,6 +76,12 @@ export async function resolveReports(questionId: string, status: Exclude<ReportS
   if (!sb) return;
   const { error } = await sb.from('question_reports').update({ status, resolved_at: new Date().toISOString() }).eq('question_id', questionId).eq('status', 'new');
   if (error) throw new Error(error.message);
+  // сомнение Lexi в ключе: отклонили — удаляем такой разбор (создастся заново), иначе снимаем отметку
+  const ex =
+    status === 'rejected'
+      ? await sb.from('question_explanations').delete().eq('question_id', questionId).eq('key_suspect', true)
+      : await sb.from('question_explanations').update({ key_suspect: false }).eq('question_id', questionId).eq('key_suspect', true);
+  if (ex.error) console.warn('Отметку Lexi снять не удалось', ex.error.message);
 }
 
 /** Загружает общие правки банка (при старте; читать могут все). */

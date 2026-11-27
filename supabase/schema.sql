@@ -281,3 +281,29 @@ grant update, delete on public.question_reports to authenticated;
 grant select on public.question_moderation to anon, authenticated;
 grant insert, update, delete on public.question_moderation to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
+
+-- ===== Подробные разборы от Lexi (v5) =====
+-- Общий кэш: каждое задание ИИ объясняет один раз для всех учеников.
+-- Ключ — id задания + SHA-256 его содержимого (исправили задание → новый разбор).
+-- Записывает только сервер (ключ service_role в Vercel); читают все; админ может снять отметку или удалить разбор.
+create table if not exists public.question_explanations (
+  question_id text not null check (char_length(question_id) between 1 and 120),
+  content_hash text not null check (char_length(content_hash) = 64),
+  lang text check (lang in ('ru','kk','en')),
+  explanation text not null check (char_length(explanation) <= 8000),
+  key_suspect boolean not null default false,
+  note text check (char_length(note) <= 1000),
+  model text,
+  created_at timestamptz not null default now(),
+  primary key (question_id, content_hash)
+);
+create index if not exists question_explanations_suspect on public.question_explanations (created_at desc) where key_suspect;
+alter table public.question_explanations enable row level security;
+drop policy if exists "everyone reads explanations" on public.question_explanations;
+create policy "everyone reads explanations" on public.question_explanations for select using (true);
+drop policy if exists "admins update explanations" on public.question_explanations;
+create policy "admins update explanations" on public.question_explanations for update using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admins delete explanations" on public.question_explanations;
+create policy "admins delete explanations" on public.question_explanations for delete using (public.is_admin());
+grant select on public.question_explanations to anon, authenticated;
+grant update, delete on public.question_explanations to authenticated;
