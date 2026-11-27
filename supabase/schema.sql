@@ -1,4 +1,5 @@
 -- LexEdu Academy — схема Supabase (PostgreSQL). Выполните целиком в SQL Editor.
+-- Скрипт можно запускать повторно: существующие таблицы и данные сохраняются, правила доступа пересоздаются.
 -- Нужна для регистрации с подтверждением email, ролей, синхронизации прогресса и лимитов ИИ.
 -- Все таблицы защищены Row Level Security: пользователь видит только свои данные.
 
@@ -113,14 +114,23 @@ alter table public.study_tasks enable row level security;
 alter table public.mistakes enable row level security;
 alter table public.user_achievements enable row level security;
 
+drop policy if exists "own profile" on public.profiles;
 create policy "own profile" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
+drop policy if exists "read shared or own questions" on public.questions;
 create policy "read shared or own questions" on public.questions for select using (owner is null or owner = auth.uid());
+drop policy if exists "write own questions" on public.questions;
 create policy "write own questions" on public.questions for all using (owner = auth.uid()) with check (owner = auth.uid() and source = 'user');
+drop policy if exists "own attempts" on public.attempts;
 create policy "own attempts" on public.attempts for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own sessions" on public.practice_sessions;
 create policy "own sessions" on public.practice_sessions for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own exams" on public.exam_results;
 create policy "own exams" on public.exam_results for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own tasks" on public.study_tasks;
 create policy "own tasks" on public.study_tasks for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own mistakes" on public.mistakes;
 create policy "own mistakes" on public.mistakes for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own achievements" on public.user_achievements;
 create policy "own achievements" on public.user_achievements for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- ===== LexEdu (v2) =====
@@ -145,8 +155,11 @@ create policy "own state" on public.user_state for all using (auth.uid() = user_
 
 -- Пользователь не может сам выдать себе роль admin
 drop policy if exists "own profile" on public.profiles;
+drop policy if exists "read own profile" on public.profiles;
 create policy "read own profile" on public.profiles for select using (auth.uid() = id);
+drop policy if exists "insert own profile" on public.profiles;
 create policy "insert own profile" on public.profiles for insert with check (auth.uid() = id and role = 'student');
+drop policy if exists "update own profile" on public.profiles;
 create policy "update own profile" on public.profiles for update using (auth.uid() = id)
   with check (auth.uid() = id and role = (select p.role from public.profiles p where p.id = auth.uid()));
 
@@ -155,7 +168,9 @@ create or replace function public.is_admin() returns boolean language sql stable
 $$;
 
 -- Администраторы видят профили и управляют общим банком вопросов
+drop policy if exists "admins read profiles" on public.profiles;
 create policy "admins read profiles" on public.profiles for select using (public.is_admin());
+drop policy if exists "admins manage shared questions" on public.questions;
 create policy "admins manage shared questions" on public.questions for all using (public.is_admin()) with check (public.is_admin());
 
 -- ===== LexEdu Academy (v3) =====
@@ -184,7 +199,9 @@ create index if not exists ai_usage_user_created on public.ai_usage (user_id, cr
 alter table public.ai_usage enable row level security;
 drop policy if exists "read own usage" on public.ai_usage;
 drop policy if exists "insert own usage" on public.ai_usage;
+drop policy if exists "read own usage" on public.ai_usage;
 create policy "read own usage" on public.ai_usage for select using (auth.uid() = user_id);
+drop policy if exists "insert own usage" on public.ai_usage;
 create policy "insert own usage" on public.ai_usage for insert with check (auth.uid() = user_id and created_at > now() - interval '1 minute');
 -- политик update/delete нет: пользователь не может стереть свой счётчик
 
