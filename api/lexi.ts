@@ -14,7 +14,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import * as z from 'zod/v4';
 import { createClient } from '@supabase/supabase-js';
-import { GEMINI_KEY, GEMINI_MODEL, GENERATED_SCHEMA, GRADE_SCHEMA, GeminiError, gemini } from './_gemini';
+import { GEMINI_KEY, GEMINI_MODEL, GENERATED_SCHEMA, GRADE_SCHEMA, GeminiError, gemini } from './_gemini.js';
 
 const MODEL = process.env.LEXI_MODEL || 'claude-opus-5-5';
 const API_KEY = process.env.ANTHROPIC_API_KEY?.trim();
