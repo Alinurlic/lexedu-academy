@@ -18,7 +18,7 @@ const API_KEY = process.env.ANTHROPIC_API_KEY;
 const env = (...names: string[]) => names.map((n) => process.env[n]?.trim()).find(Boolean);
 // поддерживаем и свои имена, и те, что создаёт интеграция Supabase в Vercel
 const SB_URL = env('SUPABASE_URL', 'VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
-const SB_KEY = env('SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
+const SB_KEY = env('SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY', 'VITE_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY');
 const DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT || 60);
 /** Без Supabase ИИ доступен всем, кто знает адрес — только для локальной разработки */
 const ALLOW_ANON = process.env.AI_ALLOW_ANONYMOUS === '1';
