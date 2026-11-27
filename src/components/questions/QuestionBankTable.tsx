@@ -5,7 +5,8 @@ import { SubjectIcon } from '@/components/icons';
 import { Explanation, QuestionMeta, QuestionView } from '@/components/QuestionView';
 import { QuestionEditor } from './QuestionEditor';
 import { AiGenerateDialog } from './AiGenerateDialog';
-import { DEMO_QUESTIONS, DIFFICULTY_LABEL, SOURCE_LABEL, TYPE_LABEL, VERIFICATION_LABEL } from '@/data/questions';
+import { builtinQuestions } from '@/data/questions/bank';
+import { DIFFICULTY_LABEL, SOURCE_LABEL, TYPE_LABEL, VERIFICATION_LABEL } from '@/data/questions';
 import { SUBJECTS, SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
 import { isDemoQuestionId, useAllQuestions, useAppStore } from '@/store/useAppStore';
 import { questionImportSchema, questionWithPolicySchema } from '@/lib/schemas';
@@ -100,7 +101,7 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
   };
 
   const subj = subject === 'all' ? null : SUBJECT_MAP[subject];
-  const deletedDemo = DEMO_QUESTIONS.filter((d) => deletedIds.includes(d.id));
+  const deletedDemo = builtinQuestions().filter((d) => deletedIds.includes(d.id));
 
   return (
     <div className="space-y-4">

@@ -9,7 +9,7 @@ import { useAllQuestions, useAppStore } from '@/store/useAppStore';
 import { useAuth, hashPin } from '@/lib/auth';
 import { getSupabase, isSupabaseConfigured } from '@/lib/supabase';
 import { examFormatSchema } from '@/lib/schemas';
-import { DEMO_QUESTIONS } from '@/data/questions';
+import { builtinQuestions } from '@/data/questions/bank';
 import { fmtDateTime } from '@/lib/date';
 import { uid } from '@/lib/utils';
 import { toast } from '@/store/toast';
@@ -120,7 +120,7 @@ function AdminPanel({ serverMode, onLock }: { serverMode?: boolean; onLock?: () 
   const custom = useAppStore((s) => s.customQuestions);
   const overrides = useAppStore((s) => s.questionOverrides);
   const deleted = useAppStore((s) => s.deletedQuestionIds);
-  const bySource = useMemo(() => ({ demo: questions.filter((q) => q.source === 'demo').length, user: questions.filter((q) => q.source === 'user').length, verified: questions.filter((q) => q.source === 'verified').length, review: questions.filter((q) => q.verification === 'needs_review').length }), [questions]);
+  const bySource = useMemo(() => ({ demo: questions.filter((q) => q.source === 'demo').length, user: questions.filter((q) => q.source === 'user').length, verified: questions.filter((q) => q.source === 'verified').length, open: questions.filter((q) => q.source === 'open').length, review: questions.filter((q) => q.verification === 'needs_review').length }), [questions]);
 
   return (
     <div className="space-y-6">
@@ -136,9 +136,10 @@ function AdminPanel({ serverMode, onLock }: { serverMode?: boolean; onLock?: () 
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <Kpi label="Вопросов в банке" value={questions.length} />
-        <Kpi label="Демо (оригинальные)" value={bySource.demo} />
+        <Kpi label="Собственные LexEdu" value={bySource.demo} />
+        <Kpi label="Открытые источники" value={bySource.open} />
         <Kpi label="Пользовательские" value={bySource.user} />
         <Kpi label="Официальные (с источником)" value={bySource.verified} />
         <Kpi label="Требуют проверки" value={bySource.review} />
@@ -160,7 +161,7 @@ function AdminPanel({ serverMode, onLock }: { serverMode?: boolean; onLock?: () 
         <Card className="p-5">
           <QuestionBankTable admin />
           <p className="mt-4 text-xs text-muted-foreground">
-            Изменено демо-вопросов: {Object.keys(overrides).length} · скрыто: {deleted.length} · своих вопросов: {custom.length}. Правки демо-вопросов хранятся отдельно и не изменяют исходный банк ({DEMO_QUESTIONS.length} шт.).
+            Изменено демо-вопросов: {Object.keys(overrides).length} · скрыто: {deleted.length} · своих вопросов: {custom.length}. Правки демо-вопросов хранятся отдельно и не изменяют исходный банк ({builtinQuestions().length} шт.).
           </p>
         </Card>
       )}

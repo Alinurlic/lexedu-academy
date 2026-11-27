@@ -48,6 +48,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
   const [fDiff, setFDiff] = useState<Difficulty | 'all'>('all');
   const [fSource, setFSource] = useState<Question['source'] | 'all'>('all');
   const [addOpen, setAddOpen] = useState(false);
+  const [shown, setShown] = useState(50);
   const [toDelete, setToDelete] = useState<Question | null>(null);
   const previewId = params.get('q');
   const preview = previewId ? questions.find((q) => q.id === previewId) : undefined;
@@ -316,13 +317,14 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
               <option value="demo">{SOURCE_LABEL.demo}</option>
               <option value="user">{SOURCE_LABEL.user}</option>
               <option value="verified">{SOURCE_LABEL.verified}</option>
+              <option value="open">{SOURCE_LABEL.open}</option>
             </Select>
           </div>
           {filtered.length === 0 ? (
             <EmptyState icon={Search} lexi="thinking" title="Вопросы не найдены" description="Измените фильтры или добавьте собственный вопрос." />
           ) : (
             <div className="divide-y rounded-xl border">
-              {filtered.map((q) => {
+              {filtered.slice(0, shown).map((q) => {
                 const st = qStats.get(q.id);
                 const bm = bookmarks.includes(q.id);
                 return (
@@ -331,7 +333,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                       <div className="line-clamp-2 text-sm hover:text-primary">{q.question}</div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                         <span>{TOPIC_MAP[q.topic]?.name}</span>·<span>{DIFFICULTY_LABEL[q.difficulty]}</span>·<span>{TYPE_LABEL[q.type]}</span>
-                        {q.source !== 'demo' && <Badge variant={q.source === 'user' ? 'violet' : 'success'}>{SOURCE_LABEL[q.source]}</Badge>}
+                        {q.source !== 'demo' && <Badge variant={q.source === 'user' ? 'violet' : q.source === 'open' ? 'outline' : 'success'}>{SOURCE_LABEL[q.source]}</Badge>}
                       </div>
                     </button>
                     {st && (
@@ -350,6 +352,16 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                   </div>
                 );
               })}
+              {filtered.length > shown && (
+                <div className="flex items-center justify-between gap-3 p-3 text-sm text-muted-foreground">
+                  <span>
+                    Показано {shown} из {filtered.length}
+                  </span>
+                  <Button variant="secondary" size="sm" onClick={() => setShown(shown + 50)}>
+                    Показать ещё
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

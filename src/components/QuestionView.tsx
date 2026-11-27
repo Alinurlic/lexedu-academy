@@ -255,7 +255,19 @@ export function Explanation({ q, correct, lexi }: { q: Question; correct: boolea
           {line ? line.text : correct ? 'Верно!' : 'Неверно'}
         </div>
         <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">{q.explanation}</p>
-        {q.sourceNote && <p className="mt-2 text-[11px] text-muted-foreground">{q.sourceNote}</p>}
+        {q.sourceNote && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            {q.sourceNote}
+            {q.source === 'open' && q.sourceRef && /^https?:\/\//.test(q.sourceRef) && (
+              <>
+                {' '}
+                <a href={q.sourceRef} target="_blank" rel="noopener noreferrer nofollow" className="underline hover:text-foreground">
+                  Ссылка на первоисточник
+                </a>
+              </>
+            )}
+          </p>
+        )}
       </div>
     </div>
   );

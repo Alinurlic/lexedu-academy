@@ -39,6 +39,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   }, [open]);
 
   const items = useMemo<Item[]>(() => {
+    if (!open) return [];
     const qmap = new Map(questions.map((q) => [q.id, q]));
     return [
       ...NAV.map((n) => ({ id: `nav-${n.to}`, group: 'Разделы', title: n.label, subtitle: n.description, icon: n.icon, to: n.to, keywords: norm(n.label + ' ' + n.description) })),
@@ -57,7 +58,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       }),
       ...tasks.map((t) => ({ id: `t-${t.id}`, group: 'Задачи плана', title: t.title, subtitle: fmtDate(t.date, { weekday: 'short', day: 'numeric', month: 'short' }), icon: CalendarDays, to: `/planner?date=${t.date}`, keywords: norm(t.title) })),
     ];
-  }, [questions, mistakes, tasks]);
+  }, [open, questions, mistakes, tasks]);
 
   const results = useMemo(() => {
     const q = norm(query.trim());

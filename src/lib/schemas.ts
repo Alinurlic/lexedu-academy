@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-export const subjectIdSchema = z.enum(['math', 'physics', 'geography', 'biology', 'chemistry', 'history', 'reading', 'mathlit', 'english', 'informatics']);
+export const subjectIdSchema = z.enum([
+  'math', 'physics', 'geography', 'biology', 'chemistry', 'history', 'reading', 'mathlit', 'english', 'informatics',
+  'worldhistory', 'law', 'russian', 'ruslit',
+  'sat-rw', 'sat-math', 'ielts-listening', 'ielts-reading', 'ielts-writing', 'ielts-speaking',
+]);
 const difficulty = z.enum(['easy', 'medium', 'hard']);
 const dayKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const answer = z.union([z.number(), z.array(z.number()), z.string(), z.boolean()]).nullable();
@@ -12,8 +16,11 @@ const questionBase = z.object({
   difficulty,
   question: z.string().min(1),
   passage: z.string().optional(),
+  audio: z.string().optional(),
+  group: z.string().optional(),
+  context: z.boolean().optional(),
   explanation: z.string(),
-  source: z.enum(['demo', 'user', 'verified']),
+  source: z.enum(['demo', 'user', 'verified', 'open']),
   sourceNote: z.string().optional(),
   sourceRef: z.string().optional(),
   verification: z.enum(['unverified', 'reviewed', 'needs_review']).optional(),
@@ -25,6 +32,9 @@ export const questionSchema = z.discriminatedUnion('type', [
   questionBase.extend({ type: z.literal('multiple'), options: z.array(z.string()).min(2), correctAnswer: z.array(z.number().int().min(0)).min(1) }),
   questionBase.extend({ type: z.literal('numeric'), correctAnswer: z.number(), tolerance: z.number().optional(), unit: z.string().optional() }),
   questionBase.extend({ type: z.literal('boolean'), correctAnswer: z.boolean() }),
+  questionBase.extend({ type: z.literal('matching'), prompts: z.array(z.string()).min(1), options: z.array(z.string()).min(2), correctAnswer: z.array(z.number().int().min(0)).min(1) }),
+  questionBase.extend({ type: z.literal('text'), correctAnswer: z.array(z.string().min(1)).min(1), wordLimit: z.number().int().positive().optional() }),
+  questionBase.extend({ type: z.literal('essay'), minWords: z.number().int().positive(), task: z.enum(['writing1', 'writing2', 'speaking']) }),
 ]);
 
 export const profileSchema = z.object({
@@ -131,7 +141,7 @@ export const importSchema = z.object({
 
 /** Официальный источник нельзя указать без ссылки на него. */
 export const questionWithPolicySchema = questionSchema.superRefine((q, ctx) => {
-  if (q.source === 'verified' && !q.sourceRef?.trim()) {
+  if ((q.source === 'verified' || q.source === 'open') && !q.sourceRef?.trim()) {
     ctx.addIssue({ code: 'custom', path: ['sourceRef'], message: 'Для официального вопроса укажите источник (сборник, год, ссылка)' });
   }
   if ((q.type === 'single' || q.type === 'multiple') && q.options) {

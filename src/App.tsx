@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { useAuth } from '@/lib/auth';
 import { HashRouter, Route, Routes } from 'react-router-dom';
+import { BankGate } from '@/components/BankGate';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Toaster } from '@/components/Toaster';
 import { PageSkeleton } from '@/components/PageSkeleton';
@@ -75,8 +76,8 @@ export function App() {
       <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Suspense fallback={<PageSkeleton full />}>
           <Routes>
-            <Route path="/practice/session" element={<PracticeSession />} />
-            <Route path="/exams/session" element={<ExamSession />} />
+            <Route path="/practice/session" element={<BankGate full><PracticeSession /></BankGate>} />
+            <Route path="/exams/session" element={<BankGate full><ExamSession /></BankGate>} />
             <Route path="/login" element={<Login standalone />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route element={<AppLayout />}>

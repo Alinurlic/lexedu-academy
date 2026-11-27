@@ -187,3 +187,9 @@ drop policy if exists "insert own usage" on public.ai_usage;
 create policy "read own usage" on public.ai_usage for select using (auth.uid() = user_id);
 create policy "insert own usage" on public.ai_usage for insert with check (auth.uid() = user_id and created_at > now() - interval '1 minute');
 -- политик update/delete нет: пользователь не может стереть свой счётчик
+
+-- Открытые источники заданий (например, KazMMLU, CC BY-NC 4.0): ссылка на источник обязательна
+alter table public.questions drop constraint if exists questions_source_check;
+alter table public.questions add constraint questions_source_check check (source in ('demo','user','verified','open'));
+alter table public.questions drop constraint if exists open_requires_ref;
+alter table public.questions add constraint open_requires_ref check (source <> 'open' or coalesce(length(trim(source_ref)), 0) > 0);

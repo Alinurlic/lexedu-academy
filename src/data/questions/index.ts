@@ -39,6 +39,7 @@ export const SOURCE_LABEL: Record<Question['source'], string> = {
   demo: 'Демо-вопрос',
   user: 'Мой вопрос',
   verified: 'Официальный источник',
+  open: 'Открытый источник',
 };
 
 export const VERIFICATION_LABEL: Record<NonNullable<Question['verification']>, string> = {

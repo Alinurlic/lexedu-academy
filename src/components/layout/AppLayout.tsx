@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { PageSkeleton } from '@/components/PageSkeleton';
+import { BankGate } from '@/components/BankGate';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { CommandPalette } from './CommandPalette';
@@ -62,7 +63,9 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onMenu={() => setMobileOpen(true)} onSearch={() => setPaletteOpen(true)} />
         <main key={pathname} className="page-enter mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          <Outlet />
+          <BankGate>
+            <Outlet />
+          </BankGate>
         </main>
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

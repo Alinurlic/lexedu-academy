@@ -28,7 +28,8 @@ export type Track = 'ent' | 'sat' | 'ielts';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 /** Источник вопроса: демо (оригинальные учебные), пользовательские, официальные (только с указанием источника). */
-export type QuestionSource = 'demo' | 'user' | 'verified';
+/** demo — собственные задания LexEdu; open — открытый источник с лицензией; verified — официальный источник. */
+export type QuestionSource = 'demo' | 'user' | 'verified' | 'open';
 
 /** Статус проверки содержания вопроса. Не путать с источником. */
 export type VerificationStatus = 'unverified' | 'reviewed' | 'needs_review';
