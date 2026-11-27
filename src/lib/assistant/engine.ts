@@ -6,7 +6,7 @@ import { uid } from '@/lib/utils';
 import { findConcept, CONCEPTS } from './concepts';
 import { generateTask } from './generators';
 import { solveEquation } from './solver';
-import { aiChat, aiStatus } from '@/lib/ai';
+import { AiError, aiChat, aiStatus } from '@/lib/ai';
 
 /**
  * Lexi-помощник.
@@ -33,6 +33,7 @@ export async function askLexi(input: string, ctx: AssistantContext, history: Cha
   if (st.enabled && !local) {
     try {
       const turns = history
+        .filter((h) => h.card?.kind !== 'retry') // сообщения о сбое ИИ не отправляем модели
         .slice(-12)
         .filter((h) => h.text.trim())
         .map((h) => ({ role: h.role === 'lexi' ? ('assistant' as const) : ('user' as const), content: h.text.slice(0, 4000) }));
@@ -40,11 +41,24 @@ export async function askLexi(input: string, ctx: AssistantContext, history: Cha
       const r = await aiChat(turns.length ? turns : [{ role: 'user', content: input }], ctx.summary ?? '');
       return [msg(r.reply)];
     } catch (e) {
-      return [msg(`ИИ сейчас недоступен (${e instanceof Error ? e.message : 'ошибка'}). Отвечаю в демо-режиме:`), ...demoRespond(input, ctx)];
+      const reason = e instanceof Error ? e.message : 'ошибка';
+      // временно: перегрузка/лимит Google или обрыв сети; ошибки входа, ключа и запроса повтор не исправит
+      const temporary = !(e instanceof AiError) || [429, 502, 503, 504].includes(e.status ?? 0);
+      const demo = demoRespond(input, ctx);
+      // Демо-режим отвечает по делу только на часть запросов (уравнения, ошибки, задачи, темы).
+      // Если он может лишь перечислить команды — не засоряем чат, а предлагаем повторить запрос к ИИ.
+      if (isDemoHelp(demo)) {
+        return [msg(temporary ? `${reason.replace(/[.\s]+$/, '')}. Нажми «Повторить».` : `ИИ сейчас недоступен: ${reason}`, temporary ? { kind: 'retry', text: input } : undefined)];
+      }
+      return [msg(`ИИ сейчас недоступен (${reason}). Пока отвечу сам:`, temporary ? { kind: 'retry', text: input } : undefined), ...demo];
     }
   }
   return demoRespond(input, ctx);
 }
+
+const DEMO_HELP = 'В демо-режиме я понимаю ограниченный набор запросов.';
+/** Ответ демо-режима — просто список того, что он умеет (на вопрос по существу он ответить не смог). */
+const isDemoHelp = (m: ChatMessage[]) => m.length === 1 && m[0].text.startsWith(DEMO_HELP);
 
 export function demoRespond(input: string, ctx: AssistantContext): ChatMessage[] {
   const t = norm(input);
@@ -113,7 +127,7 @@ export function demoRespond(input: string, ctx: AssistantContext): ChatMessage[]
 
   return [
     msg(
-      `В демо-режиме я понимаю ограниченный набор запросов. Попробуй:\n• «реши x^2 - 5x + 6 = 0»\n• «объясни мои ошибки»\n• «дай задачу на проценты»\n• «что мне повторить?»\n• объяснение темы: ${CONCEPTS.slice(0, 6)
+      `${DEMO_HELP} Попробуй:\n• «реши x^2 - 5x + 6 = 0»\n• «объясни мои ошибки»\n• «дай задачу на проценты»\n• «что мне повторить?»\n• объяснение темы: ${CONCEPTS.slice(0, 6)
         .map((x) => `«${x.title.toLowerCase()}»`)
         .join(', ')}`,
     ),

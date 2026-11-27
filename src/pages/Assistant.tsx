@@ -51,6 +51,20 @@ export default function Assistant() {
   const lastLexi = [...history].reverse().find((m) => m.role === 'lexi');
   const showMistakePicker = !!lastLexi && /неосвоенных ошибок/.test(lastLexi.text);
 
+  /** Повтор запроса после временного сбоя ИИ: вопрос уже в чате, второй раз его не добавляем. */
+  const retry = async (text: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const reply = await askLexi(text, { profile, attempts, mistakes, qmap, summary: studentSummary(profile, attempts, examFormat, mistakes.filter((m) => m.status !== 'mastered').length) }, history);
+      addMessages(reply);
+    } catch {
+      toast.error('Lexi не смог ответить', 'Попробуйте ещё раз');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const send = async (text: string) => {
     const t = text.trim().slice(0, 1000);
     if (!t || busy) return;
@@ -146,7 +160,7 @@ export default function Assistant() {
             </div>
           )}
           {history.map((m) => (
-            <Message key={m.id} m={m} onAsk={send} />
+            <Message key={m.id} m={m} onAsk={send} onRetry={m.id === lastLexi?.id ? retry : undefined} busy={busy} />
           ))}
           {busy && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -240,7 +254,7 @@ export default function Assistant() {
   );
 }
 
-function Message({ m, onAsk }: { m: ChatMessage; onAsk: (t: string) => void }) {
+function Message({ m, onAsk, onRetry, busy }: { m: ChatMessage; onAsk: (t: string) => void; onRetry?: (t: string) => void; busy?: boolean }) {
   const navigate = useNavigate();
   if (m.role === 'user') {
     return (
@@ -256,6 +270,11 @@ function Message({ m, onAsk }: { m: ChatMessage; onAsk: (t: string) => void }) {
       <div className="min-w-0 max-w-[88%] space-y-2">
         <Markdown text={m.text} className="rounded-2xl rounded-tl-md border bg-surface-2/70 px-4 py-2.5 text-sm leading-relaxed" />
         {m.card?.kind === 'generated' && <GeneratedCard card={m.card} onMore={() => onAsk(`Дай ещё задачу: ${TOPIC_MAP[m.card?.kind === 'generated' ? m.card.topic : '']?.name ?? ''}`)} />}
+        {m.card?.kind === 'retry' && onRetry && (
+          <Button size="sm" variant="secondary" disabled={busy} onClick={() => m.card?.kind === 'retry' && onRetry(m.card.text)}>
+            <RotateCcw /> Повторить
+          </Button>
+        )}
         {m.card?.kind === 'mistake' && (
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="secondary" onClick={() => navigate('/mistakes?review=1')}>

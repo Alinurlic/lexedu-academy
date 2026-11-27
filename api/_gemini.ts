@@ -8,11 +8,22 @@
 export const GEMINI_KEY = process.env.GEMINI_API_KEY?.trim();
 // «latest»-псевдоним всегда указывает на актуальную модель Flash, доступную на бесплатном тарифе
 export const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-flash-latest';
+// Запасные модели на случай перегрузки основной (у каждой модели свой бесплатный лимит)
+const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS ?? 'gemini-flash-lite-latest')
+  .split(',')
+  .map((m) => m.trim())
+  .filter(Boolean);
+export const GEMINI_MODELS = [GEMINI_MODEL, ...FALLBACK_MODELS.filter((m) => m !== GEMINI_MODEL)];
+const RETRY_MS = Number(process.env.GEMINI_RETRY_MS ?? 800);
+
+export const OVERLOADED = 'ИИ Google сейчас перегружен — попробуй ещё раз через минуту.';
 
 export class GeminiError extends Error {
   constructor(
     message: string,
     public status: number,
+    /** временная ошибка (перегрузка, лимит в минуту) — имеет смысл повторить или взять другую модель */
+    public retryable = false,
   ) {
     super(message);
   }
@@ -29,12 +40,37 @@ export type GSchema = {
   enum?: string[];
 };
 
-export async function gemini(opts: { system: string; messages: Turn[]; maxTokens?: number; schema?: GSchema; fetchImpl?: typeof fetch }): Promise<string> {
+type GeminiOpts = { system: string; messages: Turn[]; maxTokens?: number; schema?: GSchema; fetchImpl?: typeof fetch };
+
+/**
+ * Запрос к Gemini с повтором при перегрузке и переходом на запасную модель.
+ * Основная модель → повтор через паузу → запасная модель → повтор. Ошибки ключа, фильтра и запроса не повторяются.
+ */
+export async function gemini(opts: GeminiOpts): Promise<string> {
   if (!GEMINI_KEY) throw new GeminiError('GEMINI_API_KEY не задан', 503);
+  let last: GeminiError | null = null;
+  for (const model of GEMINI_MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await callOnce(model, opts);
+      } catch (e) {
+        if (!(e instanceof GeminiError)) throw e;
+        last = e;
+        if (e.status === 404) break; // модель недоступна — пробуем следующую
+        if (!e.retryable) throw e;
+        if (attempt === 0) await new Promise((r) => setTimeout(r, RETRY_MS));
+      }
+    }
+  }
+  if (last?.status === 429) throw last;
+  throw new GeminiError(OVERLOADED, 503, true);
+}
+
+async function callOnce(model: string, opts: GeminiOpts): Promise<string> {
   const doFetch = opts.fetchImpl ?? fetch;
-  const res = await doFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`, {
+  const res = await doFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY ?? '' },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: opts.system }] },
       contents: opts.messages.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
@@ -52,9 +88,11 @@ export async function gemini(opts: { system: string; messages: Turn[]; maxTokens
   };
   if (!res.ok) {
     const st = data.error?.status ?? '';
-    if (res.status === 429 || st === 'RESOURCE_EXHAUSTED') throw new GeminiError('Бесплатный лимит Gemini на сейчас исчерпан — попробуйте через минуту', 429);
+    if (res.status === 429 || st === 'RESOURCE_EXHAUSTED') throw new GeminiError('Бесплатный лимит ИИ Google на сейчас исчерпан — попробуй через минуту.', 429, true);
     if (/API_KEY|API key/i.test(data.error?.message ?? '') || res.status === 401 || res.status === 403) throw new GeminiError('Неверный GEMINI_API_KEY на сервере', 500);
-    throw new GeminiError(`Ошибка Gemini (${res.status}): ${data.error?.message ?? 'нет ответа'}`, res.status >= 500 ? 502 : 400);
+    if (res.status === 404 || st === 'NOT_FOUND') throw new GeminiError(`Модель ${model} недоступна`, 404);
+    if (res.status >= 500 || st === 'UNAVAILABLE' || st === 'INTERNAL') throw new GeminiError(OVERLOADED, 503, true);
+    throw new GeminiError(`Ошибка запроса к ИИ (${res.status}): ${data.error?.message ?? 'нет ответа'}`, 400);
   }
   if (data.promptFeedback?.blockReason) throw new GeminiError('Запрос отклонён фильтром безопасности', 422);
   const cand = data.candidates?.[0];

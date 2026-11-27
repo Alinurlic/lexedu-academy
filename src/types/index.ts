@@ -347,7 +347,9 @@ export interface ChatMessage {
   card?:
     | { kind: 'generated'; question: string; answer: number; unit?: string; steps: string[]; subject: SubjectId; topic: string }
     | { kind: 'mistake'; questionId: string }
-    | { kind: 'topics'; items: { topicId: string; subject: SubjectId; accuracy: number }[] };
+    | { kind: 'topics'; items: { topicId: string; subject: SubjectId; accuracy: number }[] }
+    /** ИИ временно недоступен — кнопка «Повторить» отправит этот же вопрос ещё раз */
+    | { kind: 'retry'; text: string };
 }
 
 export interface ChatThread {
