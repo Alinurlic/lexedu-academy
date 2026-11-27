@@ -193,3 +193,16 @@ alter table public.questions drop constraint if exists questions_source_check;
 alter table public.questions add constraint questions_source_check check (source in ('demo','user','verified','open'));
 alter table public.questions drop constraint if exists open_requires_ref;
 alter table public.questions add constraint open_requires_ref check (source <> 'open' or coalesce(length(trim(source_ref)), 0) > 0);
+
+-- ===== Права доступа для Data API =====
+-- В новых проектах Supabase таблицы могут не выдаваться API автоматически — выдаём явно.
+-- Доступ к строкам всё равно ограничен политиками RLS выше.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant select on public.questions to anon, authenticated;
+grant insert, update, delete on public.questions to authenticated;
+grant select, insert, update, delete on public.attempts, public.practice_sessions, public.exam_results,
+  public.study_tasks, public.mistakes, public.user_achievements, public.user_state to authenticated;
+grant select, insert on public.ai_usage to authenticated;
+grant usage, select on all sequences in schema public to authenticated;
+grant execute on function public.is_admin() to authenticated;
