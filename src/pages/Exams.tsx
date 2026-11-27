@@ -6,7 +6,7 @@ import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitl
 import { ChartTooltip, CHART, axisProps } from '@/components/charts';
 import { SubjectIcon } from '@/components/icons';
 import { LexiBubble } from '@/components/lexi/Lexi';
-import { useAllQuestions, useAppStore } from '@/store/useAppStore';
+import { useAllQuestions, useAppStore, useEntLang, useStudyQuestions } from '@/store/useAppStore';
 import { useSession } from '@/store/session';
 import { SUBJECT_MAP, TRACKS, formatMax, subjectsOf } from '@/data/subjects';
 import { planEntFull, planIelts, planSat, planSimple, type ExamPlan } from '@/lib/exam';
@@ -41,6 +41,8 @@ const PRESETS: Record<Track, { id: Preset; icon: React.ComponentType<{ className
 export default function Exams() {
   const navigate = useNavigate();
   const questions = useAllQuestions();
+  const entLang = useEntLang();
+  const study = useStudyQuestions();
   const profile = useAppStore((s) => s.profile);
   const updateProfile = useAppStore((s) => s.updateProfile);
   const exams = useAppStore((s) => s.exams);
@@ -48,7 +50,7 @@ export default function Exams() {
   const activeExam = useSession((s) => s.exam);
   const setExam = useSession((s) => s.setExam);
   const track = useTrack();
-  const available = (s: SubjectId) => questions.filter((q) => q.subject === s && q.type !== 'essay').length;
+  const available = (s: SubjectId) => study.list.filter((q) => q.subject === s && q.type !== 'essay').length;
 
   const [preset, setPreset] = useState<Preset>('full');
   const [subject, setSubject] = useState<SubjectId>(profile.profileSubjects[0]);
@@ -65,10 +67,10 @@ export default function Exams() {
   const plan: ExamPlan | null = useMemo(() => {
     if (track === 'sat') return planSat(questions, preset === 'rw' ? 'rw' : preset === 'math' ? 'math' : 'full');
     if (track === 'ielts') return planIelts(questions, (['listening', 'reading', 'writing'].includes(preset) ? preset : 'full') as 'full');
-    if (preset === 'full') return planEntFull(examFormat, profile.profileSubjects, questions);
+    if (preset === 'full') return planEntFull(examFormat, profile.profileSubjects, questions, entLang);
     if (preset === 'profile') {
       const blocks = examFormat.blocks.filter((b) => b.slot !== 'fixed');
-      return planEntFull({ ...examFormat, blocks, totalMinutes: Math.round((examFormat.totalMinutes * blocks.reduce((s, b) => s + b.questions, 0)) / examFormat.blocks.reduce((s, b) => s + b.questions, 0)) }, profile.profileSubjects, questions);
+      return planEntFull({ ...examFormat, blocks, totalMinutes: Math.round((examFormat.totalMinutes * blocks.reduce((s, b) => s + b.questions, 0)) / examFormat.blocks.reduce((s, b) => s + b.questions, 0)) }, profile.profileSubjects, questions, entLang);
     }
     let config: ExamConfig;
     if (preset === 'subject') {
@@ -80,9 +82,9 @@ export default function Exams() {
         .map(([s, n]) => ({ subject: s as SubjectId, count: Math.min(n, available(s as SubjectId)), maxPoints: Math.min(n, available(s as SubjectId)) }));
       config = { title: 'Свой вариант', kind: 'custom', sections, timeLimitMin: customTime, track: 'ent', scoring: 'flat' };
     }
-    return config.sections.length ? planSimple(config, questions) : null;
+    return config.sections.length ? planSimple(config, questions, entLang) : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track, preset, subject, subjectCount, custom, customTime, questions, examFormat, profile.profileSubjects]);
+  }, [track, preset, subject, subjectCount, custom, customTime, questions, examFormat, profile.profileSubjects, entLang, study]);
 
   const totalQ = plan ? plan.config.sections.reduce((s, x) => s + x.count, 0) : 0;
   const scale = TRACKS.find((t) => t.id === track)!.scale;

@@ -33,6 +33,7 @@ export default function Onboarding() {
   const [grade, setGrade] = useState(profile.grade);
   const [tracks, setTracks] = useState<Track[]>(['ent']);
   const [combo, setCombo] = useState(profile.profileSubjects.join('+'));
+  const [entLang, setEntLang] = useState<'ru' | 'kk'>(profile.entLang ?? 'ru');
   const [data, setData] = useState<Record<Track, TrackProfile & { lastInput: string; never: boolean }>>(() => {
     const out = {} as Record<Track, TrackProfile & { lastInput: string; never: boolean }>;
     for (const t of ['ent', 'sat', 'ielts'] as Track[]) {
@@ -82,6 +83,7 @@ export default function Onboarding() {
       activeTrack: tracks[0],
       onboarded: true,
       profileSubjects: [a, b],
+      entLang,
       targetScore: out.ent!.target,
       examDate: out.ent!.examDate || profile.examDate,
     });
@@ -161,15 +163,40 @@ export default function Onboarding() {
               </div>
               <FieldError>{errors.tracks}</FieldError>
               {tracks.includes('ent') && (
-                <div className="max-w-md">
-                  <Label htmlFor="ob-combo">Профильные предметы ЕНТ</Label>
-                  <Select id="ob-combo" value={combo} onChange={(e) => setCombo(e.target.value)}>
-                    {PROFILE_COMBOS.map(([a, b]) => (
-                      <option key={`${a}+${b}`} value={`${a}+${b}`}>
-                        {SUBJECT_MAP[a].name} + {SUBJECT_MAP[b].name}
-                      </option>
-                    ))}
-                  </Select>
+                <div className="grid max-w-xl gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label>Язык сдачи ЕНТ</Label>
+                    <div className="flex gap-2" role="radiogroup" aria-label="Язык сдачи ЕНТ">
+                      {(
+                        [
+                          ['ru', 'Русский'],
+                          ['kk', 'Қазақ тілі'],
+                        ] as const
+                      ).map(([v, l]) => (
+                        <button
+                          key={v}
+                          type="button"
+                          role="radio"
+                          aria-checked={entLang === v}
+                          onClick={() => setEntLang(v)}
+                          className={cn('flex-1 rounded-lg border px-3 py-2 text-sm', entLang === v ? 'border-primary bg-primary/10 font-medium' : 'hover:border-primary/40')}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">Задания ЕНТ будут на этом языке. Можно изменить в настройках.</p>
+                  </div>
+                  <div>
+                    <Label htmlFor="ob-combo">Профильные предметы ЕНТ</Label>
+                    <Select id="ob-combo" value={combo} onChange={(e) => setCombo(e.target.value)}>
+                      {PROFILE_COMBOS.map(([a, b]) => (
+                        <option key={`${a}+${b}`} value={`${a}+${b}`}>
+                          {SUBJECT_MAP[a].name} + {SUBJECT_MAP[b].name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
               )}
             </div>

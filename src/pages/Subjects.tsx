@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { Badge, Card, Progress } from '@/components/ui';
 import { SubjectIcon } from '@/components/icons';
 import { SUBJECTS } from '@/data/subjects';
-import { useAllQuestions, useAppStore } from '@/store/useAppStore';
+import { useAppStore, useStudyQuestions } from '@/store/useAppStore';
 import { subjectSummary } from '@/lib/analytics';
 import { useMemo } from 'react';
 import { fmtNum } from '@/lib/utils';
@@ -14,7 +14,7 @@ export default function Subjects() {
   const topicStatus = useAppStore((s) => s.topicStatus);
   const profile = useAppStore((s) => s.profile);
   const track = useTrack();
-  const questions = useAllQuestions();
+  const questions = useStudyQuestions().list;
   const summaries = useMemo(() => SUBJECTS.map((s) => ({ s, sum: subjectSummary(s.id, attempts, questions, topicStatus), n: questions.filter((q) => q.subject === s.id).length })), [attempts, questions, topicStatus]);
 
   const groups = track !== 'ent' ? [{ title: track === 'sat' ? 'Разделы Digital SAT' : 'Секции IELTS Academic', items: summaries.filter((x) => x.s.track === track) }] : [

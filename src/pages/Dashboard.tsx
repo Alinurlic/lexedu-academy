@@ -8,7 +8,7 @@ import { SubjectIcon } from '@/components/icons';
 import { SmartAnalysis } from '@/components/SmartAnalysis';
 import { Lexi, LexiBubble } from '@/components/lexi/Lexi';
 import { useCoreStats, usePreparation, useTrackPrediction, useWeakTopics, useWeeklyGoals } from '@/hooks/useStats';
-import { useAllQuestions, useAppStore } from '@/store/useAppStore';
+import { useAppStore, useStudyQuestions } from '@/store/useAppStore';
 import { useSession } from '@/store/session';
 import { activityByDay, allRelevantSubjects, blockSubjects, subjectSummary, trackHistory } from '@/lib/analytics';
 import { dailyGoals } from '@/lib/dailyGoals';
@@ -31,7 +31,7 @@ export default function Dashboard() {
   const topicStatus = useAppStore((s) => s.topicStatus);
   const toggleDailyGoal = useAppStore((s) => s.toggleDailyGoal);
   const setPractice = useSession((s) => s.setPractice);
-  const questions = useAllQuestions();
+  const questions = useStudyQuestions().list;
   const stats = useCoreStats();
   const prep = usePreparation();
   const weak = useWeakTopics(3);

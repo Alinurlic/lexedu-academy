@@ -86,7 +86,8 @@ describe('подсчёт баллов экзамена', () => {
 describe('формат ЕНТ', () => {
   it('по умолчанию 140 баллов', () => expect(formatMax(DEFAULT_EXAM_FORMAT)).toBe(140));
   it('полный ЕНТ собирается по регламенту: 120 заданий, 240 минут, 140 баллов', () => {
-    for (const pair of PROFILE_COMBOS) {
+    // «Казахский язык + литература» есть только в открытом банке — эта пара проверяется в openBank.test.ts
+    for (const pair of PROFILE_COMBOS.filter((p) => !p.includes('kazakh'))) {
       const plan = planEntFull(DEFAULT_EXAM_FORMAT, [pair[0], pair[1]], DEMO_QUESTIONS);
       const ids = plan.modules[0].questionIds;
       expect(ids.length, pair.join('+')).toBe(120);

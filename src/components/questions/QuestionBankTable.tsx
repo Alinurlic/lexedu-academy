@@ -12,7 +12,8 @@ import { isDemoQuestionId, useAllQuestions, useAppStore } from '@/store/useAppSt
 import { questionImportSchema, questionWithPolicySchema } from '@/lib/schemas';
 import { cn, downloadJson, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
-import type { Difficulty, Question, QuestionSource, QuestionType, SubjectId, VerificationStatus } from '@/types';
+import type { Difficulty, Question, QuestionSource, QuestionType, SubjectId, VerificationStatus, QuestionLang } from '@/types';
+import { questionLang } from '@/data/questions/lang';
 
 const PAGE = 40;
 
@@ -37,6 +38,7 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
   const [type, setType] = useState<QuestionType | 'all'>('all');
   const [source, setSource] = useState<QuestionSource | 'all'>('all');
   const [ver, setVer] = useState<VerificationStatus | 'all'>('all');
+  const [lang, setLang] = useState<QuestionLang | 'all'>('all');
   const [onlyBm, setOnlyBm] = useState(false);
   const [page, setPage] = useState(0);
   const [preview, setPreview] = useState<Question | null>(null);
@@ -64,11 +66,12 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
       if (type !== 'all' && x.type !== type) return false;
       if (source !== 'all' && x.source !== source) return false;
       if (ver !== 'all' && (x.verification ?? 'unverified') !== ver) return false;
+      if (lang !== 'all' && questionLang(x) !== lang) return false;
       if (onlyBm && !bookmarks.includes(x.id)) return false;
       if (needle && !(x.question.toLowerCase().includes(needle) || x.id.toLowerCase().includes(needle) || x.tags.some((t) => t.toLowerCase().includes(needle)))) return false;
       return true;
     });
-  }, [questions, q, subject, topic, diff, type, source, ver, onlyBm, bookmarks]);
+  }, [questions, q, subject, topic, diff, type, source, ver, lang, onlyBm, bookmarks]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
   const cur = Math.min(page, pages - 1);
@@ -139,7 +142,7 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
         )}
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-7">
+      <div className="grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
         <Select value={subject} onChange={(e) => (setSubject(e.target.value as SubjectId | 'all'), setTopic('all'), setPage(0))} aria-label="Предмет">
           <option value="all">Все предметы</option>
           {SUBJECTS.map((s) => (
@@ -187,6 +190,12 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
               {VERIFICATION_LABEL[s]}
             </option>
           ))}
+        </Select>
+        <Select value={lang} onChange={(e) => resetPage(setLang)(e.target.value as QuestionLang | 'all')} aria-label="Язык">
+          <option value="all">Любой язык</option>
+          <option value="ru">Русский</option>
+          <option value="kk">Казахский</option>
+          <option value="en">Английский</option>
         </Select>
         <Button variant={onlyBm ? 'default' : 'secondary'} onClick={() => (setOnlyBm((v) => !v), setPage(0))} aria-pressed={onlyBm}>
           <Bookmark /> Закладки

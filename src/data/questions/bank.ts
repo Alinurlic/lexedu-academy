@@ -17,19 +17,32 @@ export const isBuiltinQuestionId = (id: string) => builtinIds.has(id);
 
 let started: Promise<void> | null = null;
 
-/** Запускается один раз при старте приложения. Если загрузка не удалась, работает собственный банк. */
-export function loadBank(): Promise<void> {
+function apply(open: Question[]) {
+  const own = new Set(builtin.map((q) => q.id));
+  builtin = [...builtin, ...open.filter((q) => !own.has(q.id))];
+  builtinIds = new Set(builtin.map((q) => q.id));
+}
+
+/**
+ * Запускается один раз при старте приложения.
+ * Сначала грузится языковая часть ученика — после неё страницы с заданиями открываются;
+ * вторая часть (для добора и других языков) догружается фоном.
+ * Если загрузка не удалась, работает собственный банк LexEdu.
+ */
+export function loadBank(first: 'ru' | 'kk' = 'ru'): Promise<void> {
+  const second = first === 'ru' ? 'kk' : 'ru';
   started ??= import('./open')
-    .then((m) => m.loadOpenQuestions())
-    .then((open) => {
-      const own = new Set(DEMO_QUESTIONS.map((q) => q.id));
-      builtin = [...DEMO_QUESTIONS, ...open.filter((q) => !own.has(q.id))];
-      builtinIds = new Set(builtin.map((q) => q.id));
-      useBank.setState((s) => ({ status: 'ready', version: s.version + 1, openCount: open.length }));
+    .then(async (m) => {
+      const a = await m.loadOpenQuestions(first);
+      apply(a);
+      useBank.setState((s) => ({ status: 'ready', version: s.version + 1, openCount: a.length }));
+      const b = await m.loadOpenQuestions(second);
+      apply(b);
+      useBank.setState((s) => ({ version: s.version + 1, openCount: s.openCount + b.length }));
     })
     .catch((e) => {
       console.warn('Открытый банк заданий не загрузился', e);
-      useBank.setState((s) => ({ status: 'error', version: s.version + 1 }));
+      useBank.setState((s) => ({ status: s.status === 'ready' ? 'ready' : 'error', version: s.version + 1 }));
     });
   return started;
 }

@@ -222,6 +222,8 @@ export function subjectGenitive(id: SubjectId) {
     law: 'по основам права',
     russian: 'по русскому языку',
     ruslit: 'по русской литературе',
+    kazakh: 'по казахскому языку',
+    kazlit: 'по казахской литературе',
     'sat-rw': 'в SAT Reading & Writing',
     'sat-math': 'в SAT Math',
     'ielts-listening': 'в IELTS Listening',

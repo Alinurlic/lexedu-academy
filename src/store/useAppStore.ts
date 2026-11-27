@@ -26,6 +26,7 @@ import type {
 } from '@/types';
 import { checkAnswer as checkCorrect } from '@/data/questions';
 import { builtinQuestions, isBuiltinQuestionId, useBank } from '@/data/questions/bank';
+import { forStudy, type EntLang } from '@/data/questions/lang';
 import { importSchema } from '@/lib/schemas';
 import { ACHIEVEMENTS, LEVEL_RU, XP, levelFor } from '@/data/gamification';
 import { DEFAULT_EXAM_FORMAT, EMPTY_TAXONOMY, SUBJECTS, applyTaxonomy } from '@/data/subjects';
@@ -715,6 +716,18 @@ export function useAllQuestions() {
   const deletedQuestionIds = useAppStore((s) => s.deletedQuestionIds);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => allQuestions({ customQuestions, questionOverrides, deletedQuestionIds }), [customQuestions, questionOverrides, deletedQuestionIds, bankVersion]);
+}
+
+/** Язык сдачи ЕНТ (русский по умолчанию). */
+export function useEntLang(): EntLang {
+  return useAppStore((s) => s.profile.entLang ?? 'ru');
+}
+
+/** Задания на языке ученика (+ добор на другом языке там, где своих не хватает). */
+export function useStudyQuestions() {
+  const all = useAllQuestions();
+  const lang = useEntLang();
+  return useMemo(() => forStudy(all, lang), [all, lang]);
 }
 
 /** Текущий формат ЕНТ из настроек администратора. */

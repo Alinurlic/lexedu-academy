@@ -9,7 +9,7 @@ import { Explanation, QuestionMeta, QuestionView } from '@/components/QuestionVi
 import { AddQuestionDialog } from '@/components/AddQuestionDialog';
 import { SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
 import { DIFFICULTY_LABEL, SOURCE_LABEL, TYPE_LABEL } from '@/data/questions';
-import { useAllQuestions, useAppStore } from '@/store/useAppStore';
+import { useAppStore, useStudyQuestions } from '@/store/useAppStore';
 import { useSubjectSummary } from '@/hooks/useStats';
 import { cn, fmtNum } from '@/lib/utils';
 import { toast } from '@/store/toast';
@@ -34,7 +34,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
   const navigate = useNavigate();
   const subject = SUBJECT_MAP[subjectId];
   const summary = useSubjectSummary(subjectId);
-  const all = useAllQuestions();
+  const all = useStudyQuestions().list;
   const attempts = useAppStore((s) => s.attempts);
   const bookmarks = useAppStore((s) => s.bookmarks);
   const toggleBookmark = useAppStore((s) => s.toggleBookmark);

@@ -149,6 +149,14 @@ export default function Settings() {
                 ))}
               </Select>
             </div>
+            <div>
+              <Label htmlFor="s-entlang">Язык сдачи ЕНТ</Label>
+              <Select id="s-entlang" value={draft.entLang ?? 'ru'} onChange={(e) => setDraft({ ...draft, entLang: e.target.value as 'ru' | 'kk' })}>
+                <option value="ru">Русский</option>
+                <option value="kk">Қазақ тілі (казахский)</option>
+              </Select>
+              <p className="mt-1 text-xs text-muted-foreground">Задания в практике и пробных ЕНТ будут на этом языке</p>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 rounded-xl bg-secondary/50 p-4 text-sm sm:grid-cols-4">
             <div>

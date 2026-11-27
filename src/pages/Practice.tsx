@@ -6,7 +6,7 @@ import { SubjectIcon } from '@/components/icons';
 import { QuestionMeta, QuestionView, Explanation } from '@/components/QuestionView';
 import { SUBJECT_MAP, TOPIC_MAP, subjectsOf } from '@/data/subjects';
 import { useTrack } from '@/hooks/useTrack';
-import { useAllQuestions, useAppStore, useQuestionMap } from '@/store/useAppStore';
+import { useStudyQuestions, useAppStore, useQuestionMap } from '@/store/useAppStore';
 import { useSession } from '@/store/session';
 import { buildPool, pickQuestions, type PoolSource } from '@/lib/practice';
 import { fmtDateTime, fmtDuration } from '@/lib/date';
@@ -20,7 +20,7 @@ const TIMERS = [5, 10, 20, 30];
 export default function Practice() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const allQ = useAllQuestions();
+  const allQ = useStudyQuestions().list;
   const attempts = useAppStore((s) => s.attempts);
   const bookmarks = useAppStore((s) => s.bookmarks);
   const mistakes = useAppStore((s) => s.mistakes);

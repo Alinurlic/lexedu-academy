@@ -13,6 +13,8 @@ export type SubjectId =
   | 'law'
   | 'russian'
   | 'ruslit'
+  | 'kazakh'
+  | 'kazlit'
   // SAT
   | 'sat-rw'
   | 'sat-math'
@@ -27,6 +29,9 @@ export type Track = 'ent' | 'sat' | 'ielts';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+/** Язык задания: ЕНТ сдают на русском или казахском; SAT, IELTS и английский — на английском. */
+export type QuestionLang = 'ru' | 'kk' | 'en';
+
 /** Источник вопроса: демо (оригинальные учебные), пользовательские, официальные (только с указанием источника). */
 /** demo — собственные задания LexEdu; open — открытый источник с лицензией; verified — официальный источник. */
 export type QuestionSource = 'demo' | 'user' | 'verified' | 'open';
@@ -39,6 +44,8 @@ interface QuestionBase {
   subject: SubjectId;
   topic: string; // topic id
   difficulty: Difficulty;
+  /** Язык задания; если не указан — определяется по предмету (см. questionLang) */
+  lang?: QuestionLang;
   question: string;
   passage?: string;
   /** Скрипт аудиозаписи (IELTS Listening) — озвучивается синтезатором речи браузера */
@@ -290,6 +297,8 @@ export interface Profile {
   activeTrack?: Track;
   tracks?: Partial<Record<Track, TrackProfile>>;
   onboarded?: boolean;
+  /** Язык сдачи ЕНТ: задания в практике и пробниках ЕНТ показываются на этом языке */
+  entLang?: 'ru' | 'kk';
 }
 
 export type TopicStatus = 'not_started' | 'in_progress' | 'completed';

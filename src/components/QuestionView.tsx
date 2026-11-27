@@ -7,10 +7,13 @@ import { TOPIC_MAP } from '@/data/subjects';
 import { cn } from '@/lib/utils';
 import { Lexi } from '@/components/lexi/Lexi';
 import { lexiSay } from '@/lib/lexi';
+import { LANG_LABEL, LANG_SHORT, questionLang } from '@/data/questions/lang';
+import { useAppStore } from '@/store/useAppStore';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
 export function QuestionMeta({ q, className }: { q: Question; className?: string }) {
+  const entLang = useAppStore((s) => s.profile.entLang ?? 'ru');
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
       <Badge variant="secondary">{TOPIC_MAP[q.topic]?.name ?? q.topic}</Badge>
@@ -19,6 +22,11 @@ export function QuestionMeta({ q, className }: { q: Question; className?: string
       <Badge variant={q.source === 'verified' ? 'success' : q.source === 'user' ? 'violet' : 'outline'} title={q.sourceRef || q.sourceNote}>
         {SOURCE_LABEL[q.source]}
       </Badge>
+      {(questionLang(q) === 'kk' || (questionLang(q) === 'ru' && entLang === 'kk')) && (
+        <Badge variant="outline" title={`Задание ${LANG_LABEL[questionLang(q)]}`}>
+          {LANG_SHORT[questionLang(q)]}
+        </Badge>
+      )}
       {q.verification === 'reviewed' && <Badge variant="success">Проверен</Badge>}
       {q.verification === 'needs_review' && <Badge variant="warning">Требует проверки</Badge>}
     </div>

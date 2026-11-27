@@ -1,7 +1,8 @@
+import { LANG_LABEL, inStudyLang, studyLang, type EntLang } from '@/data/questions/lang';
 import type { Answer, Difficulty, ExamConfig, ExamFormat, ExamModule, ExamResult, Question, SubjectId, Track } from '@/types';
 import { checkAnswer, maxPoints, scoreAnswer } from '@/data/questions';
 import { SUBJECT_MAP } from '@/data/subjects';
-import { shuffle, uid } from './utils';
+import { plural, shuffle, uid } from './utils';
 
 /* ------------------------------------------------------------------ */
 /* Общие помощники                                                     */
@@ -31,23 +32,40 @@ function takeGrouped(pool: Question[], n: number, exclude: Set<string>): Questio
 }
 
 const isSingle = (q: Question) => q.type === 'single' && !q.context;
+
+/** Делит пул на задания на языке ученика и остальные (добор, если своих не хватит). */
+function byLang(pool: Question[], entLang: EntLang) {
+  return { pref: pool.filter((q) => inStudyLang(q, entLang)), rest: pool.filter((q) => !inStudyLang(q, entLang)) };
+}
+
+function langNote(subject: SubjectId, count: number, entLang: EntLang) {
+  const study = studyLang(subject, entLang);
+  const other = study === 'kk' ? 'ru' : 'kk';
+  return `${SUBJECT_MAP[subject].name}: ${count} ${plural(count, ['задание', 'задания', 'заданий'])} ${LANG_LABEL[other]} (${LANG_LABEL[study]} пока не хватает)`;
+}
 const isContext = (q: Question) => q.type === 'single' && !!q.context;
 
 /* ------------------------------------------------------------------ */
 /* Старый простой режим (предметный пробник, свой вариант)             */
 /* ------------------------------------------------------------------ */
 
-export function buildExamQuestions(config: ExamConfig, questions: Question[]) {
+export function buildExamQuestions(config: ExamConfig, questions: Question[], entLang: EntLang = 'ru') {
   const ids: string[] = [];
   const used = new Set<string>();
+  const notes: string[] = [];
   const sections = config.sections.map((s) => {
-    const pool = questions.filter((q) => q.subject === s.subject && q.type !== 'essay');
-    const picked = takeGrouped(pool, s.count, used);
+    const { pref, rest } = byLang(questions.filter((q) => q.subject === s.subject && q.type !== 'essay'), entLang);
+    let picked = takeGrouped(pref, s.count, used);
+    if (picked.length < s.count) {
+      const extra = takeGrouped(rest, s.count - picked.length, used);
+      if (extra.length) notes.push(langNote(s.subject, extra.length, entLang));
+      picked = [...picked, ...extra];
+    }
     picked.forEach((q) => used.add(q.id));
     ids.push(...picked.map((q) => q.id));
     return { ...s, count: picked.length };
   });
-  return { ids, config: { ...config, sections } };
+  return { ids, config: { ...config, sections }, langNote: notes.length ? `Часть заданий на другом языке — ${notes.join('; ')}.` : undefined };
 }
 
 /** Простой подсчёт (совместимость): доля верных × баллы раздела. */
@@ -77,11 +95,12 @@ export interface ExamPlan {
 }
 
 /** Простой экзамен из конфигурации — один модуль. */
-export function planSimple(config: ExamConfig, questions: Question[]): ExamPlan {
-  const built = buildExamQuestions(config, questions);
+export function planSimple(config: ExamConfig, questions: Question[], entLang: EntLang = 'ru'): ExamPlan {
+  const built = buildExamQuestions(config, questions, entLang);
   return {
     config: built.config,
     modules: [{ id: uid('mod'), title: built.config.title, subject: built.config.sections[0]?.subject ?? 'math', questionIds: built.ids, timeLimitSec: built.config.timeLimitMin * 60 }],
+    shortened: built.langNote,
   };
 }
 
@@ -90,15 +109,17 @@ export function planSimple(config: ExamConfig, questions: Question[]): ExamPlan 
  * Профильные блоки собираются по регламенту: 25 заданий с одним ответом, 5 контекстных,
  * 5 на соответствие, 5 с выбором нескольких ответов. Все задания — в одном модуле со свободной навигацией.
  */
-export function planEntFull(format: ExamFormat, profileSubjects: [SubjectId, SubjectId], questions: Question[]): ExamPlan {
+export function planEntFull(format: ExamFormat, profileSubjects: [SubjectId, SubjectId], questions: Question[], entLang: EntLang = 'ru'): ExamPlan {
   const used = new Set<string>();
   const ids: string[] = [];
   const sections: ExamConfig['sections'] = [];
   const shortages: string[] = [];
+  const langNotes: string[] = [];
   for (const b of format.blocks) {
     const subject = b.slot === 'profile1' ? profileSubjects[0] : b.slot === 'profile2' ? profileSubjects[1] : b.subject;
     if (!subject) continue;
-    const pool = questions.filter((q) => q.subject === subject && q.type !== 'essay');
+    // сначала задания на языке ученика; задания на другом языке — только добор при нехватке
+    const { pref: pool, rest } = byLang(questions.filter((q) => q.subject === subject && q.type !== 'essay'), entLang);
     let picked: Question[] = [];
     if (b.composition) {
       const c = b.composition;
@@ -117,6 +138,12 @@ export function planEntFull(format: ExamFormat, profileSubjects: [SubjectId, Sub
       const extra = takeGrouped(pool.filter((q) => (q.type === 'single' || q.type === 'boolean') && !picked.includes(q)), b.questions - picked.length, new Set([...used, ...picked.map((q) => q.id)]));
       picked = [...picked, ...extra];
     }
+    // на языке ученика заданий не хватило — добираем на другом языке и честно предупреждаем
+    if (picked.length < b.questions && rest.length) {
+      const extra = takeGrouped(rest.filter((q) => q.type === 'single' || q.type === 'boolean' || q.type === 'multiple' || q.type === 'matching'), b.questions - picked.length, new Set([...used, ...picked.map((q) => q.id)]));
+      if (extra.length) langNotes.push(langNote(subject, extra.length, entLang));
+      picked = [...picked, ...extra];
+    }
     picked.forEach((q) => used.add(q.id));
     if (picked.length < b.questions) shortages.push(`${SUBJECT_MAP[subject].name}: ${picked.length} из ${b.questions}`);
     ids.push(...picked.map((q) => q.id));
@@ -129,7 +156,7 @@ export function planEntFull(format: ExamFormat, profileSubjects: [SubjectId, Sub
   return {
     config,
     modules: [{ id: uid('mod'), title: 'ЕНТ', subject: sections[0]?.subject ?? 'history', questionIds: ids, timeLimitSec: timeLimitMin * 60 }],
-    shortened: shortages.length ? `В банке не хватило заданий: ${shortages.join('; ')}.` : undefined,
+    shortened: [shortages.length ? `В банке не хватило заданий: ${shortages.join('; ')}.` : '', langNotes.length ? `Часть заданий на другом языке — ${langNotes.join('; ')}.` : ''].filter(Boolean).join(' ') || undefined,
   };
 }
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const subjectIdSchema = z.enum([
   'math', 'physics', 'geography', 'biology', 'chemistry', 'history', 'reading', 'mathlit', 'english', 'informatics',
-  'worldhistory', 'law', 'russian', 'ruslit',
+  'worldhistory', 'law', 'russian', 'ruslit', 'kazakh', 'kazlit',
   'sat-rw', 'sat-math', 'ielts-listening', 'ielts-reading', 'ielts-writing', 'ielts-speaking',
 ]);
 const difficulty = z.enum(['easy', 'medium', 'hard']);
@@ -16,6 +16,7 @@ const questionBase = z.object({
   difficulty,
   question: z.string().min(1),
   passage: z.string().optional(),
+  lang: z.enum(['ru', 'kk', 'en']).optional(),
   audio: z.string().optional(),
   group: z.string().optional(),
   context: z.boolean().optional(),
@@ -54,6 +55,7 @@ export const profileSchema = z.object({
   activeTrack: z.enum(['ent', 'sat', 'ielts']).optional(),
   tracks: z.any().optional(),
   onboarded: z.boolean().optional(),
+  entLang: z.enum(['ru', 'kk']).optional(),
 });
 
 export const taskFormSchema = z.object({
