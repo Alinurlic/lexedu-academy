@@ -44,7 +44,8 @@ export function AppLayout() {
   const onboarded = useAppStore((s) => s.profile.onboarded);
   // При подключённом Supabase приложение доступно только после входа (email подтверждён)
   if (isSupabaseConfigured && !auth.ready) return <PageSkeleton full />;
-  if (isSupabaseConfigured && !auth.userId) return <Navigate to="/login" replace />;
+  // гость на главной видит страницу о платформе, на внутренних адресах — форму входа
+  if (isSupabaseConfigured && !auth.userId) return <Navigate to={pathname === '/' ? '/welcome' : '/login'} replace />;
   if (onboarded === false) return <Navigate to="/onboarding" replace />;
 
   return (

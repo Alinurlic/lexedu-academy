@@ -28,6 +28,7 @@ const Questions = lazy(() => import('@/pages/Questions'));
 const Admin = lazy(() => import('@/pages/Admin'));
 const Login = lazy(() => import('@/pages/Login'));
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
+const Landing = lazy(() => import('@/pages/Landing'));
 const Studio = lazy(() => import('@/pages/Studio'));
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
@@ -80,6 +81,7 @@ export function App() {
             <Route path="/exams/session" element={<BankGate full><ExamSession /></BankGate>} />
             <Route path="/login" element={<Login standalone />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/welcome" element={<Landing />} />
             <Route element={<AppLayout />}>
               <Route index element={<Suspense fallback={<PageSkeleton />}><Dashboard /></Suspense>} />
               <Route path="practice" element={<Suspense fallback={<PageSkeleton />}><Practice /></Suspense>} />

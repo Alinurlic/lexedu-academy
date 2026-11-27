@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { CloudDownload, CloudOff, CloudUpload, KeyRound, LogIn, LogOut, MailCheck, RotateCcw, UserPlus } from 'lucide-react';
 import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FieldError, Input, Label, Segmented } from '@/components/ui';
@@ -28,7 +28,9 @@ export default function Login({ standalone }: { standalone?: boolean }) {
   const auth = useAuth();
   const lastSyncAt = useAppStore((s) => s.lastSyncAt);
   const onboarded = useAppStore((s) => s.profile.onboarded);
-  const [mode, setMode] = useState<Mode>('in');
+  const [params] = useSearchParams();
+  // «Начать бесплатно» на главной открывает сразу регистрацию
+  const [mode, setMode] = useState<Mode>(params.get('mode') === 'up' ? 'up' : 'in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
@@ -43,9 +45,16 @@ export default function Login({ standalone }: { standalone?: boolean }) {
       <div className="grid min-h-screen place-items-center bg-background p-4">
         <div className="w-full max-w-md space-y-6">
           <div className="flex justify-center">
-            <Logo />
+            <button onClick={() => navigate('/welcome')} aria-label="LexEdu Academy — о платформе">
+              <Logo />
+            </button>
           </div>
           {children}
+          <p className="text-center text-xs text-muted-foreground">
+            <button onClick={() => navigate('/welcome')} className="underline-offset-2 hover:text-foreground hover:underline">
+              Что такое LexEdu Academy?
+            </button>
+          </p>
         </div>
       </div>
     ) : (
