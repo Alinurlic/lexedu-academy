@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import type { Question } from '@/types';
 
 /** «Сообщить об ошибке» в задании: причина + комментарий → очередь проверки в админ-панели. */
-export function ReportButton({ q, className }: { q: Question; className?: string }) {
+export function ReportButton({ q, className, variant = 'link' }: { q: Question; className?: string; variant?: 'link' | 'icon' }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason>('wrong_answer');
   const [comment, setComment] = useState('');
@@ -28,15 +28,32 @@ export function ReportButton({ q, className }: { q: Question; className?: string
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => !sent && setOpen(true)}
-        disabled={sent}
-        className={cn('inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-danger disabled:hover:text-muted-foreground', className)}
-      >
-        {sent ? <Check className="size-3" /> : <Flag className="size-3" />}
-        {sent ? 'Отправлено на проверку' : 'Сообщить об ошибке'}
-      </button>
+      {variant === 'icon' ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => !sent && setOpen(true)}
+          disabled={sent}
+          title={sent ? 'Отправлено на проверку' : 'Сообщить об ошибке в задании'}
+          aria-label={sent ? 'Жалоба отправлена' : 'Сообщить об ошибке в задании'}
+          className={className}
+        >
+          {sent ? <Check className="text-success" /> : <Flag />}
+        </Button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => !sent && setOpen(true)}
+          disabled={sent}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-danger/50 hover:text-danger disabled:hover:border-border disabled:hover:text-muted-foreground',
+            className,
+          )}
+        >
+          {sent ? <Check className="size-3.5" /> : <Flag className="size-3.5" />}
+          {sent ? 'Отправлено на проверку' : 'Сообщить об ошибке'}
+        </button>
+      )}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}

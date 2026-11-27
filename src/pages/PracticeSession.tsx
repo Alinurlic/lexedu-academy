@@ -15,6 +15,7 @@ import { cn, pct, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Answer, PracticeSessionResult } from '@/types';
 import { MathText } from '@/components/MathText';
+import { ReportButton } from '@/components/ReportButton';
 
 export default function PracticeSession() {
   const practice = useSession((s) => s.practice);
@@ -182,18 +183,21 @@ export default function PracticeSession() {
               </div>
               <QuestionMeta q={q} />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                const added = toggleBookmark(qid);
-                toast.success(added ? 'Добавлено в закладки' : 'Удалено из закладок');
-              }}
-              aria-label={bookmarked ? 'Убрать из закладок' : 'Добавить в закладки'}
-              aria-pressed={bookmarked}
-            >
-              {bookmarked ? <BookmarkCheck className="text-primary" /> : <Bookmark />}
-            </Button>
+            <div className="flex shrink-0 items-center">
+              <ReportButton q={q} variant="icon" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const added = toggleBookmark(qid);
+                  toast.success(added ? 'Добавлено в закладки' : 'Удалено из закладок');
+                }}
+                aria-label={bookmarked ? 'Убрать из закладок' : 'Добавить в закладки'}
+                aria-pressed={bookmarked}
+              >
+                {bookmarked ? <BookmarkCheck className="text-primary" /> : <Bookmark />}
+              </Button>
+            </div>
           </div>
 
           <QuestionView q={q} value={entry?.submitted ? entry.answer : draft} onChange={setDraft} reveal={entry?.submitted} />
