@@ -1,8 +1,10 @@
 /**
- * Vercel Serverless Function: ИИ-помощник Lexi (Claude).
+ * Vercel Serverless Function: ИИ-помощник Lexi.
  *
- * Переменные окружения (Vercel → Project → Settings → Environment Variables):
- *   ANTHROPIC_API_KEY        — ключ Claude API (обязателен для ИИ; хранится только на сервере)
+ * Переменные окружения (Vercel → Project → Settings → Environment Variables), нужен ОДИН из ключей:
+ *   ANTHROPIC_API_KEY        — ключ Claude API (платный, лучшее качество); если задан, используется он
+ *   GEMINI_API_KEY           — ключ Google Gemini (есть бесплатный тариф, aistudio.google.com)
+ *   GEMINI_MODEL             — модель Gemini (по умолчанию gemini-flash-latest)
  *   SUPABASE_URL / SUPABASE_ANON_KEY (или VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)
  *                            — если заданы, ИИ доступен только вошедшим пользователям с подтверждённым email
  *   AI_DAILY_LIMIT           — запросов на пользователя в сутки (по умолчанию 60)
@@ -12,9 +14,13 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import * as z from 'zod/v4';
 import { createClient } from '@supabase/supabase-js';
+import { GEMINI_KEY, GEMINI_MODEL, GENERATED_SCHEMA, GRADE_SCHEMA, GeminiError, gemini } from './_gemini';
 
 const MODEL = process.env.LEXI_MODEL || 'claude-opus-5-5';
-const API_KEY = process.env.ANTHROPIC_API_KEY;
+const API_KEY = process.env.ANTHROPIC_API_KEY?.trim();
+/** Какой ИИ используется: Claude (если есть ключ), иначе бесплатный Gemini. */
+const PROVIDER: 'claude' | 'gemini' | null = API_KEY ? 'claude' : GEMINI_KEY ? 'gemini' : null;
+const NO_KEY = 'На сервере не задан ключ ИИ (ANTHROPIC_API_KEY или GEMINI_API_KEY).';
 const env = (...names: string[]) => names.map((n) => process.env[n]?.trim()).find(Boolean);
 // поддерживаем и свои имена, и те, что создаёт интеграция Supabase в Vercel
 const SB_URL = env('SUPABASE_URL', 'VITE_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL');
@@ -106,13 +112,62 @@ async function authorize(req: Request): Promise<{ ok: true } | { ok: false; res:
 /* ---------------------------- обработчики ---------------------------- */
 
 export async function GET() {
-  if (!API_KEY) return json({ enabled: false, reason: 'На сервере не задан ANTHROPIC_API_KEY.' });
+  if (!PROVIDER) return json({ enabled: false, reason: NO_KEY });
   if (!(SB_URL && SB_KEY) && !ALLOW_ANON) return json({ enabled: false, reason: 'Не настроены аккаунты (SUPABASE_URL / SUPABASE_ANON_KEY).' });
-  return json({ enabled: true, model: MODEL, requiresAuth: Boolean(SB_URL && SB_KEY) });
+  return json({ enabled: true, provider: PROVIDER, model: PROVIDER === 'claude' ? MODEL : GEMINI_MODEL, requiresAuth: Boolean(SB_URL && SB_KEY) });
 }
 
+/* ---------------------------- общая постобработка ---------------------------- */
+
+const minWordsOf = (task: 'writing1' | 'writing2' | 'speaking') => (task === 'writing1' ? 150 : task === 'writing2' ? 250 : 0);
+const gradePrompt = (b: z.infer<typeof GradeBody>) => {
+  const minWords = minWordsOf(b.task);
+  const words = b.answer.trim().split(/\s+/).length;
+  return `Task type: ${b.task}${minWords ? ` (minimum ${minWords} words)` : ''}\nWord count: ${words}\n\nPROMPT:\n${b.prompt}\n\nCANDIDATE RESPONSE:\n${b.answer}`;
+};
+const generatePrompt = (b: z.infer<typeof GenerateBody>) => `Предмет: ${b.subject}\nТема: ${b.topic}\nКоличество: ${b.count}\nСложность: ${b.difficulty}\nЯзык заданий: ${b.language}`;
+
+function finishGrade(g: z.infer<typeof Grade>) {
+  // band пересчитываем сами по официальному правилу: среднее четырёх критериев, округление до 0,5
+  const half = (n: number) => Math.max(0, Math.min(9, Math.round(n * 2) / 2));
+  const criteria = { task: half(g.criteria.task), coherence: half(g.criteria.coherence), lexical: half(g.criteria.lexical), grammar: half(g.criteria.grammar) };
+  const band = half((criteria.task + criteria.coherence + criteria.lexical + criteria.grammar) / 4);
+  return json({ ...g, criteria, band });
+}
+
+function finishGenerate(out: z.infer<typeof Generated>, count: number) {
+  const valid = out.questions.filter((q) => q.options.length === 4 && q.correctIndex >= 0 && q.correctIndex < 4 && new Set(q.options).size === 4).slice(0, count);
+  return json({ questions: valid });
+}
+
+/** Бесплатный вариант: Google Gemini. */
+async function viaGemini(body: z.infer<typeof Body>, fetchImpl?: typeof fetch): Promise<Response> {
+  try {
+    if (body.action === 'chat') {
+      const system = body.context ? `${TUTOR}\n\nДанные ученика (из приложения):\n${body.context}` : TUTOR;
+      return json({ reply: await gemini({ system, messages: body.messages, maxTokens: 4096, fetchImpl }) });
+    }
+    if (body.action === 'analyze') {
+      return json({ reply: await gemini({ system: ANALYST, messages: [{ role: 'user', content: body.summary }], maxTokens: 4096, fetchImpl }) });
+    }
+    if (body.action === 'grade') {
+      const raw = await gemini({ system: GRADER, messages: [{ role: 'user', content: gradePrompt(body) }], schema: GRADE_SCHEMA, fetchImpl });
+      const g = Grade.safeParse(JSON.parse(raw));
+      return g.success ? finishGrade(g.data) : json({ error: 'Не удалось оценить ответ' }, 422);
+    }
+    const raw = await gemini({ system: GENERATOR, messages: [{ role: 'user', content: generatePrompt(body) }], schema: GENERATED_SCHEMA, fetchImpl });
+    const out = Generated.safeParse(JSON.parse(raw));
+    return out.success ? finishGenerate(out.data, body.count) : json({ error: 'Не удалось сгенерировать задания' }, 422);
+  } catch (e) {
+    if (e instanceof GeminiError) return json({ error: e.message }, e.status);
+    if (e instanceof SyntaxError) return json({ error: 'ИИ вернул некорректный ответ, попробуйте ещё раз' }, 502);
+    return json({ error: 'Внутренняя ошибка сервера' }, 500);
+  }
+}
+export const __test = { viaGemini };
+
 export async function POST(req: Request) {
-  if (!API_KEY) return json({ error: 'ИИ не подключён: не задан ANTHROPIC_API_KEY' }, 503);
+  if (!PROVIDER) return json({ error: `ИИ не подключён. ${NO_KEY}` }, 503);
   let body: z.infer<typeof Body>;
   try {
     body = Body.parse(await req.json());
@@ -122,6 +177,7 @@ export async function POST(req: Request) {
   const auth = await authorize(req);
   if (!auth.ok) return auth.res;
 
+  if (PROVIDER === 'gemini') return viaGemini(body);
   const client = new Anthropic({ apiKey: API_KEY });
   try {
     if (body.action === 'chat') {
@@ -142,22 +198,17 @@ export async function POST(req: Request) {
       return json({ reply: textOf(msg.content) });
     }
     if (body.action === 'grade') {
-      const minWords = body.task === 'writing1' ? 150 : body.task === 'writing2' ? 250 : 0;
-      const words = body.answer.trim().split(/\s+/).length;
       const msg = await client.beta.messages.parse({
         model: MODEL,
         max_tokens: 8000,
         ...FALLBACK,
         output_config: { effort: 'medium', format: betaZodOutputFormat(Grade) },
         system: GRADER,
-        messages: [{ role: 'user', content: `Task type: ${body.task}${minWords ? ` (minimum ${minWords} words)` : ''}\nWord count: ${words}\n\nPROMPT:\n${body.prompt}\n\nCANDIDATE RESPONSE:\n${body.answer}` }],
+        messages: [{ role: 'user', content: gradePrompt(body) }],
       });
       const g = msg.parsed_output;
       if (msg.stop_reason === 'refusal' || !g) return json({ error: 'Не удалось оценить ответ' }, 422);
-      const half = (n: number) => Math.max(0, Math.min(9, Math.round(n * 2) / 2));
-      const criteria = { task: half(g.criteria.task), coherence: half(g.criteria.coherence), lexical: half(g.criteria.lexical), grammar: half(g.criteria.grammar) };
-      const band = half((criteria.task + criteria.coherence + criteria.lexical + criteria.grammar) / 4);
-      return json({ ...g, criteria, band });
+      return finishGrade(g);
     }
     // generate
     const msg = await client.beta.messages.parse({
@@ -166,12 +217,11 @@ export async function POST(req: Request) {
       ...FALLBACK,
       output_config: { effort: 'medium', format: betaZodOutputFormat(Generated) },
       system: GENERATOR,
-      messages: [{ role: 'user', content: `Предмет: ${body.subject}\nТема: ${body.topic}\nКоличество: ${body.count}\nСложность: ${body.difficulty}\nЯзык заданий: ${body.language}` }],
+      messages: [{ role: 'user', content: generatePrompt(body) }],
     });
     const out = msg.parsed_output;
     if (msg.stop_reason === 'refusal' || !out) return json({ error: 'Не удалось сгенерировать задания' }, 422);
-    const valid = out.questions.filter((q) => q.options.length === 4 && q.correctIndex >= 0 && q.correctIndex < 4 && new Set(q.options).size === 4).slice(0, body.count);
-    return json({ questions: valid });
+    return finishGenerate(out, body.count);
   } catch (e) {
     if (e instanceof Anthropic.RateLimitError) return json({ error: 'ИИ перегружен, попробуйте через минуту' }, 429);
     if (e instanceof Anthropic.AuthenticationError) return json({ error: 'Неверный ANTHROPIC_API_KEY на сервере' }, 500);

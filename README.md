@@ -42,7 +42,8 @@ npm run build:single  # один файл release/LexEdu.html — открыва
 |---|---|---|
 | `VITE_SUPABASE_URL` | Project URL из Supabase | нет |
 | `VITE_SUPABASE_ANON_KEY` | anon public key | нет |
-| `ANTHROPIC_API_KEY` | ключ с [console.anthropic.com](https://console.anthropic.com) | **да**: только здесь, никогда в коде и без префикса `VITE_` |
+| `ANTHROPIC_API_KEY` | ключ Claude с [console.anthropic.com](https://console.anthropic.com) (платный) | **да**: только здесь, никогда в коде и без префикса `VITE_` |
+| `GEMINI_API_KEY` | **или** бесплатный ключ Google Gemini с [aistudio.google.com](https://aistudio.google.com) | **да** |
 | `AI_DAILY_LIMIT` | запросов к ИИ на ученика в сутки, по умолчанию `60` | нет |
 | `LEXI_MODEL` | модель Claude, по умолчанию `claude-opus-5-5` | нет |
 | `VITE_TURNSTILE_SITE_KEY` | site key Cloudflare Turnstile (необязательно) | нет |
@@ -69,7 +70,9 @@ where id = (select id from auth.users where email = 'ваш@email');
 
 ## ИИ (Lexi)
 
-Серверная функция `api/lexi.ts` (Vercel Function) обращается к Claude. Ключ хранится только на сервере.
+Серверная функция `api/lexi.ts` (Vercel Function) обращается к **Claude** (`ANTHROPIC_API_KEY`) или, если задан только `GEMINI_API_KEY`, к **Google Gemini** — у него есть бесплатный тариф. Ключ хранится только на сервере.
+
+> Бесплатный тариф Gemini: Google может использовать запросы для улучшения своих продуктов, а лимиты запросов в минуту/сутки небольшие. Для запуска с реальными учениками лучше включить оплату в Google AI Studio или перейти на Claude.
 
 - **Чат-тьютор**: объясняет, получает сводку статистики ученика.
 - **Проверка IELTS Writing/Speaking** по 4 критериям с band и разбором на русском.
