@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Eye, Info, Loader2, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, Check, Eye, Info, Loader2, MessageSquarePlus, Plus, RotateCcw, Send, Sparkles, Trash2, X } from 'lucide-react';
 import { Badge, Button, Card, ConfirmDialog, Input } from '@/components/ui';
 import { Lexi, LexiAvatar } from '@/components/lexi/Lexi';
 import { SubjectIcon } from '@/components/icons';
 import { Avatar } from '@/components/layout/Avatar';
-import { useAppStore, useQuestionMap } from '@/store/useAppStore';
+import { useAppStore, useChat, useQuestionMap } from '@/store/useAppStore';
 import { askLexi } from '@/lib/assistant/engine';
 import { aiStatus, type AiStatus } from '@/lib/ai';
 import { studentSummary } from '@/lib/insights';
@@ -13,22 +13,26 @@ import { GENERATOR_LIST, generateTask } from '@/lib/assistant/generators';
 import { parseNumeric } from '@/data/questions';
 import { SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
 import { cn, uid } from '@/lib/utils';
+import { Markdown } from '@/components/Markdown';
+import { fmtDate } from '@/lib/date';
 import { toast } from '@/store/toast';
 import type { ChatMessage } from '@/types';
 
 const SUGGESTIONS = ['Объясни мои ошибки', 'Что мне повторить?', 'Реши x^2 - 5x + 6 = 0', 'Дай задачу на проценты', 'Объясни теорему Виета', 'Законы Ньютона'];
 
 export default function Assistant() {
-  const history = useAppStore((s) => s.assistantHistory);
+  const { threads, activeId, messages: history } = useChat();
   const addMessages = useAppStore((s) => s.addChatMessages);
-  const clearChat = useAppStore((s) => s.clearChat);
+  const newChat = useAppStore((s) => s.newChat);
+  const selectChat = useAppStore((s) => s.selectChat);
+  const deleteChat = useAppStore((s) => s.deleteChat);
   const profile = useAppStore((s) => s.profile);
   const attempts = useAppStore((s) => s.attempts);
   const mistakes = useAppStore((s) => s.mistakes);
   const qmap = useQuestionMap();
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<AiStatus | null>(null);
   const examFormat = useAppStore((s) => s.examFormat);
@@ -66,14 +70,52 @@ export default function Assistant() {
   };
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_300px]">
+    <div className="mx-auto grid max-w-[1280px] gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+      {/* Список чатов */}
+      <Card className="hidden h-[calc(100vh-9.5rem)] min-h-[520px] flex-col overflow-hidden lg:flex">
+        <div className="flex items-center justify-between gap-2 border-b p-3">
+          <span className="text-sm font-semibold">Чаты</span>
+          <Button size="sm" onClick={() => newChat()}>
+            <MessageSquarePlus /> Новый
+          </Button>
+        </div>
+        <div className="scrollbar-thin flex-1 space-y-1 overflow-y-auto p-2">
+          {threads.length === 0 && <p className="p-3 text-xs text-muted-foreground">Пока нет чатов. Задай вопрос — начнётся новый.</p>}
+          {threads.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => selectChat(t.id)}
+              className={cn('group flex w-full items-center gap-2 rounded-xl border p-2.5 text-left transition-colors', t.id === activeId ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-secondary/60')}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="line-clamp-1 text-sm">{t.title}</div>
+                <div className="text-[11px] text-muted-foreground">{fmtDate(t.updatedAt, { day: 'numeric', month: 'short' })} · {t.messages.length} сообщ.</div>
+              </div>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => (e.stopPropagation(), setConfirmDel(t.id))}
+                onKeyDown={(e) => e.key === 'Enter' && (e.stopPropagation(), setConfirmDel(t.id))}
+                className="shrink-0 rounded-md p-1 text-muted-foreground opacity-0 transition hover:text-danger group-hover:opacity-100"
+                aria-label="Удалить чат"
+              >
+                <Trash2 className="size-4" />
+              </span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
       <Card className="flex h-[calc(100vh-9.5rem)] min-h-[520px] flex-col overflow-hidden">
         <div className="flex items-center gap-3 border-b p-4">
           <LexiAvatar size={40} />
           <div className="min-w-0 flex-1">
             <div className="font-semibold">Lexi-помощник</div>
-            <div className="text-xs text-muted-foreground">Объясняет, решает по шагам, придумывает задачи</div>
+            <div className="hidden truncate text-xs text-muted-foreground sm:block">Объясняет, решает по шагам, придумывает задачи</div>
           </div>
+          <Button variant="ghost" size="icon-sm" className="lg:hidden" onClick={() => newChat()} aria-label="Новый чат">
+            <MessageSquarePlus />
+          </Button>
           {!status ? (
             <Badge variant="outline">Проверяю ИИ…</Badge>
           ) : aiOn ? (
@@ -85,7 +127,7 @@ export default function Assistant() {
               <Info /> Демо-режим · без ИИ
             </Badge>
           )}
-          <Button variant="ghost" size="icon-sm" onClick={() => setConfirmClear(true)} disabled={!history.length} aria-label="Очистить переписку">
+          <Button variant="ghost" size="icon-sm" onClick={() => activeId && setConfirmDel(activeId)} disabled={!activeId} aria-label="Удалить этот чат">
             <Trash2 />
           </Button>
         </div>
@@ -151,7 +193,7 @@ export default function Assistant() {
         </div>
       </Card>
 
-      <div className="space-y-4">
+      <div className="space-y-4 lg:col-span-2 xl:col-span-1">
         <Card className="p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Sparkles className="size-4 text-violet" /> Новая задача
@@ -180,17 +222,19 @@ export default function Assistant() {
             <Info className="size-4" /> Как работает Lexi
           </div>
           {aiOn ? (
-            <p>Ответы даёт модель ИИ Claude через сервер LexEdu. Генератор задач и разбор ошибок по кнопке работают локально. ИИ может ошибаться — сверяй важные факты по учебнику.</p>
+            <p>
+              Ответы даёт модель ИИ {status?.provider === 'gemini' ? 'Google Gemini' : 'Claude'} через сервер LexEdu. Генератор задач и разбор ошибок по кнопке работают локально. ИИ может ошибаться — сверяй важные факты по учебнику.
+            </p>
           ) : (
             <>
               <p>ИИ не подключён{status?.reason ? `: ${status.reason}` : ''}. Ответы строятся локально: решатель уравнений, генератор задач, база объяснений и анализ твоих ответов.</p>
-              <p className="mt-2">После публикации на Vercel с ключом ANTHROPIC_API_KEY здесь заработает полноценный ИИ.</p>
+              <p className="mt-2">Когда администратор добавит ключ ИИ на сервер (GEMINI_API_KEY или ANTHROPIC_API_KEY), здесь заработает полноценный ИИ.</p>
             </>
           )}
         </Card>
       </div>
 
-      <ConfirmDialog open={confirmClear} onClose={() => setConfirmClear(false)} title="Очистить переписку с Lexi?" confirmLabel="Очистить" danger onConfirm={() => (clearChat(), toast.success('Переписка очищена'))} />
+      <ConfirmDialog open={!!confirmDel} onClose={() => setConfirmDel(null)} title="Удалить этот чат?" confirmLabel="Удалить" danger onConfirm={() => confirmDel && (deleteChat(confirmDel), toast.success('Чат удалён'))} />
     </div>
   );
 }
@@ -209,7 +253,7 @@ function Message({ m, onAsk }: { m: ChatMessage; onAsk: (t: string) => void }) {
     <div className="flex gap-2">
       <LexiAvatar size={32} />
       <div className="min-w-0 max-w-[88%] space-y-2">
-        <div className="whitespace-pre-wrap rounded-2xl rounded-tl-md border bg-surface-2/70 px-4 py-2.5 text-sm leading-relaxed">{m.text}</div>
+        <Markdown text={m.text} className="rounded-2xl rounded-tl-md border bg-surface-2/70 px-4 py-2.5 text-sm leading-relaxed" />
         {m.card?.kind === 'generated' && <GeneratedCard card={m.card} onMore={() => onAsk(`Дай ещё задачу: ${TOPIC_MAP[m.card?.kind === 'generated' ? m.card.topic : '']?.name ?? ''}`)} />}
         {m.card?.kind === 'mistake' && (
           <div className="flex flex-wrap gap-2">

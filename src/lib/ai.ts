@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react';
 import { getSupabase } from './supabase';
 
 /**
- * Клиент серверного ИИ LexEdu (Vercel-функция /api/lexi → Claude).
- * Ключ ИИ хранится только на сервере (ANTHROPIC_API_KEY в Vercel), браузер его не видит.
+ * Клиент серверного ИИ LexEdu (Vercel-функция /api/lexi → Claude или Google Gemini).
+ * Ключ ИИ хранится только на сервере (ANTHROPIC_API_KEY или GEMINI_API_KEY в Vercel), браузер его не видит.
  * Если функция недоступна (локальный запуск, один HTML-файл, ключ не задан) — ИИ считается выключенным,
  * и интерфейс прямо сообщает о демо-режиме.
  */
@@ -10,6 +11,8 @@ const ENDPOINT = (import.meta.env.VITE_LEXI_API_URL as string | undefined)?.trim
 
 export interface AiStatus {
   enabled: boolean;
+  /** claude — платный Claude, gemini — бесплатный тариф Google Gemini */
+  provider?: 'claude' | 'gemini';
   model?: string;
   requiresAuth?: boolean;
   reason?: string;
@@ -23,7 +26,7 @@ export function aiStatus(): Promise<AiStatus> {
     .then(async (r) => {
       if (!r.ok) return { enabled: false, reason: `Сервер ИИ ответил ${r.status}` };
       const data = (await r.json()) as Partial<AiStatus>;
-      return { enabled: !!data.enabled, model: data.model, requiresAuth: data.requiresAuth, reason: data.reason };
+      return { enabled: !!data.enabled, provider: data.provider, model: data.model, requiresAuth: data.requiresAuth, reason: data.reason };
     })
     .catch(() => ({ enabled: false, reason: 'Серверная функция ИИ не найдена (локальный режим).' }));
   return statusPromise;
@@ -91,4 +94,17 @@ export function aiGenerateQuestions(params: { subject: string; topic: string; co
 
 export function aiAnalyze(summary: string) {
   return call<{ reply: string }>({ action: 'analyze', summary });
+}
+
+/** Хук: статус ИИ для бейджей в интерфейсе. */
+export function useAiStatus() {
+  const [st, setSt] = useState<AiStatus | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void aiStatus().then((v) => alive && setSt(v));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return st;
 }

@@ -212,7 +212,7 @@ export default function Analytics() {
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <ChartCard title="История экзаменов" desc="Результат пробных ЕНТ, % от максимума">
           {examSeries.length === 0 ? (
-            <EmptyState icon={BarChart3} lexi="exam" title="Экзаменов пока нет" description="Пройди пробный ЕНТ — здесь появится динамика." className="py-6" />
+            <EmptyState icon={BarChart3} lexi="exam" title="Экзаменов пока нет" description="Пройди пробный экзамен — здесь появится динамика." className="py-6" />
           ) : (
             <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">

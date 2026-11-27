@@ -59,7 +59,8 @@ export default function Dashboard() {
     [studyLog, activity],
   );
   const manual = daily.date === dayKey() ? daily.manual : {};
-  const daysLeft = daysBetween(new Date(), fromKey(profile.examDate));
+  const examDate = tp.trackProfile.examDate || (tp.track === 'ent' ? profile.examDate : '');
+  const daysLeft = examDate ? daysBetween(new Date(), fromKey(examDate)) : 0;
   const gap = Math.round((tp.target - tp.prediction.value) * 10) / 10;
   const goalsDone = goals.filter((g) => g.progress >= g.target || manual[g.id]).length;
   const first = history[0]?.score;
@@ -100,7 +101,7 @@ export default function Dashboard() {
               </Badge>
               {daysLeft > 0 && (
                 <Badge variant="outline">
-                  До ЕНТ {daysLeft} {plural(daysLeft, ['день', 'дня', 'дней'])}
+                  До {trackName} {daysLeft} {plural(daysLeft, ['день', 'дня', 'дней'])}
                 </Badge>
               )}
               <Badge variant="violet">
@@ -122,7 +123,7 @@ export default function Dashboard() {
                 <Zap /> Быстрая практика
               </Button>
               <Button size="lg" variant="secondary" onClick={() => navigate('/exams')}>
-                <ClipboardCheck /> Пробный ЕНТ
+                <ClipboardCheck /> Пробный {trackName}
               </Button>
               <Button size="lg" variant="ghost" onClick={() => navigate('/assistant')}>
                 <MessageCircleHeart /> Спросить Lexi
@@ -334,7 +335,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {recentExams.length === 0 ? (
-              <EmptyState icon={ClipboardCheck} lexi="exam" title="Экзаменов пока нет" description="Пройди первый пробный ЕНТ." action={<Button size="sm" onClick={() => navigate('/exams')}>Начать</Button>} className="py-6" />
+              <EmptyState icon={ClipboardCheck} lexi="exam" title="Экзаменов пока нет" description={`Пройди первый пробный ${trackName}.`} action={<Button size="sm" onClick={() => navigate('/exams')}>Начать</Button>} className="py-6" />
             ) : (
               <div className="space-y-2">
                 {recentExams.map((e) => {

@@ -14,6 +14,7 @@ import { checkAnswer, isAnswered } from '@/data/questions';
 import { SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
 import { fmtDate, fmtDateTime, fmtDuration } from '@/lib/date';
 import { cn, pct } from '@/lib/utils';
+import { Markdown } from '@/components/Markdown';
 
 type Filter = 'all' | 'wrong' | 'empty' | 'flagged';
 
@@ -162,7 +163,7 @@ export default function ExamResult() {
                   <p className="whitespace-pre-line rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">{q.question.split('\n\n|')[0]}</p>
                   <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border p-3 text-sm">{text || <span className="text-muted-foreground">Ответ не написан</span>}</div>
                   <EssayGrader q={q} text={text} existing={exam.essays?.[id]} onGraded={(g) => gradeEssay(exam.id, id, { band: g.band, feedback: g.feedback, self: g.source === 'self' })} />
-                  {exam.essays?.[id]?.feedback && <p className="whitespace-pre-line text-sm text-muted-foreground">{exam.essays[id].feedback}</p>}
+                  {exam.essays?.[id]?.feedback && <Markdown text={exam.essays[id].feedback!} className="text-sm text-muted-foreground" />}
                 </div>
               );
             })}

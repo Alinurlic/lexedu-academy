@@ -10,6 +10,7 @@ import { aiAnalyze, aiStatus, type AiStatus } from '@/lib/ai';
 import { TRACKS } from '@/data/subjects';
 import { cn } from '@/lib/utils';
 import { toast } from '@/store/toast';
+import { Markdown } from '@/components/Markdown';
 
 const TONE: Record<Insight['tone'], { icon: React.ComponentType<{ className?: string }>; cls: string }> = {
   good: { icon: CheckCircle2, cls: 'text-success border-success/30 bg-success/5' },
@@ -106,7 +107,7 @@ export function SmartAnalysis({ compact }: { compact?: boolean }) {
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-violet">
               <Sparkles className="size-4" /> Персональный план от Lexi (ИИ)
             </div>
-            <div className="whitespace-pre-line text-sm leading-relaxed">{aiPlan}</div>
+            <Markdown text={aiPlan} className="text-sm leading-relaxed" />
             <p className="mt-2 text-[11px] text-muted-foreground">Сгенерировано ИИ по твоей статистике. Сверяй важные факты с учебником.</p>
           </div>
         )}

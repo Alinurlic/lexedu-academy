@@ -9,7 +9,7 @@ import { lexiSay } from '@/lib/lexi';
 import { useSession } from '@/store/session';
 import { useAppStore, useQuestionMap } from '@/store/useAppStore';
 import { checkAnswer, formatAnswer, formatCorrect, isAnswered } from '@/data/questions';
-import { SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
+import { SUBJECT_MAP, TOPIC_MAP, TRACKS } from '@/data/subjects';
 import { fmtClock, fmtDuration } from '@/lib/date';
 import { cn, pct, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
@@ -267,7 +267,7 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
     ? { text: `Повторите тему «${weakest.name}» (${weakest.p}%): ${TOPIC_MAP[weakest.id]?.advice}.`, cta: 'Тренировать тему', to: `/practice?subject=${result.subject}&topic=${weakest.id}&count=10` }
     : wrong > 0
       ? { text: 'Отличный результат! Закрепите его: разберите ошибки этой сессии.', cta: 'Повторить ошибки', to: '/mistakes?review=1' }
-      : { text: 'Безупречно! Пора проверить себя в формате экзамена.', cta: 'Пробный ЕНТ', to: '/exams' };
+      : { text: 'Безупречно! Пора проверить себя в формате экзамена.', cta: `Пробный ${TRACKS.find((t) => t.id === (SUBJECT_MAP[result.subject]?.track ?? 'ent'))?.name ?? 'экзамен'}`, to: '/exams' };
 
   const lexiLine = useMemo(() => {
     if (answered.length >= 5 && wrong === 0) return lexiSay('perfect');

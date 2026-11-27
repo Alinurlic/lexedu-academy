@@ -134,6 +134,8 @@ export const importSchema = z.object({
   taxonomy: z.any().optional(),
   examFormat: z.any().optional(),
   assistantHistory: z.array(z.any()).optional(),
+  chatThreads: z.array(z.any()).optional(),
+  activeChatId: z.string().nullable().optional(),
   weekly: z.any().optional(),
   lastSyncAt: z.string().nullable().optional(),
   essayAttempts: z.array(z.any()).optional(),

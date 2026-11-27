@@ -8,6 +8,7 @@ import { useAllQuestions, useAppStore } from '@/store/useAppStore';
 import { fmtClock, fmtDateTime } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import type { EssayQuestion } from '@/types';
+import { Markdown } from '@/components/Markdown';
 
 type Kind = 'writing1' | 'writing2' | 'speaking';
 const LIMIT: Record<Kind, number> = { writing1: 20 * 60, writing2: 40 * 60, speaking: 2 * 60 };
@@ -163,7 +164,7 @@ export default function Studio() {
                       </Badge>
                     </summary>
                     <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-muted-foreground">{a.text}</p>
-                    {a.feedback && <p className="mt-2 whitespace-pre-line">{a.feedback}</p>}
+                    {a.feedback && <Markdown text={a.feedback} className="mt-2" />}
                   </details>
                 ))}
               </CardContent>

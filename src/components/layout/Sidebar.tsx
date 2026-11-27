@@ -3,12 +3,14 @@ import { ChevronsLeft, ChevronsRight, Target } from 'lucide-react';
 import { NAV } from './nav';
 import { Logo } from '@/components/icons';
 import { Avatar } from './Avatar';
+import { useAiStatus } from '@/lib/ai';
 import { useAppStore } from '@/store/useAppStore';
 import { useCoreStats, useTrackPrediction } from '@/hooks/useStats';
 import { TRACKS } from '@/data/subjects';
 import { cn } from '@/lib/utils';
 
 export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
+  const ai = useAiStatus();
   const profile = useAppStore((s) => s.profile);
   const updateProfile = useAppStore((s) => s.updateProfile);
   const mistakesNew = useAppStore((s) => s.mistakes.filter((m) => m.status === 'new').length);
@@ -54,7 +56,9 @@ export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?:
                     {!collapsed && item.to === '/mistakes' && mistakesNew > 0 && (
                       <span className="rounded-md bg-danger/15 px-1.5 text-[11px] font-semibold text-danger tabular">{mistakesNew}</span>
                     )}
-                    {!collapsed && item.to === '/assistant' && <span className="rounded-md bg-violet/15 px-1.5 text-[10px] font-semibold text-violet">демо</span>}
+                    {!collapsed && item.to === '/assistant' && ai && (
+                      <span className={cn('rounded-md px-1.5 text-[10px] font-semibold', ai.enabled ? 'bg-success/15 text-success' : 'bg-violet/15 text-violet')}>{ai.enabled ? 'ИИ' : 'демо'}</span>
+                    )}
                   </>
                 )}
               </NavLink>

@@ -341,6 +341,13 @@ export interface ChatMessage {
     | { kind: 'topics'; items: { topicId: string; subject: SubjectId; accuracy: number }[] };
 }
 
+export interface ChatThread {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  updatedAt: string;
+}
+
 export interface WeeklyGoalState {
   week: string; // ключ понедельника
   rewarded: string[];

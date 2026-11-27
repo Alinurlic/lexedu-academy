@@ -7,6 +7,7 @@ import type {
   Attempt,
   AttemptMode,
   ChatMessage,
+  ChatThread,
   DailyGoalState,
   ExamFormat,
   ExamResult,
@@ -84,6 +85,8 @@ export interface PersistedState {
   taxonomy: Taxonomy;
   examFormat: ExamFormat;
   assistantHistory: ChatMessage[];
+  chatThreads: ChatThread[];
+  activeChatId: string | null;
   weekly: WeeklyGoalState;
   adminPinHash: string | null;
   lastSyncAt: string | null;
@@ -143,6 +146,10 @@ interface Actions {
   // ассистент
   addChatMessages: (m: ChatMessage[]) => void;
   clearChat: () => void;
+  newChat: () => void;
+  selectChat: (id: string) => void;
+  deleteChat: (id: string) => void;
+  renameChat: (id: string, title: string) => void;
   // недельные цели
   syncWeeklyGoals: () => void;
   markSynced: () => void;
@@ -187,6 +194,8 @@ function emptyState(profile: Profile = DEFAULT_PROFILE): PersistedState {
     taxonomy: EMPTY_TAXONOMY,
     examFormat: DEFAULT_EXAM_FORMAT,
     assistantHistory: [],
+    chatThreads: [],
+    activeChatId: null,
     weekly: { week: dayKey(startOfWeek()), rewarded: [] },
     adminPinHash: null,
     lastSyncAt: null,
@@ -287,7 +296,7 @@ function evaluateAchievements(s: PersistedState): string[] {
 const PERSISTED_KEYS: (keyof PersistedState)[] = [
   'profile', 'attempts', 'sessions', 'exams', 'mistakes', 'bookmarks', 'tasks', 'daily', 'xp', 'xpEvents', 'achievements',
   'notifications', 'customQuestions', 'topicStatus', 'studyLog', 'lastStreakAward', 'lastReminderDay', 'dataMode',
-  'questionOverrides', 'deletedQuestionIds', 'taxonomy', 'examFormat', 'assistantHistory', 'weekly', 'adminPinHash', 'lastSyncAt', 'essayAttempts',
+  'questionOverrides', 'deletedQuestionIds', 'taxonomy', 'examFormat', 'assistantHistory', 'chatThreads', 'activeChatId', 'weekly', 'adminPinHash', 'lastSyncAt', 'essayAttempts',
 ];
 
 export function pickPersisted(s: PersistedState): PersistedState {
@@ -560,8 +569,43 @@ export const useAppStore = create<AppState>()(
           });
         },
         addEssayAttempt: (a) => set({ essayAttempts: [...get().essayAttempts, { ...a, id: uid('ess'), date: new Date().toISOString() }].slice(-100) }),
-        addChatMessages: (m) => set({ assistantHistory: [...get().assistantHistory, ...m].slice(-80) }),
-        clearChat: () => set({ assistantHistory: [] }),
+        addChatMessages: (m) =>
+          set((st) => {
+            let threads = st.chatThreads;
+            let activeId = st.activeChatId;
+            let active = threads.find((t) => t.id === activeId);
+            if (!active) {
+              active = { id: uid('chat'), title: 'Новый чат', messages: [], updatedAt: new Date().toISOString() };
+              threads = [active, ...threads];
+              activeId = active.id;
+            }
+            const messages = [...active.messages, ...m].slice(-120);
+            const firstUser = messages.find((x) => x.role === 'user');
+            const title = (active.title === 'Новый чат' || !active.title) && firstUser ? firstUser.text.slice(0, 48) : active.title;
+            const updated = { ...active, messages, title, updatedAt: new Date().toISOString() };
+            return { chatThreads: threads.map((t) => (t.id === activeId ? updated : t)), activeChatId: activeId };
+          }),
+        newChat: () =>
+          set((st) => {
+            const active = st.chatThreads.find((t) => t.id === st.activeChatId);
+            if (active && active.messages.length === 0) return {}; // уже на пустом чате
+            const t: ChatThread = { id: uid('chat'), title: 'Новый чат', messages: [], updatedAt: new Date().toISOString() };
+            return { chatThreads: [t, ...st.chatThreads], activeChatId: t.id };
+          }),
+        selectChat: (id) => set({ activeChatId: id }),
+        deleteChat: (id) =>
+          set((st) => {
+            const threads = st.chatThreads.filter((t) => t.id !== id);
+            const activeChatId = st.activeChatId === id ? (threads[0]?.id ?? null) : st.activeChatId;
+            return { chatThreads: threads, activeChatId };
+          }),
+        renameChat: (id, title) => set((st) => ({ chatThreads: st.chatThreads.map((t) => (t.id === id ? { ...t, title: title.slice(0, 60) || t.title } : t)) })),
+        clearChat: () =>
+          set((st) => {
+            if (!st.activeChatId) return { chatThreads: [], assistantHistory: [] };
+            const threads = st.chatThreads.filter((t) => t.id !== st.activeChatId);
+            return { chatThreads: threads, activeChatId: threads[0]?.id ?? null, assistantHistory: [] };
+          }),
         syncWeeklyGoals: () => {
           const s = get();
           const wk = dayKey(startOfWeek());
@@ -620,7 +664,16 @@ export const useAppStore = create<AppState>()(
       // v1 (ExamPilot) → v2 (LexEdu): добавляем новые поля, ничего не удаляя
       migrate: (persisted) => ({ ...emptyState(), ...(persisted as Partial<PersistedState>) }) as unknown as AppState,
       onRehydrateStorage: () => (state) => {
-        if (state) applyTaxonomy(state.taxonomy ?? EMPTY_TAXONOMY);
+        if (!state) return;
+        applyTaxonomy(state.taxonomy ?? EMPTY_TAXONOMY);
+        // Миграция старой одиночной переписки в список чатов
+        if ((!state.chatThreads || state.chatThreads.length === 0) && state.assistantHistory?.length) {
+          const first = state.assistantHistory.find((x) => x.role === 'user');
+          const thread: ChatThread = { id: uid('chat'), title: first ? first.text.slice(0, 48) : 'Переписка с Lexi', messages: state.assistantHistory, updatedAt: new Date().toISOString() };
+          state.chatThreads = [thread];
+          state.activeChatId = thread.id;
+          state.assistantHistory = [];
+        }
       },
     },
   ),
@@ -667,4 +720,12 @@ export function useAllQuestions() {
 /** Текущий формат ЕНТ из настроек администратора. */
 export function useExamFormat() {
   return useAppStore((s) => s.examFormat);
+}
+
+/** Активная переписка с Lexi и список чатов. */
+export function useChat() {
+  const threads = useAppStore((s) => s.chatThreads);
+  const activeId = useAppStore((s) => s.activeChatId);
+  const active = threads.find((t) => t.id === activeId) ?? null;
+  return { threads, activeId: active?.id ?? null, messages: active?.messages ?? [] };
 }

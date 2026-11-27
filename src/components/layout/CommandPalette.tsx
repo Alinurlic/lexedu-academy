@@ -44,7 +44,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     return [
       ...NAV.map((n) => ({ id: `nav-${n.to}`, group: 'Разделы', title: n.label, subtitle: n.description, icon: n.icon, to: n.to, keywords: norm(n.label + ' ' + n.description) })),
       { id: 'act-practice', group: 'Действия', title: 'Начать практику', subtitle: 'Быстрая сессия из 10 вопросов', icon: Zap, to: '/practice', keywords: 'начать практику тест сессия' },
-      { id: 'act-exam', group: 'Действия', title: 'Начать пробный ЕНТ', subtitle: 'Полный формат с таймером', icon: Zap, to: '/exams', keywords: 'пробный экзамен ент тест' },
+      { id: 'act-exam', group: 'Действия', title: 'Начать пробный экзамен', subtitle: 'ЕНТ, SAT или IELTS — полный формат с таймером', icon: Zap, to: '/exams', keywords: 'пробный экзамен ент сат sat ielts айлтс тест' },
       { id: 'act-review', group: 'Действия', title: 'Повторить ошибки', subtitle: 'Режим повторения', icon: Zap, to: '/mistakes?review=1', keywords: 'повторить ошибки' },
       ...SUBJECTS.map((s) => ({ id: `subj-${s.id}`, group: 'Предметы', title: s.name, subtitle: `${s.topics.length} тем`, icon: BookOpen, to: `/subjects/${s.id}`, keywords: norm(s.name) })),
       ...SUBJECTS.flatMap((s) =>
