@@ -10,10 +10,10 @@ import { seededRandom } from '@/lib/utils';
 const NOTE = 'Сгенерированное учебное задание LexEdu (шаблон с вычисленным ответом). Не является официальным заданием.';
 const NOTE_EN = 'Generated LexEdu practice item (computed answer). Not an official College Board question.';
 
-type R = () => number;
-const ri = (r: R, a: number, b: number) => a + Math.floor(r() * (b - a + 1));
-const pick = <T,>(r: R, arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
-const fmt = (n: number) => {
+export type R = () => number;
+export const ri = (r: R, a: number, b: number) => a + Math.floor(r() * (b - a + 1));
+export const pick = <T,>(r: R, arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
+export const fmt = (n: number) => {
   const v = Math.round(n * 1000) / 1000;
   return String(v).replace('.', ',').replace('-', '−');
 };
@@ -30,7 +30,7 @@ function shuffleR<T>(r: R, arr: T[]) {
 }
 
 /** 4 различных варианта: правильный + неверные (уникальные), перемешанные. */
-function options(r: R, correct: number, wrong: number[], show: (n: number) => string = fmt) {
+export function options(r: R, correct: number, wrong: number[], show: (n: number) => string = fmt) {
   const pool: number[] = [];
   for (const w of wrong) if (Number.isFinite(w) && Math.abs(w - correct) > 1e-9 && !pool.some((p) => Math.abs(p - w) < 1e-9)) pool.push(w);
   let k = 1;

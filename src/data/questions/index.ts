@@ -13,6 +13,7 @@ import { IELTS_QUESTIONS } from './ielts';
 import { GENERATED_QUESTIONS } from './generated';
 import { ENT_HISTORY_QUESTIONS } from './entHistory';
 import { ENT_READING_QUESTIONS } from './entReading';
+import { KK_LITERACY_QUESTIONS } from './kkLiteracy';
 
 /** Весь встроенный банк LexEdu Academy: оригинальные демо-вопросы + сгенерированные по шаблонам. */
 export const DEMO_QUESTIONS: Question[] = [
@@ -33,6 +34,7 @@ export const DEMO_QUESTIONS: Question[] = [
   ...ENT_HISTORY_QUESTIONS,
   ...ENT_READING_QUESTIONS,
   ...GENERATED_QUESTIONS,
+  ...KK_LITERACY_QUESTIONS,
 ];
 
 export const SOURCE_LABEL: Record<Question['source'], string> = {

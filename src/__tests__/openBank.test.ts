@@ -53,20 +53,21 @@ describe('открытый банк KazMMLU (русский и казахски�
     }
   });
 
-  it('ЕНТ на казахском: 120 заданий; на русском — только добор матграмотности и чтения (с пометкой)', () => {
+  it('ЕНТ на казахском: 120 заданий полностью на казахском, без добора на русском', () => {
     for (const pair of PROFILE_COMBOS) {
+      if (pair.includes('russian') || pair.includes('ruslit')) continue;
       const plan = planEntFull(DEFAULT_EXAM_FORMAT, [pair[0], pair[1]], all, 'kk');
       const ids = plan.modules.flatMap((m) => m.questionIds);
       expect(ids.length, pair.join('+')).toBe(120);
-      const ruOutside = ids.filter((id) => {
-        const q = qmap.get(id)!;
-        return questionLang(q) === 'ru' && !['mathlit', 'reading', 'russian', 'ruslit'].includes(q.subject);
-      });
-      expect(ruOutside, pair.join('+')).toHaveLength(0);
-      // история Казахстана — полностью на казахском
-      const hist = ids.filter((id) => qmap.get(id)!.subject === 'history');
-      expect(langsOf(hist).every((l) => l === 'kk')).toBe(true);
-      expect(plan.shortened ?? '').toMatch(/на другом языке/);
+      const notKk = ids.filter((id) => questionLang(qmap.get(id)!) !== 'kk' && !['english', 'foreign'].includes(qmap.get(id)!.subject));
+      expect(notKk, pair.join('+')).toHaveLength(0);
+      expect(plan.shortened, pair.join('+')).toBeUndefined();
+      // математическая грамотность и чтение — из казахских заданий
+      for (const subject of ['history', 'mathlit', 'reading']) {
+        const part = ids.filter((id) => qmap.get(id)!.subject === subject);
+        expect(part.length, subject).toBeGreaterThan(0);
+        expect(langsOf(part).every((l) => l === 'kk'), subject).toBe(true);
+      }
     }
     const kz = planEntFull(DEFAULT_EXAM_FORMAT, ['kazakh', 'kazlit'], all, 'kk');
     const prof = kz.modules.flatMap((m) => m.questionIds).filter((id) => ['kazakh', 'kazlit'].includes(qmap.get(id)!.subject));
@@ -76,8 +77,7 @@ describe('открытый банк KazMMLU (русский и казахски�
 
   it('forStudy: свой язык первым, добор только там, где своих мало', () => {
     const { list, fallback } = forStudy(all, 'kk');
-    expect(fallback.has('mathlit')).toBe(true);
-    expect(fallback.has('history')).toBe(false);
+    for (const subject of ['history', 'mathlit', 'reading'] as const) expect(fallback.has(subject), subject).toBe(false);
     expect(list.filter((q) => q.subject === 'history').every((q) => questionLang(q) === 'kk')).toBe(true);
     const ru = forStudy(all, 'ru');
     expect(ru.list.some((q) => q.lang === 'kk' && !['kazakh', 'kazlit'].includes(q.subject))).toBe(false);
