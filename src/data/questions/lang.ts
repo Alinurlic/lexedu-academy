@@ -1,4 +1,5 @@
 import type { Question, QuestionLang, SubjectId } from '@/types';
+import { tr } from '@/i18n';
 
 /**
  * Язык заданий. ЕНТ сдают на русском или казахском (настройка «Язык сдачи ЕНТ»),
@@ -8,8 +9,16 @@ export type EntLang = 'ru' | 'kk';
 
 const FIXED: Partial<Record<SubjectId, QuestionLang>> = { russian: 'ru', ruslit: 'ru', kazakh: 'kk', kazlit: 'kk', english: 'en' };
 
-export const LANG_LABEL: Record<QuestionLang, string> = { ru: 'на русском', kk: 'на казахском', en: 'на английском' };
-export const LANG_SHORT: Record<QuestionLang, string> = { ru: 'РУС', kk: 'ҚАЗ', en: 'ENG' };
+export const LANG_LABEL: Record<QuestionLang, string> = { get ru() {
+    return tr('на русском');
+  }, get kk() {
+    return tr('на казахском');
+  }, get en() {
+    return tr('на английском');
+  } };
+export const LANG_SHORT: Record<QuestionLang, string> = { get ru() {
+    return tr('РУС');
+  }, kk: 'ҚАЗ', en: 'ENG' };
 
 export function questionLang(q: Pick<Question, 'lang' | 'subject'>): QuestionLang {
   if (q.lang) return q.lang;

@@ -11,6 +11,8 @@ import { isSupabaseConfigured } from '@/lib/supabase';
 import { useAppStore } from '@/store/useAppStore';
 import { fmtDateTime } from '@/lib/date';
 import { toast } from '@/store/toast';
+import { tr } from '@/i18n';
+import { LangSwitch } from '@/components/LangSwitch';
 
 const emailSchema = z.string().trim().email('Введите корректный email').max(254);
 const passwordSchema = z
@@ -42,17 +44,18 @@ export default function Login({ standalone }: { standalone?: boolean }) {
 
   const wrap = (children: React.ReactNode) =>
     standalone ? (
-      <div className="grid min-h-screen place-items-center bg-background p-4">
-        <div className="w-full max-w-md space-y-6">
+      <div className="relative grid min-h-screen place-items-center bg-background p-4">
+        <LangSwitch className="absolute right-4 top-4" />
+        <div className="w-full max-w-md space-y-6 pt-10 sm:pt-0">
           <div className="flex justify-center">
-            <button onClick={() => navigate('/welcome')} aria-label="LexEdu Academy — о платформе">
+            <button onClick={() => navigate('/welcome')} aria-label={tr('LexEdu Academy — о платформе')}>
               <Logo />
             </button>
           </div>
           {children}
           <p className="text-center text-xs text-muted-foreground">
             <button onClick={() => navigate('/welcome')} className="underline-offset-2 hover:text-foreground hover:underline">
-              Что такое LexEdu Academy?
+              {tr('Что такое LexEdu Academy?')}
             </button>
           </p>
         </div>
@@ -65,50 +68,50 @@ export default function Login({ standalone }: { standalone?: boolean }) {
     return wrap(
       <Card className="p-8 text-center">
         <Lexi mood="reading" size="lg" className="mx-auto" />
-        <h2 className="mt-3 text-xl font-semibold">Локальный режим</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Аккаунты не подключены: не заданы ключи Supabase. Прогресс хранится в этом браузере и сохраняется автоматически. Перенести его можно экспортом и импортом JSON в настройках.</p>
+        <h2 className="mt-3 text-xl font-semibold">{tr('Локальный режим')}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{tr('Аккаунты не подключены: не заданы ключи Supabase. Прогресс хранится в этом браузере и сохраняется автоматически. Перенести его можно экспортом и импортом JSON в настройках.')}</p>
         <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <CloudOff className="size-4" /> Чтобы включить регистрацию, задайте VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY
+          <CloudOff className="size-4" /> {tr('Чтобы включить регистрацию, задайте VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY')}
         </div>
         <Button className="mt-6" onClick={() => navigate('/')}>
-          Продолжить
+          {tr('Продолжить')}
         </Button>
       </Card>,
     );
   }
 
-  if (!auth.ready) return wrap(<Card className="p-8 text-center text-sm text-muted-foreground">Проверяю сессию…</Card>);
+  if (!auth.ready) return wrap(<Card className="p-8 text-center text-sm text-muted-foreground">{tr('Проверяю сессию…')}</Card>);
 
   // Ссылка из письма «восстановить пароль»
   if (auth.recovery || mode === 'recovery') {
     const save = async () => {
       const p = passwordSchema.safeParse(password);
-      if (!p.success) return setErrors({ password: p.error.issues[0].message });
-      if (password !== password2) return setErrors({ password2: 'Пароли не совпадают' });
+      if (!p.success) return setErrors({ password: tr(p.error.issues[0].message) });
+      if (password !== password2) return setErrors({ password2: tr('Пароли не совпадают') });
       setBusy(true);
       const err = await auth.updatePassword(password);
       setBusy(false);
       if (err) return setErrors({ form: err });
-      toast.success('Пароль обновлён');
+      toast.success(tr('Пароль обновлён'));
       navigate('/');
     };
     return wrap(
       <Card className="p-6">
-        <h2 className="mb-4 text-lg font-semibold">Новый пароль</h2>
+        <h2 className="mb-4 text-lg font-semibold">{tr('Новый пароль')}</h2>
         <form className="space-y-3" onSubmit={(e) => (e.preventDefault(), void save())}>
           <div>
-            <Label htmlFor="np">Новый пароль</Label>
+            <Label htmlFor="np">{tr('Новый пароль')}</Label>
             <Input id="np" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <FieldError>{errors.password}</FieldError>
           </div>
           <div>
-            <Label htmlFor="np2">Повторите пароль</Label>
+            <Label htmlFor="np2">{tr('Повторите пароль')}</Label>
             <Input id="np2" type="password" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} />
             <FieldError>{errors.password2}</FieldError>
           </div>
           <FieldError>{errors.form}</FieldError>
           <Button type="submit" className="w-full" loading={busy}>
-            <KeyRound /> Сохранить пароль
+            <KeyRound /> {tr('Сохранить пароль')}
           </Button>
         </form>
       </Card>,
@@ -129,22 +132,22 @@ export default function Login({ standalone }: { standalone?: boolean }) {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Аккаунт</CardTitle>
+            <CardTitle>{tr('Аккаунт')}</CardTitle>
             <CardDescription>{auth.email}</CardDescription>
           </div>
-          <Badge variant={auth.role === 'admin' ? 'violet' : 'secondary'}>{auth.role === 'admin' ? 'Администратор' : 'Ученик'}</Badge>
+          <Badge variant={auth.role === 'admin' ? 'violet' : 'secondary'}>{auth.role === 'admin' ? tr('Администратор') : tr('Ученик')}</Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Прогресс синхронизируется автоматически. Последняя синхронизация: {lastSyncAt ? fmtDateTime(lastSyncAt) : 'ещё не выполнялась'}</p>
+          <p className="text-sm text-muted-foreground">{tr('Прогресс синхронизируется автоматически. Последняя синхронизация: {0}', lastSyncAt ? fmtDateTime(lastSyncAt) : tr('ещё не выполнялась'))}</p>
           <div className="flex flex-wrap gap-2">
-            <Button loading={busy} onClick={() => run(auth.push, 'Прогресс сохранён в облаке')}>
-              <CloudUpload /> Сохранить сейчас
+            <Button loading={busy} onClick={() => run(auth.push, tr('Прогресс сохранён в облаке'))}>
+              <CloudUpload /> {tr('Сохранить сейчас')}
             </Button>
-            <Button variant="secondary" loading={busy} onClick={() => run(auth.pull, 'Прогресс загружен из облака')}>
-              <CloudDownload /> Загрузить из облака
+            <Button variant="secondary" loading={busy} onClick={() => run(auth.pull, tr('Прогресс загружен из облака'))}>
+              <CloudDownload /> {tr('Загрузить из облака')}
             </Button>
             <Button variant="ghost" onClick={() => void auth.signOut().then(() => navigate('/login'))}>
-              <LogOut /> Выйти
+              <LogOut /> {tr('Выйти')}
             </Button>
           </div>
         </CardContent>
@@ -156,9 +159,9 @@ export default function Login({ standalone }: { standalone?: boolean }) {
     return wrap(
       <Card className="p-6 text-center">
         <MailCheck className="mx-auto size-10 text-primary" />
-        <h2 className="mt-3 text-lg font-semibold">Подтвердите email</h2>
+        <h2 className="mt-3 text-lg font-semibold">{tr('Подтвердите email')}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Мы отправили письмо на <b className="text-foreground">{email}</b>. Перейдите по ссылке в письме — после этого вы сможете войти. Проверьте папку «Спам».
+          {tr('Мы отправили письмо на')} <b className="text-foreground">{email}</b>{tr('. Перейдите по ссылке в письме — после этого вы сможете войти. Проверьте папку «Спам».')}
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <Button
@@ -169,12 +172,12 @@ export default function Login({ standalone }: { standalone?: boolean }) {
               const err = await auth.resend(email);
               setBusy(false);
               if (err) toast.error(err);
-              else toast.success('Письмо отправлено ещё раз');
+              else toast.success(tr('Письмо отправлено ещё раз'));
             }}
           >
-            <RotateCcw /> Отправить ещё раз
+            <RotateCcw /> {tr('Отправить ещё раз')}
           </Button>
-          <Button onClick={() => setMode('in')}>Я подтвердил(а) — войти</Button>
+          <Button onClick={() => setMode('in')}>{tr('Я подтвердил(а) — войти')}</Button>
         </div>
       </Card>,
     );
@@ -183,13 +186,13 @@ export default function Login({ standalone }: { standalone?: boolean }) {
   const submit = async () => {
     const e: Record<string, string> = {};
     const em = emailSchema.safeParse(email);
-    if (!em.success) e.email = em.error.issues[0].message;
+    if (!em.success) e.email = tr(em.error.issues[0].message);
     if (mode !== 'reset') {
-      const pw = mode === 'up' ? passwordSchema.safeParse(password) : z.string().min(1, 'Введите пароль').safeParse(password);
-      if (!pw.success) e.password = pw.error.issues[0].message;
-      if (mode === 'up' && password !== password2) e.password2 = 'Пароли не совпадают';
+      const pw = mode === 'up' ? passwordSchema.safeParse(password) : z.string().min(1, tr('Введите пароль')).safeParse(password);
+      if (!pw.success) e.password = tr(pw.error.issues[0].message);
+      if (mode === 'up' && password !== password2) e.password2 = tr('Пароли не совпадают');
     }
-    if (TURNSTILE_SITE_KEY && !captcha) e.form = 'Подтвердите, что вы не робот';
+    if (TURNSTILE_SITE_KEY && !captcha) e.form = tr('Подтвердите, что вы не робот');
     setErrors(e);
     if (Object.keys(e).length) return;
     setBusy(true);
@@ -199,7 +202,7 @@ export default function Login({ standalone }: { standalone?: boolean }) {
       const err = await auth.requestReset(cleanEmail, captcha ?? undefined);
       setBusy(false);
       if (err) return setErrors({ form: err });
-      toast.success('Письмо для восстановления отправлено', 'Перейдите по ссылке в письме');
+      toast.success(tr('Письмо для восстановления отправлено'), tr('Перейдите по ссылке в письме'));
       return setMode('in');
     }
     const res = mode === 'in' ? await auth.signIn(cleanEmail, password, captcha ?? undefined) : await auth.signUp(cleanEmail, password, captcha ?? undefined);
@@ -209,7 +212,7 @@ export default function Login({ standalone }: { standalone?: boolean }) {
       return setErrors({ form: res.error });
     }
     if (mode === 'up' && res.needsConfirmation) return setMode('sent');
-    toast.success(mode === 'in' ? 'Вы вошли в аккаунт' : 'Аккаунт создан');
+    toast.success(mode === 'in' ? tr('Вы вошли в аккаунт') : tr('Аккаунт создан'));
   };
 
   return wrap(
@@ -217,11 +220,11 @@ export default function Login({ standalone }: { standalone?: boolean }) {
       <div className="mb-5 flex items-center gap-3">
         <Lexi mood={mode === 'up' ? 'graduate' : 'default'} size="sm" decorative />
         <div>
-          <h2 className="text-lg font-semibold">{mode === 'in' ? 'Вход в LexEdu Academy' : mode === 'up' ? 'Регистрация' : 'Восстановление пароля'}</h2>
-          <p className="text-sm text-muted-foreground">{mode === 'up' ? 'Понадобится подтвердить email' : mode === 'reset' ? 'Пришлём ссылку для нового пароля' : 'ЕНТ · SAT · IELTS'}</p>
+          <h2 className="text-lg font-semibold">{mode === 'in' ? tr('Вход в LexEdu Academy') : mode === 'up' ? tr('Регистрация') : tr('Восстановление пароля')}</h2>
+          <p className="text-sm text-muted-foreground">{mode === 'up' ? tr('Понадобится подтвердить email') : mode === 'reset' ? tr('Пришлём ссылку для нового пароля') : tr('ЕНТ · SAT · IELTS')}</p>
         </div>
       </div>
-      {mode !== 'reset' && <Segmented value={mode as 'in' | 'up'} onChange={(m) => (setMode(m), setErrors({}))} options={[{ value: 'in', label: 'Вход' }, { value: 'up', label: 'Регистрация' }]} className="mb-4" />}
+      {mode !== 'reset' && <Segmented value={mode as 'in' | 'up'} onChange={(m) => (setMode(m), setErrors({}))} options={[{ value: 'in', label: tr('Вход') }, { value: 'up', label: tr('Регистрация') }]} className="mb-4" />}
       <form className="space-y-3" onSubmit={(e) => (e.preventDefault(), void submit())}>
         <div>
           <Label htmlFor="l-email">Email</Label>
@@ -230,15 +233,15 @@ export default function Login({ standalone }: { standalone?: boolean }) {
         </div>
         {mode !== 'reset' && (
           <div>
-            <Label htmlFor="l-pass">Пароль</Label>
+            <Label htmlFor="l-pass">{tr('Пароль')}</Label>
             <Input id="l-pass" type="password" autoComplete={mode === 'in' ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} />
-            {mode === 'up' && <p className="mt-1 text-[11px] text-muted-foreground">Минимум 8 символов, буквы и цифры</p>}
+            {mode === 'up' && <p className="mt-1 text-[11px] text-muted-foreground">{tr('Минимум 8 символов, буквы и цифры')}</p>}
             <FieldError>{errors.password}</FieldError>
           </div>
         )}
         {mode === 'up' && (
           <div>
-            <Label htmlFor="l-pass2">Повторите пароль</Label>
+            <Label htmlFor="l-pass2">{tr('Повторите пароль')}</Label>
             <Input id="l-pass2" type="password" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} />
             <FieldError>{errors.password2}</FieldError>
           </div>
@@ -256,22 +259,22 @@ export default function Login({ standalone }: { standalone?: boolean }) {
               else setMode('sent');
             }}
           >
-            <RotateCcw /> Отправить письмо подтверждения ещё раз
+            <RotateCcw /> {tr('Отправить письмо подтверждения ещё раз')}
           </Button>
         )}
         <Button type="submit" className="w-full" loading={busy}>
-          {mode === 'in' ? <LogIn /> : mode === 'up' ? <UserPlus /> : <KeyRound />} {mode === 'in' ? 'Войти' : mode === 'up' ? 'Создать аккаунт' : 'Отправить ссылку'}
+          {mode === 'in' ? <LogIn /> : mode === 'up' ? <UserPlus /> : <KeyRound />} {mode === 'in' ? tr('Войти') : mode === 'up' ? tr('Создать аккаунт') : tr('Отправить ссылку')}
         </Button>
       </form>
       <div className="mt-4 text-center text-sm">
         {mode === 'in' && (
           <button className="text-muted-foreground hover:text-foreground" onClick={() => (setMode('reset'), setErrors({}))}>
-            Забыли пароль?
+            {tr('Забыли пароль?')}
           </button>
         )}
         {mode === 'reset' && (
           <button className="text-muted-foreground hover:text-foreground" onClick={() => (setMode('in'), setErrors({}))}>
-            Вернуться ко входу
+            {tr('Вернуться ко входу')}
           </button>
         )}
       </div>

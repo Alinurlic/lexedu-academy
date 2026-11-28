@@ -19,6 +19,7 @@ import { LEVEL_RU } from '@/data/gamification';
 import { SUBJECT_MAP, TOPIC_MAP, TRACKS, subjectsOf } from '@/data/subjects';
 import { cn, fmtNum, pct, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
+import { tr } from '@/i18n';
 
 export default function Dashboard() {
   const profile = useAppStore((s) => s.profile);
@@ -80,11 +81,11 @@ export default function Dashboard() {
             : 'greeting';
   const line = useMemo(() => lexiSay(lexiCtx, new Date().getDate()), [lexiCtx]);
   const lexiText =
-    lexiCtx === 'greetingStreak' ? `Серия ${stats.streak} ${plural(stats.streak, ['день', 'дня', 'дней'])} подряд — продолжаем! Сегодня тоже можно стать лучше.` : line.text;
+    lexiCtx === 'greetingStreak' ? tr('Серия {0} {1} подряд — продолжаем! Сегодня тоже можно стать лучше.', stats.streak, plural(stats.streak, ['день', 'дня', 'дней'])) : line.text;
 
   const startQuick = () => {
     const p = quickPractice(questions, attempts, allRelevantSubjects(profile, examFormat), weak.map((w) => w.topicId));
-    if (!p) return toast.error('Нет вопросов', 'Добавьте вопросы в банк');
+    if (!p) return toast.error(tr('Нет вопросов'), tr('Добавьте вопросы в банк'));
     setPractice(p);
     navigate('/practice/session');
   };
@@ -97,22 +98,22 @@ export default function Dashboard() {
           <div className="flex flex-col gap-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge>
-                <Flame /> Серия {stats.streak} {plural(stats.streak, ['день', 'дня', 'дней'])}
+                <Flame /> {tr('Серия {0} {1}', stats.streak, plural(stats.streak, ['день', 'дня', 'дней']))}
               </Badge>
               {daysLeft > 0 && (
                 <Badge variant="outline">
-                  До {trackName} {daysLeft} {plural(daysLeft, ['день', 'дня', 'дней'])}
+                  {tr('До {0} {1} {2}', trackName, daysLeft, plural(daysLeft, ['день', 'дня', 'дней']))}
                 </Badge>
               )}
               <Badge variant="violet">
-                Ур. {stats.level.current.index} · {stats.level.current.name}
+                {tr('Ур. {0} · {1}', stats.level.current.index, stats.level.current.name)}
               </Badge>
             </div>
             <div>
               <h2 className="text-2xl font-semibold tracking-tight sm:text-[30px]">
                 {greeting()}, {profile.name}.
               </h2>
-              <p className="mt-1.5 max-w-xl text-muted-foreground">Продолжай подготовку. Каждый тест приближает тебя к цели.</p>
+              <p className="mt-1.5 max-w-xl text-muted-foreground">{tr('Продолжай подготовку. Каждый тест приближает тебя к цели.')}</p>
             </div>
             <div className="max-w-xl rounded-2xl border bg-card/80 p-3.5 text-sm backdrop-blur sm:hidden">
               <span className="font-semibold text-violet">Lexi: </span>
@@ -120,13 +121,13 @@ export default function Dashboard() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button size="lg" onClick={startQuick}>
-                <Zap /> Быстрая практика
+                <Zap /> {tr('Быстрая практика')}
               </Button>
               <Button size="lg" variant="secondary" onClick={() => navigate('/exams')}>
-                <ClipboardCheck /> Пробный {trackName}
+                <ClipboardCheck /> {tr('Пробный {0}', trackName)}
               </Button>
               <Button size="lg" variant="ghost" onClick={() => navigate('/assistant')}>
-                <MessageCircleHeart /> Спросить Lexi
+                <MessageCircleHeart /> {tr('Спросить Lexi')}
               </Button>
             </div>
           </div>
@@ -140,46 +141,46 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="grid grid-cols-2 border-t md:grid-cols-4">
-          <HeroStat label={`Цель ${trackName}`} value={String(tp.target)} hint={`шкала ${tp.prediction.min}–${tp.prediction.max}`} />
+          <HeroStat label={tr('Цель {0}', trackName)} value={String(tp.target)} hint={tr('шкала {0}–{1}', tp.prediction.min, tp.prediction.max)} />
           <div className="flex items-center gap-3 border-l p-4 md:p-5">
             <RingProgress value={(tp.prediction.value - tp.prediction.min) / Math.max(1, tp.target - tp.prediction.min)} size={56} stroke={6}>
               <span className="text-sm font-semibold tabular">{tp.prediction.value}</span>
             </RingProgress>
             <div>
               <div className="text-xs text-muted-foreground">{tp.prediction.label}</div>
-              <div className={cn('text-sm font-medium', gap <= 0 ? 'text-success' : '')}>{gap <= 0 ? 'Цель достигнута' : tp.track === 'ielts' ? `ещё +${gap} band` : `ещё +${gap} ${plural(gap, ['балл', 'балла', 'баллов'])}`}</div>
-              {!tp.prediction.enoughData && <div className="text-[11px] text-warning">мало данных</div>}
+              <div className={cn('text-sm font-medium', gap <= 0 ? 'text-success' : '')}>{gap <= 0 ? tr('Цель достигнута') : tp.track === 'ielts' ? tr('ещё +{0} band', gap) : tr('ещё +{0} {1}', gap, plural(gap, ['балл', 'балла', 'баллов']))}</div>
+              {!tp.prediction.enoughData && <div className="text-[11px] text-warning">{tr('мало данных')}</div>}
             </div>
           </div>
           <div className="border-t p-4 md:border-l md:border-t-0 md:p-5">
-            <div className="text-xs text-muted-foreground">Готовность по темам</div>
+            <div className="text-xs text-muted-foreground">{tr('Готовность по темам')}</div>
             <div className="mt-1 flex items-center gap-2">
               <span className="text-xl font-semibold tabular">{prep.progress}%</span>
               <span className="text-xs text-muted-foreground">
-                {prep.completed}/{prep.total} тем освоено
+                {tr('{0}/{1} тем освоено', prep.completed, prep.total)}
               </span>
             </div>
             <Progress value={prep.progress} className="mt-2" indicatorClassName="brand-gradient" />
           </div>
-          <HeroStat label="Время занятий" value={`${Math.round(stats.totalHours)} ч`} hint={`сегодня ${fmtDuration(stats.todaySec)}`} className="border-l border-t md:border-t-0" />
+          <HeroStat label={tr('Время занятий')} value={tr('{0} ч', Math.round(stats.totalHours))} hint={tr('сегодня {0}', fmtDuration(stats.todaySec))} className="border-l border-t md:border-t-0" />
         </div>
       </Card>
 
       {/* Метрики */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard icon={Target} label="Решено вопросов" value={fmtNum(stats.totalQuestions)} hint={`сегодня ${stats.todayQuestions}`} />
-        <StatCard icon={Gauge} label="Верных ответов" value={`${Math.round(stats.accuracy * 100)}%`} hint={`${fmtNum(stats.correct)} верно`} />
-        <StatCard icon={Flame} label="Серия" value={`${stats.streak} дн.`} hint={`рекорд ${stats.longestStreak}`} />
-        <StatCard icon={Clock} label="За неделю" value={`${stats.weekHours.toFixed(1)} ч`} hint={`план выполнен на ${stats.weeklyCompletion}%`} />
-        <StatCard icon={Sparkles} label="Опыт" value={fmtNum(stats.xp)} hint="XP" />
+        <StatCard icon={Target} label={tr('Решено вопросов')} value={fmtNum(stats.totalQuestions)} hint={tr('сегодня {0}', stats.todayQuestions)} />
+        <StatCard icon={Gauge} label={tr('Верных ответов')} value={`${Math.round(stats.accuracy * 100)}%`} hint={tr('{0} верно', fmtNum(stats.correct))} />
+        <StatCard icon={Flame} label={tr('Серия')} value={tr('{0} дн.', stats.streak)} hint={tr('рекорд {0}', stats.longestStreak)} />
+        <StatCard icon={Clock} label={tr('За неделю')} value={tr('{0} ч', stats.weekHours.toFixed(1))} hint={tr('план выполнен на {0}%', stats.weeklyCompletion)} />
+        <StatCard icon={Sparkles} label={tr('Опыт')} value={fmtNum(stats.xp)} hint="XP" />
         <Link to="/achievements" className="block">
           <Card className="card-hover h-full p-4">
-            <div className="text-xs text-muted-foreground">Уровень</div>
+            <div className="text-xs text-muted-foreground">{tr('Уровень')}</div>
             <div className="mt-2 text-xl font-semibold">
               {stats.level.current.index} · {stats.level.current.name}
             </div>
             <Progress value={stats.level.progress * 100} className="mt-2" indicatorClassName="brand-gradient" />
-            <div className="mt-1.5 text-[11px] text-muted-foreground">{stats.level.next ? `${fmtNum(stats.level.toNext)} XP до «${LEVEL_RU[stats.level.next.name]}»` : 'Максимальный уровень'}</div>
+            <div className="mt-1.5 text-[11px] text-muted-foreground">{stats.level.next ? tr('{0} XP до «{1}»', fmtNum(stats.level.toNext), LEVEL_RU[stats.level.next.name]) : tr('Максимальный уровень')}</div>
           </Card>
         </Link>
       </div>
@@ -188,33 +189,32 @@ export default function Dashboard() {
         <Card className="xl:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle>{tp.prediction.label}: динамика</CardTitle>
+              <CardTitle>{tr('{0}: динамика', tp.prediction.label)}</CardTitle>
               <CardDescription>
-                По точности ответов в каждом блоке экзамена{' '}
+                {tr('По точности ответов в каждом блоке экзамена')}{' '}
                 {delta !== 0 && (
                   <span className={delta > 0 ? 'text-success' : 'text-danger'}>
-                    · {delta > 0 ? '+' : ''}
-                    {delta} за период
+                    {tr('· {0}{1} за период', delta > 0 ? '+' : '', delta)}
                   </span>
                 )}
               </CardDescription>
             </div>
-            <Segmented size="sm" value={range} onChange={setRange} options={[{ value: '12', label: '3 мес' }, { value: '26', label: '6 мес' }]} />
+            <Segmented size="sm" value={range} onChange={setRange} options={[{ value: '12', label: tr('3 мес') }, { value: '26', label: tr('6 мес') }]} />
           </CardHeader>
           <CardContent>
-            <Legend items={[{ label: 'Прогноз', color: CHART.c1 }, { label: `Цель (${tp.target})`, color: CHART.c3, dashed: true }]} />
+            <Legend items={[{ label: tr('Прогноз'), color: CHART.c1 }, { label: tr('Цель ({0})', tp.target), color: CHART.c3, dashed: true }]} />
             <div className="mt-3 h-72">
               {history.length < 2 ? (
-                <EmptyState icon={TrendingUp} lexi="reading" title="Пока мало данных" description="Реши ещё несколько вопросов, чтобы увидеть динамику прогноза." className="h-full py-4" />
+                <EmptyState icon={TrendingUp} lexi="reading" title={tr('Пока мало данных')} description={tr('Реши ещё несколько вопросов, чтобы увидеть динамику прогноза.')} className="h-full py-4" />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={history} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="label" {...axisProps} minTickGap={24} />
                     <YAxis domain={tp.track === 'ielts' ? [0, 9] : [Math.max(tp.prediction.min, Math.min(...history.map((h) => h.score)) - (tp.track === 'sat' ? 100 : 10)), tp.prediction.max]} {...axisProps} />
-                    <Tooltip content={<ChartTooltip fmt={(v) => `${v} баллов`} />} />
+                    <Tooltip content={<ChartTooltip fmt={(v) => tr('{0} баллов', v)} />} />
                     <ReferenceLine y={tp.target} stroke={CHART.c3} strokeDasharray="5 4" strokeWidth={1.5} />
-                    <Line type="monotone" dataKey="score" name="Прогноз" stroke={CHART.c1} strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: 'hsl(var(--card))' }} />
+                    <Line type="monotone" dataKey="score" name={tr('Прогноз')} stroke={CHART.c1} strokeWidth={2} dot={false} activeDot={{ r: 5, strokeWidth: 2, stroke: 'hsl(var(--card))' }} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -225,9 +225,9 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Задачи на сегодня</CardTitle>
+              <CardTitle>{tr('Задачи на сегодня')}</CardTitle>
               <CardDescription>
-                Выполнено {goalsDone} из {goals.length} · +20 XP за каждую
+                {tr('Выполнено {0} из {1} · +20 XP за каждую', goalsDone, goals.length)}
               </CardDescription>
             </div>
           </CardHeader>
@@ -241,7 +241,7 @@ export default function Dashboard() {
                   <button
                     onClick={() => !auto && toggleDailyGoal(g.id)}
                     disabled={auto}
-                    aria-label={done ? 'Отметить как невыполненное' : 'Отметить как выполненное'}
+                    aria-label={done ? tr('Отметить как невыполненное') : tr('Отметить как выполненное')}
                     aria-pressed={done}
                     className={cn('grid size-6 shrink-0 place-items-center rounded-md border-2 transition-colors', done ? 'border-success bg-success text-white' : 'border-input hover:border-primary')}
                   >
@@ -257,7 +257,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   {!done && (
-                    <Button size="icon-sm" variant="ghost" onClick={() => navigate(g.link)} aria-label={`Перейти: ${g.title}`}>
+                    <Button size="icon-sm" variant="ghost" onClick={() => navigate(g.link)} aria-label={tr('Перейти: {0}', g.title)}>
                       <ArrowRight />
                     </Button>
                   )}
@@ -272,8 +272,8 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Активность за неделю</CardTitle>
-              <CardDescription>Минуты занятий по дням · цель {profile.dailyGoalMin} мин</CardDescription>
+              <CardTitle>{tr('Активность за неделю')}</CardTitle>
+              <CardDescription>{tr('Минуты занятий по дням · цель {0} мин', profile.dailyGoalMin)}</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -283,14 +283,14 @@ export default function Dashboard() {
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="label" {...axisProps} />
                   <YAxis {...axisProps} />
-                  <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => `${v} мин`} />} />
+                  <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => tr('{0} мин', v)} />} />
                   <ReferenceLine y={profile.dailyGoalMin} stroke={CHART.c3} strokeDasharray="4 4" />
-                  <Bar dataKey="minutes" name="Занятия" fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="minutes" name={tr('Занятия')} fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={28} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              {last7.reduce((s, d) => s + d.questions, 0)} вопросов за 7 дней · пунктир — дневная цель
+              {tr('{0} вопросов за 7 дней · пунктир — дневная цель', last7.reduce((s, d) => s + d.questions, 0))}
             </p>
           </CardContent>
         </Card>
@@ -298,8 +298,8 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Цели недели</CardTitle>
-              <CardDescription>XP начисляется автоматически при выполнении</CardDescription>
+              <CardTitle>{tr('Цели недели')}</CardTitle>
+              <CardDescription>{tr('XP начисляется автоматически при выполнении')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -326,16 +326,16 @@ export default function Dashboard() {
         <Card className="lg:col-span-2 xl:col-span-1">
           <CardHeader>
             <div>
-              <CardTitle>Последние экзамены</CardTitle>
-              <CardDescription>Результаты пробных ЕНТ</CardDescription>
+              <CardTitle>{tr('Последние экзамены')}</CardTitle>
+              <CardDescription>{tr('Результаты пробных ЕНТ')}</CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate('/exams')}>
-              Все <ArrowRight />
+              {tr('Все')} <ArrowRight />
             </Button>
           </CardHeader>
           <CardContent>
             {recentExams.length === 0 ? (
-              <EmptyState icon={ClipboardCheck} lexi="exam" title="Экзаменов пока нет" description={`Пройди первый пробный ${trackName}.`} action={<Button size="sm" onClick={() => navigate('/exams')}>Начать</Button>} className="py-6" />
+              <EmptyState icon={ClipboardCheck} lexi="exam" title={tr('Экзаменов пока нет')} description={tr('Пройди первый пробный {0}.', trackName)} action={<Button size="sm" onClick={() => navigate('/exams')}>{tr('Начать')}</Button>} className="py-6" />
             ) : (
               <div className="space-y-2">
                 {recentExams.map((e) => {
@@ -364,11 +364,11 @@ export default function Dashboard() {
         <Card className="xl:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle>{tp.track === 'ent' ? 'Успеваемость по предметам ЕНТ' : `Разделы ${trackName}`}</CardTitle>
-              <CardDescription>Блоки экзамена и выбранные профильные предметы</CardDescription>
+              <CardTitle>{tp.track === 'ent' ? tr('Успеваемость по предметам ЕНТ') : tr('Разделы {0}', trackName)}</CardTitle>
+              <CardDescription>{tr('Блоки экзамена и выбранные профильные предметы')}</CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate('/subjects')}>
-              Все предметы <ArrowRight />
+              {tr('Все предметы')} <ArrowRight />
             </Button>
           </CardHeader>
           <CardContent className="p-0 pb-2">
@@ -378,13 +378,12 @@ export default function Dashboard() {
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{SUBJECT_MAP[b.subject].name}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {fmtNum(b.summary.attempts)} отв. · {b.summary.level}
-                    {b.summary.weakest && ` · слабая: ${b.summary.weakest.name}`}
+                    {tr('{0} отв. · {1}{2}', fmtNum(b.summary.attempts), b.summary.level, b.summary.weakest && tr(' · слабая: {0}', b.summary.weakest.name))}
                   </div>
                 </div>
                 <div className="col-span-3 row-start-2 sm:col-span-1 sm:row-start-auto">
                   <div className="mb-1 flex justify-between text-[11px] text-muted-foreground">
-                    <span>Темы</span>
+                    <span>{tr('Темы')}</span>
                     <span className="tabular">{b.summary.progress}%</span>
                   </div>
                   <Progress value={b.summary.progress} className="h-1.5" />
@@ -400,13 +399,13 @@ export default function Dashboard() {
         <Card className="border-violet/30">
           <CardHeader>
             <div>
-              <CardTitle>Рекомендуемые темы</CardTitle>
-              <CardDescription>Рассчитано по твоим ответам</CardDescription>
+              <CardTitle>{tr('Рекомендуемые темы')}</CardTitle>
+              <CardDescription>{tr('Рассчитано по твоим ответам')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {weak.length === 0 ? (
-              <LexiBubble mood="default" text="Слабых тем не найдено — во всех темах с достаточной статистикой точность выше 70%. Отлично!" tone="success" />
+              <LexiBubble mood="default" text={tr('Слабых тем не найдено — во всех темах с достаточной статистикой точность выше 70%. Отлично!')} tone="success" />
             ) : (
               <>
                 <LexiBubble mood="confident" text={lexiSay('recommend', 1).text} tone="violet" size="xs" />
@@ -419,7 +418,7 @@ export default function Dashboard() {
                     </div>
                     <p className="mt-1.5 line-clamp-2 text-xs text-muted-foreground">{TOPIC_MAP[w.topicId]?.advice}</p>
                     <Button size="sm" variant="link" className="mt-1" onClick={() => navigate(`/practice?subject=${w.subject}&topic=${w.topicId}&count=${Math.min(20, w.recommendedCount)}`)}>
-                      Решить {Math.min(20, w.recommendedCount)} вопросов <ArrowRight />
+                      {tr('Решить {0} вопросов', Math.min(20, w.recommendedCount))} <ArrowRight />
                     </Button>
                   </div>
                 ))}
@@ -434,11 +433,11 @@ export default function Dashboard() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Активность за 12 месяцев</CardTitle>
-            <CardDescription>Интенсивность цвета — время занятий в день</CardDescription>
+            <CardTitle>{tr('Активность за 12 месяцев')}</CardTitle>
+            <CardDescription>{tr('Интенсивность цвета — время занятий в день')}</CardDescription>
           </div>
           <Badge variant="outline">
-            <TrendingUp /> {stats.activeDays} дн. с занятиями
+            <TrendingUp /> {tr('{0} дн. с занятиями', stats.activeDays)}
           </Badge>
         </CardHeader>
         <CardContent>

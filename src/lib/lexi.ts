@@ -11,6 +11,7 @@ import lexi_exam from '@/assets/lexi/lexi-exam.webp';
 import lexi_reading from '@/assets/lexi/lexi-reading.webp';
 import lexi_motivating from '@/assets/lexi/lexi-motivating.webp';
 import lexiAvatar from '@/assets/lexi/lexi-avatar.webp';
+import { tr } from '@/i18n';
 
 /**
  * Lexi — официальный маскот LexEdu.
@@ -47,18 +48,42 @@ export const LEXI_SRC: Record<LexiMood, string> = {
 };
 
 export const LEXI_ALT: Record<LexiMood, string> = {
-  default: 'Lexi показывает большой палец: «Отлично!»',
-  graduate: 'Lexi в шапке выпускника: «Ты молодец!»',
-  thinking: 'Lexi в очках размышляет: «Давай разберёмся!»',
-  celebrating: 'Lexi радуется: «Ура!»',
-  studying: 'Lexi за ноутбуком: «Отличная работа!»',
-  resting: 'Lexi отдыхает: «Отдыхай и возвращайся!»',
-  perfect: 'Lexi с табличкой 100%: «Идеально!»',
-  sad: 'Lexi грустит: «Не сдавайся...»',
-  confident: 'Lexi в солнцезащитных очках: «Ты можешь больше!»',
-  exam: 'Lexi с рюкзаком: «Удачи на ЕНТ!»',
-  reading: 'Lexi с книгой: «Учись с LexEdu!»',
-  motivating: 'Решительный Lexi: «Вперёд к цели!»',
+  get default() {
+    return tr('Lexi показывает большой палец: «Отлично!»');
+  },
+  get graduate() {
+    return tr('Lexi в шапке выпускника: «Ты молодец!»');
+  },
+  get thinking() {
+    return tr('Lexi в очках размышляет: «Давай разберёмся!»');
+  },
+  get celebrating() {
+    return tr('Lexi радуется: «Ура!»');
+  },
+  get studying() {
+    return tr('Lexi за ноутбуком: «Отличная работа!»');
+  },
+  get resting() {
+    return tr('Lexi отдыхает: «Отдыхай и возвращайся!»');
+  },
+  get perfect() {
+    return tr('Lexi с табличкой 100%: «Идеально!»');
+  },
+  get sad() {
+    return tr('Lexi грустит: «Не сдавайся...»');
+  },
+  get confident() {
+    return tr('Lexi в солнцезащитных очках: «Ты можешь больше!»');
+  },
+  get exam() {
+    return tr('Lexi с рюкзаком: «Удачи на ЕНТ!»');
+  },
+  get reading() {
+    return tr('Lexi с книгой: «Учись с LexEdu!»');
+  },
+  get motivating() {
+    return tr('Решительный Lexi: «Вперёд к цели!»');
+  },
 };
 
 export const LEXI_AVATAR = lexiAvatar;
@@ -92,48 +117,106 @@ interface Line {
 
 const LINES: Record<LexiContext, Line[]> = {
   correct: [
-    { mood: 'default', text: 'Отлично! Так держать!' },
-    { mood: 'celebrating', text: 'Верно! Ты уверенно идёшь вперёд.' },
-    { mood: 'studying', text: 'Правильно! Хорошая работа.' },
+    { mood: 'default', get text() {
+    return tr('Отлично! Так держать!');
+  } },
+    { mood: 'celebrating', get text() {
+    return tr('Верно! Ты уверенно идёшь вперёд.');
+  } },
+    { mood: 'studying', get text() {
+    return tr('Правильно! Хорошая работа.');
+  } },
   ],
   incorrect: [
-    { mood: 'thinking', text: 'Не переживай. Давай разберём решение!' },
-    { mood: 'sad', text: 'Ошибки — часть пути. Посмотри объяснение, и в следующий раз получится.' },
-    { mood: 'thinking', text: 'Почти! Разберём, где была ловушка.' },
+    { mood: 'thinking', get text() {
+    return tr('Не переживай. Давай разберём решение!');
+  } },
+    { mood: 'sad', get text() {
+    return tr('Ошибки — часть пути. Посмотри объяснение, и в следующий раз получится.');
+  } },
+    { mood: 'thinking', get text() {
+    return tr('Почти! Разберём, где была ловушка.');
+  } },
   ],
   sessionGreat: [
-    { mood: 'celebrating', text: 'Ура! Отличный результат. Ещё один шаг к цели!' },
-    { mood: 'graduate', text: 'Ты молодец! Ещё один шаг к цели.' },
+    { mood: 'celebrating', get text() {
+    return tr('Ура! Отличный результат. Ещё один шаг к цели!');
+  } },
+    { mood: 'graduate', get text() {
+    return tr('Ты молодец! Ещё один шаг к цели.');
+  } },
   ],
   sessionGood: [
-    { mood: 'studying', text: 'Хорошая работа! Разберём ошибки — и будет ещё лучше.' },
-    { mood: 'confident', text: 'Неплохо! Ты можешь больше — давай закрепим слабые темы.' },
+    { mood: 'studying', get text() {
+    return tr('Хорошая работа! Разберём ошибки — и будет ещё лучше.');
+  } },
+    { mood: 'confident', get text() {
+    return tr('Неплохо! Ты можешь больше — давай закрепим слабые темы.');
+  } },
   ],
   sessionWeak: [
-    { mood: 'sad', text: 'Не сдавайся! Разбери ошибки, и следующая попытка будет лучше.' },
-    { mood: 'thinking', text: 'Давай разберёмся вместе: начнём с самой трудной темы.' },
+    { mood: 'sad', get text() {
+    return tr('Не сдавайся! Разбери ошибки, и следующая попытка будет лучше.');
+  } },
+    { mood: 'thinking', get text() {
+    return tr('Давай разберёмся вместе: начнём с самой трудной темы.');
+  } },
   ],
-  perfect: [{ mood: 'perfect', text: 'Идеально! Ни одной ошибки.' }],
-  examGreat: [{ mood: 'celebrating', text: 'Ура! Это сильный результат. Так держать на настоящем ЕНТ!' }],
-  examGood: [{ mood: 'confident', text: 'Хороший экзамен! Ты можешь больше — подтяни слабые блоки.' }],
-  examWeak: [{ mood: 'thinking', text: 'Давай разберёмся, где потерялись баллы, и составим план.' }],
-  dailyDone: [{ mood: 'graduate', text: 'Все задачи на сегодня выполнены. Ты молодец!' }],
-  taskDone: [{ mood: 'graduate', text: 'Ты молодец! Ещё один шаг к цели.' }],
-  reviewDone: [{ mood: 'studying', text: 'Отличная работа над ошибками!' }],
-  empty: [{ mood: 'reading', text: 'Здесь пока пусто. Начнём?' }],
+  perfect: [{ mood: 'perfect', get text() {
+    return tr('Идеально! Ни одной ошибки.');
+  } }],
+  examGreat: [{ mood: 'celebrating', get text() {
+    return tr('Ура! Это сильный результат. Так держать на настоящем ЕНТ!');
+  } }],
+  examGood: [{ mood: 'confident', get text() {
+    return tr('Хороший экзамен! Ты можешь больше — подтяни слабые блоки.');
+  } }],
+  examWeak: [{ mood: 'thinking', get text() {
+    return tr('Давай разберёмся, где потерялись баллы, и составим план.');
+  } }],
+  dailyDone: [{ mood: 'graduate', get text() {
+    return tr('Все задачи на сегодня выполнены. Ты молодец!');
+  } }],
+  taskDone: [{ mood: 'graduate', get text() {
+    return tr('Ты молодец! Ещё один шаг к цели.');
+  } }],
+  reviewDone: [{ mood: 'studying', get text() {
+    return tr('Отличная работа над ошибками!');
+  } }],
+  empty: [{ mood: 'reading', get text() {
+    return tr('Здесь пока пусто. Начнём?');
+  } }],
   recommend: [
-    { mood: 'confident', text: 'Ты можешь больше! Вот что стоит подтянуть.' },
-    { mood: 'thinking', text: 'Я посмотрел твои ответы. Давай разберёмся с этим.' },
+    { mood: 'confident', get text() {
+    return tr('Ты можешь больше! Вот что стоит подтянуть.');
+  } },
+    { mood: 'thinking', get text() {
+    return tr('Я посмотрел твои ответы. Давай разберёмся с этим.');
+  } },
   ],
-  greetingMorning: [{ mood: 'reading', text: 'Сегодня тоже можно стать лучше!' }],
+  greetingMorning: [{ mood: 'reading', get text() {
+    return tr('Сегодня тоже можно стать лучше!');
+  } }],
   greeting: [
-    { mood: 'motivating', text: 'Вперёд к своей цели!' },
-    { mood: 'reading', text: 'Сегодня тоже можно стать лучше!' },
+    { mood: 'motivating', get text() {
+    return tr('Вперёд к своей цели!');
+  } },
+    { mood: 'reading', get text() {
+    return tr('Сегодня тоже можно стать лучше!');
+  } },
   ],
-  greetingStreak: [{ mood: 'default', text: 'Серия продолжается — отлично!' }],
-  examSoon: [{ mood: 'exam', text: 'ЕНТ уже близко. Удачи — ты готовишься правильно!' }],
-  rest: [{ mood: 'resting', text: 'Ты сегодня много занимался. Отдыхай и возвращайся!' }],
-  achievement: [{ mood: 'celebrating', text: 'Ура! Новое достижение!' }],
+  greetingStreak: [{ mood: 'default', get text() {
+    return tr('Серия продолжается — отлично!');
+  } }],
+  examSoon: [{ mood: 'exam', get text() {
+    return tr('ЕНТ уже близко. Удачи — ты готовишься правильно!');
+  } }],
+  rest: [{ mood: 'resting', get text() {
+    return tr('Ты сегодня много занимался. Отдыхай и возвращайся!');
+  } }],
+  achievement: [{ mood: 'celebrating', get text() {
+    return tr('Ура! Новое достижение!');
+  } }],
 };
 
 const lastIndex: Partial<Record<LexiContext, number>> = {};

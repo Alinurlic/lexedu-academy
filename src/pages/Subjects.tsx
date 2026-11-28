@@ -8,6 +8,7 @@ import { subjectSummary } from '@/lib/analytics';
 import { useMemo } from 'react';
 import { fmtNum } from '@/lib/utils';
 import { useTrack } from '@/hooks/useTrack';
+import { tr } from '@/i18n';
 
 export default function Subjects() {
   const attempts = useAppStore((s) => s.attempts);
@@ -17,10 +18,10 @@ export default function Subjects() {
   const questions = useStudyQuestions().list;
   const summaries = useMemo(() => SUBJECTS.map((s) => ({ s, sum: subjectSummary(s.id, attempts, questions, topicStatus), n: questions.filter((q) => q.subject === s.id).length })), [attempts, questions, topicStatus]);
 
-  const groups = track !== 'ent' ? [{ title: track === 'sat' ? 'Разделы Digital SAT' : 'Секции IELTS Academic', items: summaries.filter((x) => x.s.track === track) }] : [
-    { title: 'Обязательные предметы', items: summaries.filter((x) => x.s.kind === 'mandatory') },
-    { title: 'Мои профильные предметы', items: summaries.filter((x) => profile.profileSubjects.includes(x.s.id)) },
-    { title: 'Другие профильные предметы', items: summaries.filter((x) => x.s.kind === 'profile' && x.s.track === 'ent' && !profile.profileSubjects.includes(x.s.id)) },
+  const groups = track !== 'ent' ? [{ title: track === 'sat' ? tr('Разделы Digital SAT') : tr('Секции IELTS Academic'), items: summaries.filter((x) => x.s.track === track) }] : [
+    { title: tr('Обязательные предметы'), items: summaries.filter((x) => x.s.kind === 'mandatory') },
+    { title: tr('Мои профильные предметы'), items: summaries.filter((x) => profile.profileSubjects.includes(x.s.id)) },
+    { title: tr('Другие профильные предметы'), items: summaries.filter((x) => x.s.kind === 'profile' && x.s.track === 'ent' && !profile.profileSubjects.includes(x.s.id)) },
   ];
 
   return (
@@ -40,13 +41,13 @@ export default function Subjects() {
                         <ArrowRight className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
                       <div className="mt-0.5 text-xs text-muted-foreground">
-                        {s.topics.length} тем · {n} вопросов в банке
+                        {tr('{0} тем · {1} вопросов в банке', s.topics.length, n)}
                       </div>
                     </div>
                   </div>
                   <div className="mt-5">
                     <div className="mb-1.5 flex justify-between text-xs">
-                      <span className="text-muted-foreground">Прогресс тем</span>
+                      <span className="text-muted-foreground">{tr('Прогресс тем')}</span>
                       <span className="font-medium tabular">{sum.progress}%</span>
                     </div>
                     <Progress value={sum.progress} />
@@ -54,22 +55,22 @@ export default function Subjects() {
                   <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-lg bg-secondary/60 p-2">
                       <div className="text-sm font-semibold tabular">{sum.attempts ? `${Math.round(sum.accuracy * 100)}%` : '—'}</div>
-                      <div className="text-[10px] text-muted-foreground">точность</div>
+                      <div className="text-[10px] text-muted-foreground">{tr('точность')}</div>
                     </div>
                     <div className="rounded-lg bg-secondary/60 p-2">
                       <div className="text-sm font-semibold tabular">{fmtNum(sum.attempts)}</div>
-                      <div className="text-[10px] text-muted-foreground">ответов</div>
+                      <div className="text-[10px] text-muted-foreground">{tr('ответов')}</div>
                     </div>
                     <div className="rounded-lg bg-secondary/60 p-2">
                       <div className="text-sm font-semibold tabular">
                         {sum.completedTopics}/{s.topics.length}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">тем освоено</div>
+                      <div className="text-[10px] text-muted-foreground">{tr('тем освоено')}</div>
                     </div>
                   </div>
                   {sum.weakest && (
                     <div className="mt-3">
-                      <Badge variant="danger">Слабая тема: {sum.weakest.name}</Badge>
+                      <Badge variant="danger">{tr('Слабая тема: {0}', sum.weakest.name)}</Badge>
                     </div>
                   )}
                 </Card>

@@ -18,6 +18,7 @@ import { fmtDate } from '@/lib/date';
 import { toast } from '@/store/toast';
 import type { ChatMessage } from '@/types';
 import { MathText } from '@/components/MathText';
+import { tr } from '@/i18n';
 
 const SUGGESTIONS = ['Объясни мои ошибки', 'Что мне повторить?', 'Реши x^2 - 5x + 6 = 0', 'Дай задачу на проценты', 'Объясни теорему Виета', 'Законы Ньютона'];
 
@@ -59,7 +60,7 @@ export default function Assistant() {
       const reply = await askLexi(text, { profile, attempts, mistakes, qmap, summary: studentSummary(profile, attempts, examFormat, mistakes.filter((m) => m.status !== 'mastered').length) }, history);
       addMessages(reply);
     } catch {
-      toast.error('Lexi не смог ответить', 'Попробуйте ещё раз');
+      toast.error(tr('Lexi не смог ответить'), tr('Попробуйте ещё раз'));
     } finally {
       setBusy(false);
     }
@@ -77,7 +78,7 @@ export default function Assistant() {
       const [reply] = await Promise.all([askLexi(t, { profile, attempts, mistakes, qmap, summary: studentSummary(profile, attempts, examFormat, mistakes.filter((m) => m.status !== 'mastered').length) }, [...history, userMsg]), new Promise((r) => setTimeout(r, 350))]);
       addMessages(reply);
     } catch {
-      toast.error('Lexi не смог ответить', 'Попробуйте ещё раз');
+      toast.error(tr('Lexi не смог ответить'), tr('Попробуйте ещё раз'));
     } finally {
       setBusy(false);
       inputRef.current?.focus();
@@ -89,13 +90,13 @@ export default function Assistant() {
       {/* Список чатов */}
       <Card className="hidden h-[calc(100vh-9.5rem)] min-h-[520px] flex-col overflow-hidden lg:flex">
         <div className="flex items-center justify-between gap-2 border-b p-3">
-          <span className="text-sm font-semibold">Чаты</span>
+          <span className="text-sm font-semibold">{tr('Чаты')}</span>
           <Button size="sm" onClick={() => newChat()}>
-            <MessageSquarePlus /> Новый
+            <MessageSquarePlus /> {tr('Новый')}
           </Button>
         </div>
         <div className="scrollbar-thin flex-1 space-y-1 overflow-y-auto p-2">
-          {threads.length === 0 && <p className="p-3 text-xs text-muted-foreground">Пока нет чатов. Задай вопрос — начнётся новый.</p>}
+          {threads.length === 0 && <p className="p-3 text-xs text-muted-foreground">{tr('Пока нет чатов. Задай вопрос — начнётся новый.')}</p>}
           {threads.map((t) => (
             <button
               key={t.id}
@@ -103,8 +104,8 @@ export default function Assistant() {
               className={cn('group flex w-full items-center gap-2 rounded-xl border p-2.5 text-left transition-colors', t.id === activeId ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-secondary/60')}
             >
               <div className="min-w-0 flex-1">
-                <div className="line-clamp-1 text-sm">{t.title}</div>
-                <div className="text-[11px] text-muted-foreground">{fmtDate(t.updatedAt, { day: 'numeric', month: 'short' })} · {t.messages.length} сообщ.</div>
+                <div className="line-clamp-1 text-sm">{tr(t.title)}</div>
+                <div className="text-[11px] text-muted-foreground">{tr('{0} · {1} сообщ.', fmtDate(t.updatedAt, { day: 'numeric', month: 'short' }), t.messages.length)}</div>
               </div>
               <span
                 role="button"
@@ -112,7 +113,7 @@ export default function Assistant() {
                 onClick={(e) => (e.stopPropagation(), setConfirmDel(t.id))}
                 onKeyDown={(e) => e.key === 'Enter' && (e.stopPropagation(), setConfirmDel(t.id))}
                 className="shrink-0 rounded-md p-1 text-muted-foreground opacity-0 transition hover:text-danger group-hover:opacity-100"
-                aria-label="Удалить чат"
+                aria-label={tr('Удалить чат')}
               >
                 <Trash2 className="size-4" />
               </span>
@@ -125,24 +126,24 @@ export default function Assistant() {
         <div className="flex items-center gap-3 border-b p-4">
           <LexiAvatar size={40} />
           <div className="min-w-0 flex-1">
-            <div className="font-semibold">Lexi-помощник</div>
-            <div className="hidden truncate text-xs text-muted-foreground sm:block">Объясняет, решает по шагам, придумывает задачи</div>
+            <div className="font-semibold">{tr('Lexi-помощник')}</div>
+            <div className="hidden truncate text-xs text-muted-foreground sm:block">{tr('Объясняет, решает по шагам, придумывает задачи')}</div>
           </div>
-          <Button variant="ghost" size="icon-sm" className="lg:hidden" onClick={() => newChat()} aria-label="Новый чат">
+          <Button variant="ghost" size="icon-sm" className="lg:hidden" onClick={() => newChat()} aria-label={tr('Новый чат')}>
             <MessageSquarePlus />
           </Button>
           {!status ? (
-            <Badge variant="outline">Проверяю ИИ…</Badge>
+            <Badge variant="outline">{tr('Проверяю ИИ…')}</Badge>
           ) : aiOn ? (
             <Badge variant="success" title={status.model}>
-              <Sparkles /> ИИ подключён
+              <Sparkles /> {tr('ИИ подключён')}
             </Badge>
           ) : (
             <Badge variant="warning" title={status.reason}>
-              <Info /> Демо-режим · без ИИ
+              <Info /> {tr('Демо-режим · без ИИ')}
             </Badge>
           )}
-          <Button variant="ghost" size="icon-sm" onClick={() => activeId && setConfirmDel(activeId)} disabled={!activeId} aria-label="Удалить этот чат">
+          <Button variant="ghost" size="icon-sm" onClick={() => activeId && setConfirmDel(activeId)} disabled={!activeId} aria-label={tr('Удалить этот чат')}>
             <Trash2 />
           </Button>
         </div>
@@ -151,11 +152,11 @@ export default function Assistant() {
           {history.length === 0 && (
             <div className="flex flex-col items-center py-6 text-center">
               <Lexi mood="reading" size="lg" />
-              <h2 className="mt-3 text-lg font-semibold">Привет, {profile.name}! Я Lexi.</h2>
+              <h2 className="mt-3 text-lg font-semibold">{tr('Привет, {0}! Я Lexi.', profile.name)}</h2>
               <p className="mt-1 max-w-md text-sm text-muted-foreground">
                 {aiOn
-                  ? 'Задай вопрос по любому предмету ЕНТ, SAT или IELTS — объясню по шагам. Я вижу твою статистику и подскажу, что повторить.'
-                  : 'Сейчас я работаю в демо-режиме: ИИ не подключён. Я решаю линейные и квадратные уравнения по шагам, объясняю твои ошибки, придумываю задачи с проверкой и подсказываю, что повторить.'}
+                  ? tr('Задай вопрос по любому предмету ЕНТ, SAT или IELTS — объясню по шагам. Я вижу твою статистику и подскажу, что повторить.')
+                  : tr('Сейчас я работаю в демо-режиме: ИИ не подключён. Я решаю линейные и квадратные уравнения по шагам, объясняю твои ошибки, придумываю задачи с проверкой и подсказываю, что повторить.')}
               </p>
             </div>
           )}
@@ -164,7 +165,7 @@ export default function Assistant() {
           ))}
           {busy && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <LexiAvatar size={28} /> <Loader2 className="size-4 animate-spin" /> Lexi думает…
+              <LexiAvatar size={28} /> <Loader2 className="size-4 animate-spin" /> {tr('Lexi думает…')}
             </div>
           )}
           {showMistakePicker && !busy && (
@@ -173,7 +174,7 @@ export default function Assistant() {
                 const q = qmap.get(m.questionId);
                 if (!q) return null;
                 return (
-                  <button key={m.id} onClick={() => send(`Объясни ошибку #${m.id}`)} className="flex items-center gap-2 rounded-xl border bg-card p-2.5 text-left text-sm transition-colors hover:border-primary/50">
+                  <button key={m.id} onClick={() => send(tr('Объясни ошибку #{0}', m.id))} className="flex items-center gap-2 rounded-xl border bg-card p-2.5 text-left text-sm transition-colors hover:border-primary/50">
                     <SubjectIcon subject={q.subject} className="size-7" />
                     <span className="line-clamp-1 flex-1"><MathText text={q.question} noSub={q.subject === 'informatics'} /></span>
                     <ArrowRight className="size-4 text-muted-foreground" />
@@ -188,8 +189,8 @@ export default function Assistant() {
         <div className="border-t p-3">
           <div className="scrollbar-thin mb-2 flex gap-1.5 overflow-x-auto pb-1">
             {SUGGESTIONS.map((s) => (
-              <button key={s} onClick={() => send(s)} disabled={busy} className="shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground disabled:opacity-50">
-                {s}
+              <button key={s} onClick={() => send(tr(s))} disabled={busy} className="shrink-0 rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground disabled:opacity-50">
+                {tr(s)}
               </button>
             ))}
           </div>
@@ -200,8 +201,8 @@ export default function Assistant() {
             }}
             className="flex gap-2"
           >
-            <Input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Спроси Lexi… например «реши 3x - 7 = 11»" maxLength={1000} aria-label="Сообщение для Lexi" />
-            <Button type="submit" disabled={!input.trim() || busy} aria-label="Отправить">
+            <Input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} placeholder={tr('Спроси Lexi… например «реши 3x - 7 = 11»')} maxLength={1000} aria-label={tr('Сообщение для Lexi')} />
+            <Button type="submit" disabled={!input.trim() || busy} aria-label={tr('Отправить')}>
               <Send />
             </Button>
           </form>
@@ -211,9 +212,9 @@ export default function Assistant() {
       <div className="space-y-4 lg:col-span-2 xl:col-span-1">
         <Card className="p-4">
           <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="size-4 text-violet" /> Новая задача
+            <Sparkles className="size-4 text-violet" /> {tr('Новая задача')}
           </div>
-          <p className="mb-3 text-xs text-muted-foreground">Числа подбираются случайно, ответ и решение вычисляются.</p>
+          <p className="mb-3 text-xs text-muted-foreground">{tr('Числа подбираются случайно, ответ и решение вычисляются.')}</p>
           <div className="flex flex-wrap gap-1.5">
             {GENERATOR_LIST.map((g) => (
               <button
@@ -221,8 +222,8 @@ export default function Assistant() {
                 onClick={() => {
                   const task = generateTask({ kind: g.id });
                   addMessages([
-                    { id: uid('chat'), role: 'user', text: `Дай задачу: ${g.label.toLowerCase()}`, date: new Date().toISOString() },
-                    { id: uid('chat'), role: 'lexi', text: `Задача по теме «${TOPIC_MAP[task.topic]?.name ?? g.label}». Реши и проверь ответ.`, date: new Date().toISOString(), card: { kind: 'generated', question: task.question, answer: task.answer, unit: task.unit, steps: task.steps, subject: task.subject, topic: task.topic } },
+                    { id: uid('chat'), role: 'user', text: tr('Дай задачу: {0}', g.label.toLowerCase()), date: new Date().toISOString() },
+                    { id: uid('chat'), role: 'lexi', text: tr('Задача по теме «{0}». Реши и проверь ответ.', TOPIC_MAP[task.topic]?.name ?? g.label), date: new Date().toISOString(), card: { kind: 'generated', question: task.question, answer: task.answer, unit: task.unit, steps: task.steps, subject: task.subject, topic: task.topic } },
                   ]);
                 }}
                 className="rounded-lg border px-2.5 py-1.5 text-xs transition-colors hover:border-primary/50"
@@ -234,22 +235,22 @@ export default function Assistant() {
         </Card>
         <Card className="p-4 text-xs leading-relaxed text-muted-foreground">
           <div className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Info className="size-4" /> Как работает Lexi
+            <Info className="size-4" /> {tr('Как работает Lexi')}
           </div>
           {aiOn ? (
             <p>
-              Ответы даёт модель ИИ {status?.provider === 'gemini' ? 'Google Gemini' : 'Claude'} через сервер LexEdu. Генератор задач и разбор ошибок по кнопке работают локально. ИИ может ошибаться — сверяй важные факты по учебнику.
+              {tr('Ответы даёт модель ИИ {0} через сервер LexEdu. Генератор задач и разбор ошибок по кнопке работают локально. ИИ может ошибаться — сверяй важные факты по учебнику.', status?.provider === 'gemini' ? 'Google Gemini' : 'Claude')}
             </p>
           ) : (
             <>
-              <p>ИИ не подключён{status?.reason ? `: ${status.reason}` : ''}. Ответы строятся локально: решатель уравнений, генератор задач, база объяснений и анализ твоих ответов.</p>
-              <p className="mt-2">Когда администратор добавит ключ ИИ на сервер (GEMINI_API_KEY или ANTHROPIC_API_KEY), здесь заработает полноценный ИИ.</p>
+              <p>{tr('ИИ не подключён{0}. Ответы строятся локально: решатель уравнений, генератор задач, база объяснений и анализ твоих ответов.', status?.reason ? `: ${status.reason}` : '')}</p>
+              <p className="mt-2">{tr('Когда администратор добавит ключ ИИ на сервер (GEMINI_API_KEY или ANTHROPIC_API_KEY), здесь заработает полноценный ИИ.')}</p>
             </>
           )}
         </Card>
       </div>
 
-      <ConfirmDialog open={!!confirmDel} onClose={() => setConfirmDel(null)} title="Удалить этот чат?" confirmLabel="Удалить" danger onConfirm={() => confirmDel && (deleteChat(confirmDel), toast.success('Чат удалён'))} />
+      <ConfirmDialog open={!!confirmDel} onClose={() => setConfirmDel(null)} title={tr('Удалить этот чат?')} confirmLabel={tr('Удалить')} danger onConfirm={() => confirmDel && (deleteChat(confirmDel), toast.success(tr('Чат удалён')))} />
     </div>
   );
 }
@@ -269,16 +270,16 @@ function Message({ m, onAsk, onRetry, busy }: { m: ChatMessage; onAsk: (t: strin
       <LexiAvatar size={32} />
       <div className="min-w-0 max-w-[88%] space-y-2">
         <Markdown text={m.text} className="rounded-2xl rounded-tl-md border bg-surface-2/70 px-4 py-2.5 text-sm leading-relaxed" />
-        {m.card?.kind === 'generated' && <GeneratedCard card={m.card} onMore={() => onAsk(`Дай ещё задачу: ${TOPIC_MAP[m.card?.kind === 'generated' ? m.card.topic : '']?.name ?? ''}`)} />}
+        {m.card?.kind === 'generated' && <GeneratedCard card={m.card} onMore={() => onAsk(tr('Дай ещё задачу: {0}', TOPIC_MAP[m.card?.kind === 'generated' ? m.card.topic : '']?.name ?? ''))} />}
         {m.card?.kind === 'retry' && onRetry && (
           <Button size="sm" variant="secondary" disabled={busy} onClick={() => m.card?.kind === 'retry' && onRetry(m.card.text)}>
-            <RotateCcw /> Повторить
+            <RotateCcw /> {tr('Повторить')}
           </Button>
         )}
         {m.card?.kind === 'mistake' && (
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="secondary" onClick={() => navigate('/mistakes?review=1')}>
-              <RotateCcw /> Повторить ошибки
+              <RotateCcw /> {tr('Повторить ошибки')}
             </Button>
           </div>
         )}
@@ -316,7 +317,7 @@ function GeneratedCard({ card, onMore }: { card: Extract<NonNullable<ChatMessage
     <div className="rounded-2xl border bg-card p-4">
       <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
         <SubjectIcon subject={card.subject} className="size-6" /> {SUBJECT_MAP[card.subject].name} · {TOPIC_MAP[card.topic]?.name}
-        <Badge variant="violet">Сгенерировано</Badge>
+        <Badge variant="violet">{tr('Сгенерировано')}</Badge>
       </div>
       <p className="font-medium"><MathText text={card.question} /></p>
       <form
@@ -326,19 +327,19 @@ function GeneratedCard({ card, onMore }: { card: Extract<NonNullable<ChatMessage
           check();
         }}
       >
-        <Input value={value} onChange={(e) => (setValue(e.target.value), setResult(null))} inputMode="decimal" placeholder="Ответ" className="h-9 w-32" aria-label="Ваш ответ" />
+        <Input value={value} onChange={(e) => (setValue(e.target.value), setResult(null))} inputMode="decimal" placeholder={tr('Ответ')} className="h-9 w-32" aria-label={tr('Ваш ответ')} />
         {card.unit && <span className="text-sm text-muted-foreground">{card.unit}</span>}
         <Button size="sm" type="submit" disabled={parseNumeric(value) === null}>
-          Проверить
+          {tr('Проверить')}
         </Button>
         <Button size="sm" type="button" variant="ghost" onClick={() => setShowSteps((v) => !v)}>
-          <Eye /> {showSteps ? 'Скрыть решение' : 'Решение'}
+          <Eye /> {showSteps ? tr('Скрыть решение') : tr('Решение')}
         </Button>
       </form>
       {result !== null && (
         <p className={cn('mt-2 flex items-center gap-1.5 text-sm font-medium', result ? 'text-success' : 'text-danger')}>
           {result ? <Check className="size-4" /> : <X className="size-4" />}
-          {result ? 'Отлично! Так держать!' : 'Не совсем. Посмотри решение — давай разберёмся!'}
+          {result ? tr('Отлично! Так держать!') : tr('Не совсем. Посмотри решение — давай разберёмся!')}
         </p>
       )}
       {showSteps && (
@@ -347,14 +348,13 @@ function GeneratedCard({ card, onMore }: { card: Extract<NonNullable<ChatMessage
             <li key={i}>{s}</li>
           ))}
           <li className="font-semibold">
-            Ответ: {String(card.answer).replace('.', ',')}
-            {card.unit ? ` ${card.unit}` : ''}
+            {tr('Ответ: {0}{1}', String(card.answer).replace('.', ','), card.unit ? ` ${card.unit}` : '')}
           </li>
         </ol>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" variant="secondary" onClick={onMore}>
-          <Sparkles /> Ещё задачу
+          <Sparkles /> {tr('Ещё задачу')}
         </Button>
         <Button
           size="sm"
@@ -373,15 +373,15 @@ function GeneratedCard({ card, onMore }: { card: Extract<NonNullable<ChatMessage
               unit: card.unit,
               explanation: card.steps.join(' '),
               source: 'user',
-              sourceNote: 'Сгенерировано Lexi (демо-режим) и сохранено пользователем.',
+              sourceNote: tr('Сгенерировано Lexi (демо-режим) и сохранено пользователем.'),
               verification: 'unverified',
               tags: ['lexi'],
             });
             setSaved(true);
-            toast.success('Задача сохранена', 'Она появилась в банке вопросов как «Мой вопрос»');
+            toast.success(tr('Задача сохранена'), tr('Она появилась в банке вопросов как «Мой вопрос»'));
           }}
         >
-          <Plus /> {saved ? 'Сохранено' : 'В мои вопросы'}
+          <Plus /> {saved ? tr('Сохранено') : tr('В мои вопросы')}
         </Button>
       </div>
     </div>

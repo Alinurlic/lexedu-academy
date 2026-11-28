@@ -1,6 +1,7 @@
 import type { Attempt, Difficulty, ExamFormat, ExamResult, Profile, Question, SubjectId, TopicStatus, Track } from '@/types';
 import { DEFAULT_EXAM_FORMAT, SUBJECTS, SUBJECT_MAP, TOPIC_MAP, formatMax } from '@/data/subjects';
-import { addDays, dayKey, fromKey, startOfWeek } from './date';
+import { addDays, dayKey, fmtDate, fromKey, startOfWeek } from './date';
+import { tr } from '@/i18n';
 
 const DIFF_W: Record<Difficulty, number> = { easy: 0.8, medium: 1, hard: 1.25 };
 const PRIOR_ACC = 0.35;
@@ -74,7 +75,7 @@ export function scoreHistory(attempts: Attempt[], profile: Profile, weeks = 26, 
     while (idx < sorted.length && new Date(sorted[idx].date) < end) acc.push(sorted[idx++]);
     if (end < firstDate) continue;
     if (acc.length < 10) continue;
-    const label = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(addDays(end, -1));
+    const label = fmtDate(addDays(end, -1));
     res.push({ date: dayKey(addDays(end, -1)), label, score: predictScore(acc, profile, format).total });
   }
   return res;
@@ -161,7 +162,7 @@ export function subjectSummary(subject: SubjectId, attempts: Attempt[], question
   const attempted = topics.filter((t) => t.attempts >= 3);
   const weakest = attempted.length ? [...attempted].sort((a, b) => a.accuracy - b.accuracy)[0] : null;
   const hardShare = recent.length ? recent.filter((a) => a.difficulty === 'hard').length / recent.length : 0;
-  const level = accuracy >= 0.8 && hardShare > 0.2 ? 'Продвинутый' : accuracy >= 0.6 ? 'Средний' : sAtt.length ? 'Базовый' : '—';
+  const level = accuracy >= 0.8 && hardShare > 0.2 ? tr('Продвинутый') : accuracy >= 0.6 ? tr('Средний') : sAtt.length ? tr('Базовый') : '—';
   return { subject, attempts: sAtt.length, accuracy, progress, topics, weakest, level, completedTopics: topics.filter((t) => t.status === 'completed').length };
 }
 
@@ -200,7 +201,7 @@ export function weakTopics(attempts: Attempt[], profile: Profile, limit = 5, for
       accuracy,
       attempts: arr.length,
       recommendedCount,
-      message: `Самая слабая тема ${genitive} — «${tp.name}». Точность ${Math.round(accuracy * 100)}%. Рекомендуем ${tp.advice} и решить ${recommendedCount} практических вопросов.`,
+      message: tr('Самая слабая тема {0} — «{1}». Точность {2}%. Рекомендуем {3} и решить {4} практических вопросов.', genitive, tp.name, Math.round(accuracy * 100), tp.advice, recommendedCount),
     });
   }
   return list.sort((a, b) => a.accuracy - b.accuracy).slice(0, limit);
@@ -208,28 +209,28 @@ export function weakTopics(attempts: Attempt[], profile: Profile, limit = 5, for
 
 export function subjectGenitive(id: SubjectId) {
   const g: Record<SubjectId, string> = {
-    math: 'по математике',
-    physics: 'по физике',
-    geography: 'по географии',
-    biology: 'по биологии',
-    chemistry: 'по химии',
-    history: 'по истории Казахстана',
-    reading: 'по грамотности чтения',
-    mathlit: 'по математической грамотности',
-    english: 'по английскому языку',
-    informatics: 'по информатике',
-    worldhistory: 'по всемирной истории',
-    law: 'по основам права',
-    russian: 'по русскому языку',
-    ruslit: 'по русской литературе',
-    kazakh: 'по казахскому языку',
-    kazlit: 'по казахской литературе',
-    'sat-rw': 'в SAT Reading & Writing',
-    'sat-math': 'в SAT Math',
-    'ielts-listening': 'в IELTS Listening',
-    'ielts-reading': 'в IELTS Reading',
-    'ielts-writing': 'в IELTS Writing',
-    'ielts-speaking': 'в IELTS Speaking',
+    math: tr('по математике'),
+    physics: tr('по физике'),
+    geography: tr('по географии'),
+    biology: tr('по биологии'),
+    chemistry: tr('по химии'),
+    history: tr('по истории Казахстана'),
+    reading: tr('по грамотности чтения'),
+    mathlit: tr('по математической грамотности'),
+    english: tr('по английскому языку'),
+    informatics: tr('по информатике'),
+    worldhistory: tr('по всемирной истории'),
+    law: tr('по основам права'),
+    russian: tr('по русскому языку'),
+    ruslit: tr('по русской литературе'),
+    kazakh: tr('по казахскому языку'),
+    kazlit: tr('по казахской литературе'),
+    'sat-rw': tr('в SAT Reading & Writing'),
+    'sat-math': tr('в SAT Math'),
+    'ielts-listening': tr('в IELTS Listening'),
+    'ielts-reading': tr('в IELTS Reading'),
+    'ielts-writing': tr('в IELTS Writing'),
+    'ielts-speaking': tr('в IELTS Speaking'),
   };
   return g[id];
 }
@@ -259,7 +260,7 @@ export function weeklySeries(attempts: Attempt[], studyLog: Record<string, numbe
       }
     }
     out.push({
-      label: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(ws),
+      label: fmtDate(ws),
       hours: Math.round((sec / 3600) * 10) / 10,
       questions: q,
       accuracy: q ? Math.round((c / q) * 100) : null,
@@ -310,7 +311,7 @@ export function predictTrack(track: Track, attempts: Attempt[], profile: Profile
       const v = Math.round((200 + 600 * weightedAccuracy(arr)) / 10) * 10;
       return { label: s === 'sat-rw' ? 'Reading & Writing' : 'Math', value: v, max: 800, subject: s, n: arr.length };
     });
-    return { track, label: 'Прогноз SAT', value: parts.reduce((a, p) => a + p.value, 0), max: 1600, min: 400, parts, enoughData: parts.every((p) => p.n >= 10), unit: '' };
+    return { track, label: tr('Прогноз SAT'), value: parts.reduce((a, p) => a + p.value, 0), max: 1600, min: 400, parts, enoughData: parts.every((p) => p.n >= 10), unit: '' };
   }
   if (track === 'ielts') {
     const lr = (['ielts-listening', 'ielts-reading'] as SubjectId[]).map((s) => {
@@ -325,10 +326,10 @@ export function predictTrack(track: Track, attempts: Attempt[], profile: Profile
     const known = parts.map((p) => p.value).filter((v): v is number => v !== null);
     const avg = known.length ? known.reduce((a, b) => a + b, 0) / known.length : 0;
     const overall = Math.round(avg * 2) / 2;
-    return { track, label: 'Прогноз IELTS', value: overall, max: 9, min: 0, parts, enoughData: lr.every((p) => p.n >= 10) && known.length >= 3, unit: 'band' };
+    return { track, label: tr('Прогноз IELTS'), value: overall, max: 9, min: 0, parts, enoughData: lr.every((p) => p.n >= 10) && known.length >= 3, unit: 'band' };
   }
   const p = predictScore(attempts, profile, format);
-  return { track, label: 'Прогноз ЕНТ', value: p.total, max: p.max, min: 0, parts: p.blocks.map((b) => ({ label: b.label, value: Math.round(b.points * 10) / 10, max: b.maxPoints, subject: b.subject })), enoughData: p.enoughData, unit: 'баллов' };
+  return { track, label: tr('Прогноз ЕНТ'), value: p.total, max: p.max, min: 0, parts: p.blocks.map((b) => ({ label: b.label, value: Math.round(b.points * 10) / 10, max: b.maxPoints, subject: b.subject })), enoughData: p.enoughData, unit: tr('баллов') };
 }
 
 /** Динамика прогноза по неделям для любого трека. */
@@ -343,7 +344,7 @@ export function trackHistory(track: Track, attempts: Attempt[], profile: Profile
     const end = addDays(thisWeek, -7 * w + 7);
     while (idx < sorted.length && new Date(sorted[idx].date) < end) acc.push(sorted[idx++]);
     if (acc.length < 10) continue;
-    const label = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(addDays(end, -1));
+    const label = fmtDate(addDays(end, -1));
     res.push({ date: dayKey(addDays(end, -1)), label, score: predictTrack(track, acc, profile, format).value });
   }
   return res;

@@ -5,6 +5,7 @@ import { SUBJECTS, SUBJECT_MAP } from '@/data/subjects';
 import { questionWithPolicySchema } from '@/lib/schemas';
 import { cn, uid } from '@/lib/utils';
 import type { Difficulty, Question, QuestionSource, QuestionType, SubjectId, VerificationStatus } from '@/types';
+import { tr } from '@/i18n';
 
 interface Form {
   id: string;
@@ -120,15 +121,15 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
 
   const save = () => {
     const e: Record<string, string> = {};
-    if (f.question.trim().length < 5) e.question = 'Минимум 5 символов';
-    if (f.explanation.trim().length < 3) e.explanation = 'Добавьте объяснение';
-    if (hasOptions && f.options.filter((o) => o.trim()).length !== f.options.length) e.options = 'Заполните все варианты или удалите пустые';
-    if (hasOptions && f.options.length < 2) e.options = 'Нужно минимум 2 варианта';
-    if (f.type === 'multiple' && f.correctMulti.length === 0) e.options = 'Отметьте хотя бы один верный вариант';
-    if (f.type === 'numeric' && !Number.isFinite(Number(f.correctNumber.replace(',', '.').replace('−', '-'))) ) e.correctNumber = 'Введите число';
-    if (f.type === 'numeric' && f.correctNumber.trim() === '') e.correctNumber = 'Введите число';
+    if (f.question.trim().length < 5) e.question = tr('Минимум 5 символов');
+    if (f.explanation.trim().length < 3) e.explanation = tr('Добавьте объяснение');
+    if (hasOptions && f.options.filter((o) => o.trim()).length !== f.options.length) e.options = tr('Заполните все варианты или удалите пустые');
+    if (hasOptions && f.options.length < 2) e.options = tr('Нужно минимум 2 варианта');
+    if (f.type === 'multiple' && f.correctMulti.length === 0) e.options = tr('Отметьте хотя бы один верный вариант');
+    if (f.type === 'numeric' && !Number.isFinite(Number(f.correctNumber.replace(',', '.').replace('−', '-'))) ) e.correctNumber = tr('Введите число');
+    if (f.type === 'numeric' && f.correctNumber.trim() === '') e.correctNumber = tr('Введите число');
     const res = questionWithPolicySchema.safeParse(fromForm(f));
-    if (!res.success) for (const i of res.error.issues) e[String(i.path[0])] ??= i.message;
+    if (!res.success) for (const i of res.error.issues) e[String(i.path[0])] ??= tr(i.message);
     setErrors(e);
     if (Object.keys(e).length || !res.success) return;
     // поля, которых нет в форме (язык, аудио, группа заданий), сохраняем из исходного вопроса
@@ -143,21 +144,21 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
       open={open}
       onClose={onClose}
       size="lg"
-      title={question ? 'Редактирование вопроса' : 'Новый вопрос'}
-      description={question ? `ID: ${question.id}` : 'Вопрос будет добавлен в банк'}
+      title={question ? tr('Редактирование вопроса') : tr('Новый вопрос')}
+      description={question ? `ID: ${question.id}` : tr('Вопрос будет добавлен в банк')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Отмена
+            {tr('Отмена')}
           </Button>
-          <Button onClick={save}>Сохранить</Button>
+          <Button onClick={save}>{tr('Сохранить')}</Button>
         </>
       }
     >
       <div className="space-y-4 pb-2">
         <div className="grid gap-3 sm:grid-cols-3">
           <div>
-            <Label htmlFor="qe-subj">Предмет</Label>
+            <Label htmlFor="qe-subj">{tr('Предмет')}</Label>
             <Select id="qe-subj" value={f.subject} onChange={(e) => setF((x) => ({ ...x, subject: e.target.value as SubjectId, topic: SUBJECT_MAP[e.target.value as SubjectId].topics[0]?.id ?? '' }))}>
               {SUBJECTS.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -167,7 +168,7 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
             </Select>
           </div>
           <div>
-            <Label htmlFor="qe-topic">Тема</Label>
+            <Label htmlFor="qe-topic">{tr('Тема')}</Label>
             <Select id="qe-topic" value={f.topic} onChange={(e) => set('topic', e.target.value)}>
               {subj.topics.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -177,31 +178,31 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
             </Select>
           </div>
           <div>
-            <Label htmlFor="qe-diff">Сложность</Label>
+            <Label htmlFor="qe-diff">{tr('Сложность')}</Label>
             <Select id="qe-diff" value={f.difficulty} onChange={(e) => set('difficulty', e.target.value as Difficulty)}>
-              <option value="easy">Лёгкий</option>
-              <option value="medium">Средний</option>
-              <option value="hard">Сложный</option>
+              <option value="easy">{tr('Лёгкий')}</option>
+              <option value="medium">{tr('Средний')}</option>
+              <option value="hard">{tr('Сложный')}</option>
             </Select>
           </div>
         </div>
         <div>
-          <Label>Тип ответа</Label>
-          <Segmented size="sm" value={f.type} onChange={(v) => set('type', v)} options={[{ value: 'single', label: 'Один' }, { value: 'multiple', label: 'Несколько' }, { value: 'numeric', label: 'Число' }, { value: 'boolean', label: 'Верно/Неверно' }]} />
+          <Label>{tr('Тип ответа')}</Label>
+          <Segmented size="sm" value={f.type} onChange={(v) => set('type', v)} options={[{ value: 'single', label: tr('Один') }, { value: 'multiple', label: tr('Несколько') }, { value: 'numeric', label: tr('Число') }, { value: 'boolean', label: tr('Верно/Неверно') }]} />
         </div>
         <div>
-          <Label htmlFor="qe-q">Текст вопроса</Label>
+          <Label htmlFor="qe-q">{tr('Текст вопроса')}</Label>
           <Textarea id="qe-q" value={f.question} onChange={(e) => set('question', e.target.value)} />
           <FieldError>{errors.question}</FieldError>
         </div>
         <div>
-          <Label htmlFor="qe-p">Текст для чтения (необязательно)</Label>
+          <Label htmlFor="qe-p">{tr('Текст для чтения (необязательно)')}</Label>
           <Textarea id="qe-p" value={f.passage} onChange={(e) => set('passage', e.target.value)} className="min-h-[60px]" />
         </div>
 
         {hasOptions && (
           <div>
-            <Label>Варианты (отметьте верные)</Label>
+            <Label>{tr('Варианты (отметьте верные)')}</Label>
             <div className="space-y-2">
               {f.options.map((o, i) => {
                 const on = f.type === 'single' ? f.correctSingle === i : f.correctMulti.includes(i);
@@ -210,7 +211,7 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
                     <button
                       type="button"
                       aria-pressed={on}
-                      aria-label={`Вариант ${i + 1} верный`}
+                      aria-label={tr('Вариант {0} верный', i + 1)}
                       onClick={() => (f.type === 'single' ? set('correctSingle', i) : set('correctMulti', on ? f.correctMulti.filter((x) => x !== i) : [...f.correctMulti, i]))}
                       className={cn('grid size-8 shrink-0 place-items-center border-2 text-xs font-semibold', f.type === 'single' ? 'rounded-full' : 'rounded-md', on ? 'border-success bg-success text-white' : 'border-input text-muted-foreground')}
                     >
@@ -220,7 +221,7 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label="Удалить вариант"
+                      aria-label={tr('Удалить вариант')}
                       disabled={f.options.length <= 2}
                       onClick={() =>
                         setF((x) => ({
@@ -238,7 +239,7 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
               })}
               {f.options.length < 6 && (
                 <Button size="sm" variant="ghost" onClick={() => set('options', [...f.options, ''])}>
-                  <Plus /> Вариант
+                  <Plus /> {tr('Вариант')}
                 </Button>
               )}
             </div>
@@ -248,57 +249,57 @@ export function QuestionEditor({ open, question, defaultSubject = 'math', onClos
         {f.type === 'numeric' && (
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <Label htmlFor="qe-num">Правильный ответ</Label>
+              <Label htmlFor="qe-num">{tr('Правильный ответ')}</Label>
               <Input id="qe-num" inputMode="decimal" value={f.correctNumber} onChange={(e) => set('correctNumber', e.target.value)} />
               <FieldError>{errors.correctNumber}</FieldError>
             </div>
             <div>
-              <Label htmlFor="qe-unit">Единица измерения</Label>
-              <Input id="qe-unit" value={f.unit} onChange={(e) => set('unit', e.target.value)} placeholder="м/с, %, тг…" />
+              <Label htmlFor="qe-unit">{tr('Единица измерения')}</Label>
+              <Input id="qe-unit" value={f.unit} onChange={(e) => set('unit', e.target.value)} placeholder={tr('м/с, %, тг…')} />
             </div>
           </div>
         )}
         {f.type === 'boolean' && (
           <div>
-            <Label>Правильный ответ</Label>
-            <Segmented value={f.correctBool ? 't' : 'f'} onChange={(v) => set('correctBool', v === 't')} options={[{ value: 't', label: 'Верно' }, { value: 'f', label: 'Неверно' }]} />
+            <Label>{tr('Правильный ответ')}</Label>
+            <Segmented value={f.correctBool ? 't' : 'f'} onChange={(v) => set('correctBool', v === 't')} options={[{ value: 't', label: tr('Верно') }, { value: 'f', label: tr('Неверно') }]} />
           </div>
         )}
         <div>
-          <Label htmlFor="qe-ex">Объяснение</Label>
+          <Label htmlFor="qe-ex">{tr('Объяснение')}</Label>
           <Textarea id="qe-ex" value={f.explanation} onChange={(e) => set('explanation', e.target.value)} />
           <FieldError>{errors.explanation}</FieldError>
         </div>
 
         <div className="grid gap-3 rounded-xl border p-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="qe-src">Источник</Label>
+            <Label htmlFor="qe-src">{tr('Источник')}</Label>
             <Select id="qe-src" value={f.source} onChange={(e) => set('source', e.target.value as QuestionSource)}>
-              <option value="demo">Демо-вопрос (оригинальный учебный)</option>
-              <option value="user">Пользовательский</option>
-              <option value="verified">Официальный источник</option>
+              <option value="demo">{tr('Демо-вопрос (оригинальный учебный)')}</option>
+              <option value="user">{tr('Пользовательский')}</option>
+              <option value="verified">{tr('Официальный источник')}</option>
             </Select>
           </div>
           <div>
-            <Label htmlFor="qe-ver">Статус проверки</Label>
+            <Label htmlFor="qe-ver">{tr('Статус проверки')}</Label>
             <Select id="qe-ver" value={f.verification} onChange={(e) => set('verification', e.target.value as VerificationStatus)}>
-              <option value="unverified">Не проверен экспертом</option>
-              <option value="reviewed">Проверен</option>
-              <option value="needs_review">Требует проверки</option>
+              <option value="unverified">{tr('Не проверен экспертом')}</option>
+              <option value="reviewed">{tr('Проверен')}</option>
+              <option value="needs_review">{tr('Требует проверки')}</option>
             </Select>
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="qe-ref">Ссылка на источник {f.source === 'verified' && <span className="text-danger">*</span>}</Label>
-            <Input id="qe-ref" value={f.sourceRef} onChange={(e) => set('sourceRef', e.target.value)} placeholder="Сборник НЦТ, год, вариант, страница или URL" />
+            <Label htmlFor="qe-ref">{tr('Ссылка на источник')} {f.source === 'verified' && <span className="text-danger">*</span>}</Label>
+            <Input id="qe-ref" value={f.sourceRef} onChange={(e) => set('sourceRef', e.target.value)} placeholder={tr('Сборник НЦТ, год, вариант, страница или URL')} />
             <FieldError>{errors.sourceRef}</FieldError>
             {f.source === 'verified' && (
               <p className="mt-1.5 flex items-start gap-1.5 text-xs text-warning">
-                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" /> Отмечайте «Официальный источник» только для заданий из официальных материалов. Придуманные вопросы так помечать нельзя.
+                <AlertTriangle className="mt-0.5 size-3.5 shrink-0" /> {tr('Отмечайте «Официальный источник» только для заданий из официальных материалов. Придуманные вопросы так помечать нельзя.')}
               </p>
             )}
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="qe-tags">Теги (через запятую)</Label>
+            <Label htmlFor="qe-tags">{tr('Теги (через запятую)')}</Label>
             <Input id="qe-tags" value={f.tags} onChange={(e) => set('tags', e.target.value)} />
           </div>
         </div>

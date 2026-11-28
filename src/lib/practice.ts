@@ -1,6 +1,7 @@
 import type { Attempt, Difficulty, Mistake, Question, SubjectId } from '@/types';
 import type { ActivePractice } from '@/store/session';
 import { shuffle } from './utils';
+import { tr } from '@/i18n';
 
 export type PoolSource = 'all' | 'unseen' | 'bookmarks' | 'mistakes';
 
@@ -67,6 +68,6 @@ export function quickPractice(questions: Question[], attempts: Attempt[], subjec
     entries: {},
     startedAt: new Date().toISOString(),
     timeLimitSec: null,
-    label: 'Быстрая практика',
+    label: tr('Быстрая практика'),
   };
 }

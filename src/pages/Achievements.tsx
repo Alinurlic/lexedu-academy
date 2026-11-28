@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lexi } from '@/components/lexi/Lexi';
 import { fmtDate, fmtDateTime } from '@/lib/date';
 import { cn, fmtNum } from '@/lib/utils';
+import { tr } from '@/i18n';
 
 export default function Achievements() {
   const unlocked = useAppStore((s) => s.achievements);
@@ -44,13 +45,13 @@ export default function Achievements() {
   const weekly = useWeeklyGoals();
   const navigate = useNavigate();
   const milestones = [
-    { label: 'Первые 50 вопросов', done: stats.totalQuestions >= 50, progress: stats.totalQuestions / 50 },
-    { label: 'Первый пробный ЕНТ', done: exams.length >= 1, progress: exams.length },
-    { label: 'Уровень 3 · Apprentice', done: lvl.current.index >= 3, progress: stats.xp / 2000 },
-    { label: '1000 решённых вопросов', done: stats.totalQuestions >= 1000, progress: stats.totalQuestions / 1000 },
-    { label: 'Серия 14 дней', done: stats.longestStreak >= 14, progress: stats.longestStreak / 14 },
-    { label: `Прогноз ${Math.round(stats.prediction.max * 0.7)}+ баллов`, done: stats.prediction.total >= stats.prediction.max * 0.7, progress: stats.prediction.total / (stats.prediction.max * 0.7) },
-    { label: 'Уровень 6 · Master', done: lvl.current.index >= 6, progress: stats.xp / 20000 },
+    { label: tr('Первые 50 вопросов'), done: stats.totalQuestions >= 50, progress: stats.totalQuestions / 50 },
+    { label: tr('Первый пробный ЕНТ'), done: exams.length >= 1, progress: exams.length },
+    { label: tr('Уровень 3 · Apprentice'), done: lvl.current.index >= 3, progress: stats.xp / 2000 },
+    { label: tr('1000 решённых вопросов'), done: stats.totalQuestions >= 1000, progress: stats.totalQuestions / 1000 },
+    { label: tr('Серия 14 дней'), done: stats.longestStreak >= 14, progress: stats.longestStreak / 14 },
+    { label: tr('Прогноз {0}+ баллов', Math.round(stats.prediction.max * 0.7)), done: stats.prediction.total >= stats.prediction.max * 0.7, progress: stats.prediction.total / (stats.prediction.max * 0.7) },
+    { label: tr('Уровень 6 · Master'), done: lvl.current.index >= 6, progress: stats.xp / 20000 },
   ];
 
   return (
@@ -61,7 +62,7 @@ export default function Achievements() {
           <div className="flex flex-wrap items-center gap-5">
             <div className="brand-gradient grid size-20 place-items-center rounded-3xl text-3xl font-semibold text-white">{lvl.current.index}</div>
             <div className="min-w-0 flex-1 sm:pr-28">
-              <div className="text-xs text-muted-foreground">Текущий уровень</div>
+              <div className="text-xs text-muted-foreground">{tr('Текущий уровень')}</div>
               <div className="text-2xl font-semibold">
                 {lvl.current.name} <span className="text-base font-normal text-muted-foreground">· {LEVEL_RU[lvl.current.name]}</span>
               </div>
@@ -69,7 +70,7 @@ export default function Achievements() {
                 <Progress value={lvl.progress * 100} className="h-2" indicatorClassName="bg-gradient-to-r from-primary to-violet" />
                 <div className="mt-1.5 flex justify-between text-xs text-muted-foreground tabular">
                   <span>{fmtNum(stats.xp)} XP</span>
-                  <span>{lvl.next ? `${fmtNum(lvl.next.minXp)} XP — ${lvl.next.name}` : 'Максимум'}</span>
+                  <span>{lvl.next ? `${fmtNum(lvl.next.minXp)} XP — ${lvl.next.name}` : tr('Максимум')}</span>
                 </div>
               </div>
             </div>
@@ -86,20 +87,20 @@ export default function Achievements() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Как начисляется XP</CardTitle>
-              <CardDescription>Опыт отражает реальную учебную работу</CardDescription>
+              <CardTitle>{tr('Как начисляется XP')}</CardTitle>
+              <CardDescription>{tr('Опыт отражает реальную учебную работу')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {[
-              ['Верный ответ', XP.correct],
-              ['Бонус за сложный', XP.correctHardBonus],
-              ['Завершённая сессия', XP.sessionComplete],
-              ['Пробный экзамен', XP.examComplete],
-              ['Ежедневная цель', XP.dailyTask],
-              ['Ошибка освоена', XP.mistakeMastered],
-              ['Задача из плана', XP.plannerTask],
-              ['День серии', XP.streakDay],
+              [tr('Верный ответ'), XP.correct],
+              [tr('Бонус за сложный'), XP.correctHardBonus],
+              [tr('Завершённая сессия'), XP.sessionComplete],
+              [tr('Пробный экзамен'), XP.examComplete],
+              [tr('Ежедневная цель'), XP.dailyTask],
+              [tr('Ошибка освоена'), XP.mistakeMastered],
+              [tr('Задача из плана'), XP.plannerTask],
+              [tr('День серии'), XP.streakDay],
             ].map(([l, v]) => (
               <div key={String(l)} className="flex justify-between border-b border-dashed py-1">
                 <span className="text-muted-foreground">{l}</span>
@@ -114,8 +115,8 @@ export default function Achievements() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Цели недели</CardTitle>
-              <CardDescription>Обновляются каждый понедельник · XP начисляется автоматически</CardDescription>
+              <CardTitle>{tr('Цели недели')}</CardTitle>
+              <CardDescription>{tr('Обновляются каждый понедельник · XP начисляется автоматически')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -141,8 +142,8 @@ export default function Achievements() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Этапы пути</CardTitle>
-              <CardDescription>Крупные вехи подготовки</CardDescription>
+              <CardTitle>{tr('Этапы пути')}</CardTitle>
+              <CardDescription>{tr('Крупные вехи подготовки')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -161,9 +162,9 @@ export default function Achievements() {
 
       <section>
         <div className="mb-3 flex items-end justify-between">
-          <h2 className="text-base font-semibold">Достижения</h2>
+          <h2 className="text-base font-semibold">{tr('Достижения')}</h2>
           <span className="text-sm text-muted-foreground">
-            {count} из {ACHIEVEMENTS.length}
+            {tr('{0} из {1}', count, ACHIEVEMENTS.length)}
           </span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -181,12 +182,12 @@ export default function Achievements() {
                   </div>
                   <p className="mt-0.5 text-[13px] text-muted-foreground">{a.description}</p>
                   {date ? (
-                    <p className="mt-2 text-xs text-success">Получено {fmtDate(date, { day: 'numeric', month: 'long', year: 'numeric' })} · +{a.xp} XP</p>
+                    <p className="mt-2 text-xs text-success">{tr('Получено {0} · +{1} XP', fmtDate(date, { day: 'numeric', month: 'long', year: 'numeric' }), a.xp)}</p>
                   ) : (
                     <div className="mt-2">
                       <Progress value={(cur / max) * 100} className="h-1" />
                       <div className="mt-1 text-[11px] text-muted-foreground tabular">
-                        {a.id === 'subject-complete' ? 'Освойте все темы любого предмета' : `${fmtNum(cur)} / ${fmtNum(max)}`} · +{a.xp} XP
+                        {a.id === 'subject-complete' ? tr('Освойте все темы любого предмета') : `${fmtNum(cur)} / ${fmtNum(max)}`} · +{a.xp} XP
                       </div>
                     </div>
                   )}
@@ -200,8 +201,8 @@ export default function Achievements() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>История опыта</CardTitle>
-            <CardDescription>Последние начисления XP</CardDescription>
+            <CardTitle>{tr('История опыта')}</CardTitle>
+            <CardDescription>{tr('Последние начисления XP')}</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -212,12 +213,12 @@ export default function Achievements() {
               .map((e) => (
                 <div key={e.id} className="flex items-center gap-3 p-3 text-sm">
                   <Sparkles className="size-4 text-violet" />
-                  <span className="flex-1">{e.reason}</span>
+                  <span className="flex-1">{tr(e.reason)}</span>
                   <span className="text-xs text-muted-foreground">{fmtDateTime(e.date)}</span>
                   <span className="w-16 text-right font-semibold tabular text-violet">+{fmtNum(e.amount)}</span>
                 </div>
               ))}
-            {xpEvents.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">Пока нет начислений</p>}
+            {xpEvents.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">{tr('Пока нет начислений')}</p>}
           </div>
         </CardContent>
       </Card>

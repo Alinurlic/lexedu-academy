@@ -8,6 +8,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useCoreStats, useTrackPrediction } from '@/hooks/useStats';
 import { TRACKS } from '@/data/subjects';
 import { cn } from '@/lib/utils';
+import { tr } from '@/i18n';
 
 export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
   const ai = useAiStatus();
@@ -22,16 +23,16 @@ export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?:
   return (
     <aside className={cn('flex h-full flex-col border-r bg-surface transition-[width] duration-200', mobile ? 'w-72' : collapsed ? 'w-[72px]' : 'w-64')}>
       <div className={cn('flex h-16 items-center px-4', collapsed && 'justify-center px-0')}>
-        <button onClick={() => (navigate('/'), onNavigate?.())} aria-label="LexEdu Academy — на главную">
+        <button onClick={() => (navigate('/'), onNavigate?.())} aria-label={tr('LexEdu Academy — на главную')}>
           <Logo collapsed={collapsed} />
         </button>
       </div>
 
-      <nav className="scrollbar-thin flex-1 space-y-0.5 overflow-y-auto px-3 py-2" aria-label="Основная навигация">
+      <nav className="scrollbar-thin flex-1 space-y-0.5 overflow-y-auto px-3 py-2" aria-label={tr('Основная навигация')}>
         {NAV.map((item, i) => {
           const prev = NAV[i - 1];
           const groupStart = prev && (prev.group ?? 'main') !== (item.group ?? 'main');
-          const groupLabel = { main: '', tools: 'Инструменты', system: 'Система' }[item.group ?? 'main'];
+          const groupLabel = { main: '', tools: tr('Инструменты'), system: tr('Система') }[item.group ?? 'main'];
           return (
             <div key={item.to}>
               {groupStart && (collapsed ? <div className="mx-2 my-2 h-px bg-border" /> : <div className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground/70">{groupLabel}</div>)}
@@ -57,7 +58,7 @@ export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?:
                       <span className="rounded-md bg-danger/15 px-1.5 text-[11px] font-semibold text-danger tabular">{mistakesNew}</span>
                     )}
                     {!collapsed && item.to === '/assistant' && ai && (
-                      <span className={cn('rounded-md px-1.5 text-[10px] font-semibold', ai.enabled ? 'bg-success/15 text-success' : 'bg-violet/15 text-violet')}>{ai.enabled ? 'ИИ' : 'демо'}</span>
+                      <span className={cn('rounded-md px-1.5 text-[10px] font-semibold', ai.enabled ? 'bg-success/15 text-success' : 'bg-violet/15 text-violet')}>{ai.enabled ? tr('ИИ') : tr('демо')}</span>
                     )}
                   </>
                 )}
@@ -72,7 +73,7 @@ export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?:
           <button onClick={() => (navigate('/analytics'), onNavigate?.())} className="w-full rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/40">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
-                <Target className="size-3.5" /> Цель {TRACKS.find((t) => t.id === tp.track)?.name}
+                <Target className="size-3.5" /> {tr('Цель {0}', TRACKS.find((t) => t.id === tp.track)?.name)}
               </span>
               <span className="tabular">
                 <span className="font-semibold text-foreground">{tp.prediction.value}</span> / {tp.target}
@@ -93,7 +94,7 @@ export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?:
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{profile.name}</div>
               <div className="truncate text-xs text-muted-foreground">
-                Ур. {stats.level.current.index} · {stats.level.current.name}
+                {tr('Ур. {0} · {1}', stats.level.current.index, stats.level.current.name)}
               </div>
             </div>
           )}
@@ -102,10 +103,10 @@ export function Sidebar({ mobile, onNavigate }: { mobile?: boolean; onNavigate?:
           <button
             onClick={() => updateProfile({ sidebarCollapsed: !profile.sidebarCollapsed })}
             className={cn('flex h-8 w-full items-center gap-2 rounded-lg px-2 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground', collapsed && 'justify-center')}
-            aria-label={collapsed ? 'Развернуть меню' : 'Свернуть меню'}
+            aria-label={collapsed ? tr('Развернуть меню') : tr('Свернуть меню')}
           >
             {collapsed ? <ChevronsRight className="size-4" /> : <ChevronsLeft className="size-4" />}
-            {!collapsed && 'Свернуть'}
+            {!collapsed && tr('Свернуть')}
           </button>
         )}
       </div>

@@ -38,6 +38,7 @@ import { computeStreak, predictScore, subjectSummary } from '@/lib/analytics';
 import { dailyGoals } from '@/lib/dailyGoals';
 import { uid } from '@/lib/utils';
 import { toast } from './toast';
+import { tr } from '@/i18n';
 
 export const STORE_KEY = 'lexedu-store';
 export const LEGACY_STORE_KEY = 'exampilot-store';
@@ -231,13 +232,13 @@ function demoState(profile: Profile = DEFAULT_PROFILE): PersistedState {
     ...base,
     ...demo,
     xp,
-    xpEvents: [{ id: uid('xp'), date: new Date().toISOString(), amount: xp, reason: 'Демо-история подготовки' }],
+    xpEvents: [{ id: uid('xp'), date: new Date().toISOString(), amount: xp, reason: tr('Демо-история подготовки') }],
     dataMode: 'demo',
     notifications: [
       {
         id: uid('n'),
-        title: 'Добро пожаловать в LexEdu',
-        body: 'Это демо-профиль с историей подготовки. Данные можно сбросить в настройках.',
+        title: tr('Добро пожаловать в LexEdu'),
+        body: tr('Это демо-профиль с историей подготовки. Данные можно сбросить в настройках.'),
         date: new Date().toISOString(),
         read: false,
         kind: 'info',
@@ -336,8 +337,8 @@ export const useAppStore = create<AppState>()(
         const ev: XpEvent = { id: uid('xp'), date: new Date().toISOString(), amount, reason };
         set({ xp, xpEvents: [...get().xpEvents.slice(-199), ev] });
         if (after.index > before.index) {
-          notify({ title: `Новый уровень: ${after.name}`, body: `Ты достиг уровня «${LEVEL_RU[after.name]}». Так держать!`, kind: 'level', link: '/achievements' });
-          toast.xp(`Уровень ${after.index} — ${after.name}`, LEVEL_RU[after.name]);
+          notify({ title: tr('Новый уровень: {0}', after.name), body: tr('Ты достиг уровня «{0}». Так держать!', LEVEL_RU[after.name]), kind: 'level', link: '/achievements' });
+          toast.xp(tr('Уровень {0} — {1}', after.index, after.name), LEVEL_RU[after.name]);
         }
       };
 
@@ -359,8 +360,8 @@ export const useAppStore = create<AppState>()(
         for (const id of unlocked) {
           const def = ACHIEVEMENTS.find((a) => a.id === id);
           if (!def) continue;
-          notify({ title: `Достижение: ${def.title}`, body: def.description, kind: 'achievement', link: '/achievements' });
-          award(def.xp, `Достижение «${def.title}»`);
+          notify({ title: tr('Достижение: {0}', def.title), body: def.description, kind: 'achievement', link: '/achievements' });
+          award(def.xp, tr('Достижение «{0}»', def.title));
         }
       };
 
@@ -370,7 +371,7 @@ export const useAppStore = create<AppState>()(
         if (get().lastStreakAward === today) return;
         const streak = computeStreak(activeDaySet(get()));
         set({ lastStreakAward: today });
-        if (streak >= 2) award(XP.streakDay, `Серия ${streak} дн.`);
+        if (streak >= 2) award(XP.streakDay, tr('Серия {0} дн.', streak));
       };
 
       const logTime = (sec: number, date = new Date()) => {
@@ -422,7 +423,7 @@ export const useAppStore = create<AppState>()(
           set({ sessions: [...get().sessions, result], attempts: [...get().attempts, ...toAttempts(answers, 'practice', finishedAt)] });
           for (const a of answers) if (!a.correct && a.answer !== null) upsertMistake(a.questionId, a.answer, finishedAt);
           logTime(durationSec);
-          award(xpEarned, 'Практическая сессия');
+          award(xpEarned, tr('Практическая сессия'));
           afterActivity();
           return result;
         },
@@ -440,7 +441,7 @@ export const useAppStore = create<AppState>()(
           for (const a of answers) if (!a.correct && a.answer !== null) upsertMistake(a.questionId, a.answer, exam.finishedAt);
           logTime(exam.durationSec);
           const pctScore = exam.maxScore ? exam.score / exam.maxScore : 0;
-          award(XP.examComplete + Math.round(pctScore * 70), 'Пробный экзамен');
+          award(XP.examComplete + Math.round(pctScore * 70), tr('Пробный экзамен'));
           afterActivity();
           return result;
         },
@@ -461,7 +462,7 @@ export const useAppStore = create<AppState>()(
           });
           set({ mistakes });
           logTime(timeMs / 1000);
-          award(newStatus === 'mastered' ? XP.mistakeMastered : XP.mistakeReviewed, newStatus === 'mastered' ? 'Ошибка освоена' : 'Повторение ошибки');
+          award(newStatus === 'mastered' ? XP.mistakeMastered : XP.mistakeReviewed, newStatus === 'mastered' ? tr('Ошибка освоена') : tr('Повторение ошибки'));
           afterActivity();
           return newStatus;
         },
@@ -475,7 +476,7 @@ export const useAppStore = create<AppState>()(
           const prev = get().mistakes.find((m) => m.id === id);
           set({ mistakes: get().mistakes.map((m) => (m.id === id ? { ...m, status, lastReviewed: new Date().toISOString() } : m)) });
           if (prev && prev.status !== 'mastered' && status === 'mastered') {
-            award(XP.mistakeMastered, 'Ошибка освоена');
+            award(XP.mistakeMastered, tr('Ошибка освоена'));
             checkAchievements();
           }
         },
@@ -500,7 +501,7 @@ export const useAppStore = create<AppState>()(
           });
           const now = get().tasks.find((t) => t.id === id);
           if (prev && now && !prev.done && now.done) {
-            award(XP.plannerTask, 'Задача из плана');
+            award(XP.plannerTask, tr('Задача из плана'));
             checkAchievements();
           }
         },
@@ -524,8 +525,8 @@ export const useAppStore = create<AppState>()(
           const fresh = done.filter((id) => !d.rewarded.includes(id));
           set({ daily: { ...d, rewarded: [...d.rewarded, ...fresh] } });
           if (fresh.length) {
-            award(fresh.length * XP.dailyTask, 'Ежедневная цель');
-            toast.xp(`+${fresh.length * XP.dailyTask} XP`, 'Ежедневная цель выполнена');
+            award(fresh.length * XP.dailyTask, tr('Ежедневная цель'));
+            toast.xp(`+${fresh.length * XP.dailyTask} XP`, tr('Ежедневная цель выполнена'));
           }
         },
 
@@ -600,6 +601,7 @@ export const useAppStore = create<AppState>()(
             }
             const messages = [...active.messages, ...m].slice(-120);
             const firstUser = messages.find((x) => x.role === 'user');
+            // «Новый чат» хранится по-русски и переводится при показе
             const title = (active.title === 'Новый чат' || !active.title) && firstUser ? firstUser.text.slice(0, 48) : active.title;
             const updated = { ...active, messages, title, updatedAt: new Date().toISOString() };
             return { chatThreads: threads.map((t) => (t.id === activeId ? updated : t)), activeChatId: activeId };
@@ -642,8 +644,8 @@ export const useAppStore = create<AppState>()(
           const fresh = goals.filter((g) => g.progress >= g.target && !w.rewarded.includes(g.id));
           set({ weekly: { week: wk, rewarded: [...w.rewarded, ...fresh.map((g) => g.id)] } });
           for (const g of fresh) {
-            award(g.xp, `Недельная цель: ${g.title}`);
-            toast.xp(`+${g.xp} XP`, `Недельная цель выполнена: ${g.title}`);
+            award(g.xp, tr('Недельная цель: {0}', g.title));
+            toast.xp(`+${g.xp} XP`, tr('Недельная цель выполнена: {0}', g.title));
           }
         },
         markSynced: () => set({ lastSyncAt: new Date().toISOString() }),
@@ -664,9 +666,9 @@ export const useAppStore = create<AppState>()(
           if (s.lastReminderDay === today) return;
           set({ lastReminderDay: today });
           const left = daysBetween(new Date(), fromKey(s.profile.examDate));
-          if (left > 0) notify({ title: `До ЕНТ осталось ${left} дн.`, body: 'Загляни в план недели и выбери задачи на сегодня.', kind: 'reminder', link: '/planner' });
+          if (left > 0) notify({ title: tr('До ЕНТ осталось {0} дн.', left), body: tr('Загляни в план недели и выбери задачи на сегодня.'), kind: 'reminder', link: '/planner' });
           const fresh = s.mistakes.filter((m) => m.status === 'new').length;
-          if (fresh > 0) notify({ title: `Новых ошибок: ${fresh}`, body: 'Повтори их — это самый быстрый способ поднять балл.', kind: 'reminder', link: '/mistakes?review=1' });
+          if (fresh > 0) notify({ title: tr('Новых ошибок: {0}', fresh), body: tr('Повтори их — это самый быстрый способ поднять балл.'), kind: 'reminder', link: '/mistakes?review=1' });
         },
 
         // Сброс истории не трогает банк вопросов, справочник, формат ЕНТ и PIN администратора

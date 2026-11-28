@@ -5,6 +5,7 @@ import { REASON_LABEL, submitReport, type ReportReason } from '@/lib/moderation'
 import { toast } from '@/store/toast';
 import { cn } from '@/lib/utils';
 import type { Question } from '@/types';
+import { tr } from '@/i18n';
 
 /** «Сообщить об ошибке» в задании: причина + комментарий → очередь проверки в админ-панели. */
 export function ReportButton({ q, className, variant = 'link' }: { q: Question; className?: string; variant?: 'link' | 'icon' }) {
@@ -22,7 +23,7 @@ export function ReportButton({ q, className, variant = 'link' }: { q: Question; 
       setSent(true);
       setOpen(false);
       setComment('');
-      toast.success('Спасибо! Задание отправлено на проверку', 'Мы исправим его или уберём из банка');
+      toast.success(tr('Спасибо! Задание отправлено на проверку'), tr('Мы исправим его или уберём из банка'));
     } else toast.error(r.message);
   };
 
@@ -34,8 +35,8 @@ export function ReportButton({ q, className, variant = 'link' }: { q: Question; 
           size="icon"
           onClick={() => !sent && setOpen(true)}
           disabled={sent}
-          title={sent ? 'Отправлено на проверку' : 'Сообщить об ошибке в задании'}
-          aria-label={sent ? 'Жалоба отправлена' : 'Сообщить об ошибке в задании'}
+          title={sent ? tr('Отправлено на проверку') : tr('Сообщить об ошибке в задании')}
+          aria-label={sent ? tr('Жалоба отправлена') : tr('Сообщить об ошибке в задании')}
           className={className}
         >
           {sent ? <Check className="text-success" /> : <Flag />}
@@ -51,27 +52,27 @@ export function ReportButton({ q, className, variant = 'link' }: { q: Question; 
           )}
         >
           {sent ? <Check className="size-3.5" /> : <Flag className="size-3.5" />}
-          {sent ? 'Отправлено на проверку' : 'Сообщить об ошибке'}
+          {sent ? tr('Отправлено на проверку') : tr('Сообщить об ошибке')}
         </button>
       )}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Ошибка в задании"
-        description="Опишите, что не так. Задание проверит администратор: исправит его или уберёт из банка."
+        title={tr('Ошибка в задании')}
+        description={tr('Опишите, что не так. Задание проверит администратор: исправит его или уберёт из банка.')}
         footer={
           <>
             <Button variant="secondary" onClick={() => setOpen(false)}>
-              Отмена
+              {tr('Отмена')}
             </Button>
             <Button onClick={() => void send()} loading={busy}>
-              <Flag /> Отправить
+              <Flag /> {tr('Отправить')}
             </Button>
           </>
         }
       >
         <div className="space-y-3 pb-2">
-          <div role="radiogroup" aria-label="Что не так" className="space-y-1.5">
+          <div role="radiogroup" aria-label={tr('Что не так')} className="space-y-1.5">
             {(Object.keys(REASON_LABEL) as ReportReason[]).map((r) => (
               <label key={r} className={cn('flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors', reason === r ? 'border-primary bg-primary/10' : 'hover:border-primary/40')}>
                 <input type="radio" name={`report-${q.id}`} checked={reason === r} onChange={() => setReason(r)} className="accent-[hsl(var(--primary))]" />
@@ -80,13 +81,13 @@ export function ReportButton({ q, className, variant = 'link' }: { q: Question; 
             ))}
           </div>
           <div>
-            <Label htmlFor={`report-comment-${q.id}`}>Комментарий (необязательно)</Label>
+            <Label htmlFor={`report-comment-${q.id}`}>{tr('Комментарий (необязательно)')}</Label>
             <textarea
               id={`report-comment-${q.id}`}
               value={comment}
               onChange={(e) => setComment(e.target.value.slice(0, 1000))}
               rows={3}
-              placeholder="Например: верный ответ — B, потому что…"
+              placeholder={tr('Например: верный ответ — B, потому что…')}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             <div className="mt-0.5 text-right text-[11px] text-muted-foreground">{comment.length}/1000</div>

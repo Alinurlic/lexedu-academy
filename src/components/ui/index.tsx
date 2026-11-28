@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Loader2, X } from 'lucide-react';
 import { Lexi } from '@/components/lexi/Lexi';
 import type { LexiMood } from '@/lib/lexi';
+import { tr } from '@/i18n';
 
 /* ---------- Button ---------- */
 export const buttonVariants = cva(
@@ -156,7 +157,7 @@ export function Switch({ checked, onChange, label, id }: { checked: boolean; onC
 /* ---------- Segmented / Tabs ---------- */
 export function Segmented<T extends string>({ value, onChange, options, className, size = 'default' }: { value: T; onChange: (v: T) => void; options: { value: T; label: React.ReactNode }[]; className?: string; size?: 'sm' | 'default' }) {
   return (
-    <div role="tablist" className={cn('inline-flex rounded-lg border bg-secondary/60 p-0.5', className)}>
+    <div role="tablist" className={cn('inline-flex max-w-full flex-wrap rounded-lg border bg-secondary/60 p-0.5', className)}>
       {options.map((o) => (
         <button
           key={o.value}
@@ -237,7 +238,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
             <h2 className="text-base font-semibold">{title}</h2>
             {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
           </div>
-          <Button data-close variant="ghost" size="icon-sm" onClick={onClose} aria-label="Закрыть">
+          <Button data-close variant="ghost" size="icon-sm" onClick={onClose} aria-label={tr('Закрыть')}>
             <X />
           </Button>
         </div>
@@ -248,7 +249,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
   );
 }
 
-export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = 'Подтвердить', danger }: { open: boolean; onClose: () => void; onConfirm: () => void; title: string; description?: string; confirmLabel?: string; danger?: boolean }) {
+export function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLabel = tr('Подтвердить'), danger }: { open: boolean; onClose: () => void; onConfirm: () => void; title: string; description?: string; confirmLabel?: string; danger?: boolean }) {
   return (
     <Dialog
       open={open}
@@ -259,7 +260,7 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, description, co
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Отмена
+            {tr('Отмена')}
           </Button>
           <Button
             variant={danger ? 'danger' : 'default'}

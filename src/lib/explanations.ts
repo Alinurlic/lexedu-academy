@@ -3,6 +3,7 @@ import { SUBJECT_MAP } from '@/data/subjects';
 import { questionLang } from '@/data/questions/lang';
 import { aiExplain, type ExplainPayload, type ExplainReply } from './ai';
 import { getSupabase, isSupabaseConfigured } from './supabase';
+import { tr } from '@/i18n';
 
 /**
  * Подробные разборы от Lexi. Порядок: память вкладки → общий кэш в Supabase (без расхода лимита ИИ) → сервер ИИ.
@@ -37,7 +38,7 @@ const memory = new Map<string, ExplainReply>();
 
 export async function getExplanation(q: Question): Promise<ExplainReply> {
   const payload = explainPayload(q);
-  if (!payload) throw new Error('Для эссе подробный разбор не нужен — используйте проверку по критериям');
+  if (!payload) throw new Error(tr('Для эссе подробный разбор не нужен — используйте проверку по критериям'));
   const hash = await sha256Hex(explainKey(payload));
   const key = `${q.id}:${hash}`;
   const mem = memory.get(key);

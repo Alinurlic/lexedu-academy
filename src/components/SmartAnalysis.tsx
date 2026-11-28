@@ -11,6 +11,7 @@ import { TRACKS } from '@/data/subjects';
 import { cn } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import { Markdown } from '@/components/Markdown';
+import { tr } from '@/i18n';
 
 const TONE: Record<Insight['tone'], { icon: React.ComponentType<{ className?: string }>; cls: string }> = {
   good: { icon: CheckCircle2, cls: 'text-success border-success/30 bg-success/5' },
@@ -40,7 +41,7 @@ export function SmartAnalysis({ compact }: { compact?: boolean }) {
   const plan = () => {
     const tasks = buildWeekPlan(track, attempts, mistakesOpen);
     tasks.forEach((t) => addTask(t));
-    toast.success(`В план добавлено задач: ${tasks.length}`, 'Открой «План», чтобы посмотреть');
+    toast.success(tr('В план добавлено задач: {0}', tasks.length), tr('Открой «План», чтобы посмотреть'));
   };
 
   const askAi = async () => {
@@ -49,7 +50,7 @@ export function SmartAnalysis({ compact }: { compact?: boolean }) {
       const r = await aiAnalyze(studentSummary(profile, attempts, examFormat, mistakesOpen));
       setAiPlan(r.reply);
     } catch (e) {
-      toast.error('ИИ не смог составить план', e instanceof Error ? e.message : undefined);
+      toast.error(tr('ИИ не смог составить план'), e instanceof Error ? e.message : undefined);
     } finally {
       setBusy(false);
     }
@@ -63,18 +64,18 @@ export function SmartAnalysis({ compact }: { compact?: boolean }) {
           <Lexi mood="thinking" size="xs" decorative />
           <div>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="size-4 text-violet" /> Умный анализ · {TRACKS.find((t) => t.id === track)!.name}
+              <TrendingUp className="size-4 text-violet" /> {tr('Умный анализ · {0}', TRACKS.find((t) => t.id === track)!.name)}
             </CardTitle>
-            <CardDescription>Выводы из твоих ответов, времени, режимов и целей</CardDescription>
+            <CardDescription>{tr('Выводы из твоих ответов, времени, режимов и целей')}</CardDescription>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" onClick={() => setConfirmPlan(true)}>
-            <CalendarPlus /> Автоплан на неделю
+            <CalendarPlus /> {tr('Автоплан на неделю')}
           </Button>
           {ai?.enabled && (
             <Button size="sm" onClick={askAi} loading={busy}>
-              <Sparkles /> План от Lexi (ИИ)
+              <Sparkles /> {tr('План от Lexi (ИИ)')}
             </Button>
           )}
         </div>
@@ -99,21 +100,21 @@ export function SmartAnalysis({ compact }: { compact?: boolean }) {
         })}
         {compact && insights.length > 3 && (
           <Button size="sm" variant="ghost" onClick={() => navigate('/analytics')}>
-            Ещё {insights.length - 3} в аналитике <ArrowRight />
+            {tr('Ещё {0} в аналитике', insights.length - 3)} <ArrowRight />
           </Button>
         )}
         {aiPlan && (
           <div className="mt-3 rounded-xl border border-violet/30 bg-violet/5 p-4">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-violet">
-              <Sparkles className="size-4" /> Персональный план от Lexi (ИИ)
+              <Sparkles className="size-4" /> {tr('Персональный план от Lexi (ИИ)')}
             </div>
             <Markdown text={aiPlan} className="text-sm leading-relaxed" />
-            <p className="mt-2 text-[11px] text-muted-foreground">Сгенерировано ИИ по твоей статистике. Сверяй важные факты с учебником.</p>
+            <p className="mt-2 text-[11px] text-muted-foreground">{tr('Сгенерировано ИИ по твоей статистике. Сверяй важные факты с учебником.')}</p>
           </div>
         )}
-        {ai && !ai.enabled && !compact && <p className="pt-1 text-[11px] text-muted-foreground">ИИ-план недоступен: {ai.reason} Локальный анализ и автоплан работают без ИИ.</p>}
+        {ai && !ai.enabled && !compact && <p className="pt-1 text-[11px] text-muted-foreground">{tr('ИИ-план недоступен: {0} Локальный анализ и автоплан работают без ИИ.', ai.reason)}</p>}
       </CardContent>
-      <ConfirmDialog open={confirmPlan} onClose={() => setConfirmPlan(false)} title="Добавить автоплан на неделю?" description="В «План» будут добавлены задачи до конца недели: слабые темы, повторение ошибок и пробный экзамен." confirmLabel="Добавить" onConfirm={plan} />
+      <ConfirmDialog open={confirmPlan} onClose={() => setConfirmPlan(false)} title={tr('Добавить автоплан на неделю?')} description={tr('В «План» будут добавлены задачи до конца недели: слабые темы, повторение ошибок и пробный экзамен.')} confirmLabel={tr('Добавить')} onConfirm={plan} />
     </Card>
   );
 }

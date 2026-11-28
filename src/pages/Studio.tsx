@@ -9,6 +9,7 @@ import { fmtClock, fmtDateTime } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import type { EssayQuestion } from '@/types';
 import { Markdown } from '@/components/Markdown';
+import { tr } from '@/i18n';
 
 type Kind = 'writing1' | 'writing2' | 'speaking';
 const LIMIT: Record<Kind, number> = { writing1: 20 * 60, writing2: 40 * 60, speaking: 2 * 60 };
@@ -90,20 +91,20 @@ export default function Studio() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented value={kind} onChange={setKind} options={[{ value: 'writing1', label: 'Writing Task 1' }, { value: 'writing2', label: 'Writing Task 2' }, { value: 'speaking', label: 'Speaking' }]} />
         <Badge variant="outline">
-          <Timer /> Рекомендуемое время: {Math.round(LIMIT[kind] / 60)} мин
+          <Timer /> {tr('Рекомендуемое время: {0} мин', Math.round(LIMIT[kind] / 60))}
         </Badge>
       </div>
 
       {!q ? (
-        <EmptyState icon={PenLine} lexi="thinking" title="Нет заданий" description="Добавьте задания этого типа в админ-панели." />
+        <EmptyState icon={PenLine} lexi="thinking" title={tr('Нет заданий')} description={tr('Добавьте задания этого типа в админ-панели.')} />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
           <Card className="p-5 sm:p-6">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <select value={q.id} onChange={(e) => (setQid(e.target.value), reset())} className="h-9 max-w-full rounded-lg border border-input bg-surface px-2 text-sm" aria-label="Выбор задания">
+              <select value={q.id} onChange={(e) => (setQid(e.target.value), reset())} className="h-9 max-w-full rounded-lg border border-input bg-surface px-2 text-sm" aria-label={tr('Выбор задания')}>
                 {prompts.map((p, i) => (
                   <option key={p.id} value={p.id}>
-                    Задание {i + 1}: {p.question.replace(/^(Writing Task \d\.|Speaking Part \d\.)\s*/, '').slice(0, 70)}…
+                    {tr('Задание {0}: {1}…', i + 1, p.question.replace(/^(Writing Task \d\.|Speaking Part \d\.)\s*/, '').slice(0, 70))}
                   </option>
                 ))}
               </select>
@@ -116,10 +117,10 @@ export default function Studio() {
             {kind === 'speaking' && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <Button variant={listening ? 'danger' : 'default'} onClick={toggleMic} disabled={!SR}>
-                  {listening ? <MicOff /> : <Mic />} {listening ? 'Остановить запись' : 'Говорить (распознавание речи)'}
+                  {listening ? <MicOff /> : <Mic />} {listening ? tr('Остановить запись') : tr('Говорить (распознавание речи)')}
                 </Button>
-                {!SR && <span className="text-xs text-warning">Распознавание речи поддерживается в Chrome и Edge. Можно ввести ответ текстом.</span>}
-                {listening && <span className="text-xs text-danger">● Идёт запись…</span>}
+                {!SR && <span className="text-xs text-warning">{tr('Распознавание речи поддерживается в Chrome и Edge. Можно ввести ответ текстом.')}</span>}
+                {listening && <span className="text-xs text-danger">{tr('● Идёт запись…')}</span>}
               </div>
             )}
             <textarea
@@ -128,39 +129,39 @@ export default function Studio() {
                 setText(e.target.value.slice(0, 12000));
                 if (!startedAt) setStartedAt(Date.now());
               }}
-              placeholder={kind === 'speaking' ? 'Здесь появится расшифровка ответа (или введите текст)…' : 'Start writing your answer…'}
+              placeholder={kind === 'speaking' ? tr('Здесь появится расшифровка ответа (или введите текст)…') : 'Start writing your answer…'}
               spellCheck={false}
               className="mt-4 min-h-[300px] w-full rounded-xl border border-input bg-surface p-4 text-[15px] leading-relaxed focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-              aria-label="Ответ"
+              aria-label={tr('Ответ')}
             />
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <span className={cn(wordCount(text) >= q.minWords && 'text-success')}>
-                Слов: {wordCount(text)} / минимум {q.minWords}
+                {tr('Слов: {0} / минимум {1}', wordCount(text), q.minWords)}
               </span>
               <Button variant="ghost" size="sm" onClick={reset}>
-                <RotateCcw /> Начать заново
+                <RotateCcw /> {tr('Начать заново')}
               </Button>
             </div>
           </Card>
 
           <div className="space-y-4">
             <EssayGrader key={q.id} q={q} text={text} onGraded={(g) => addAttempt({ questionId: q.id, text, band: g.band, feedback: g.feedback, criteria: g.criteria, source: g.source })} />
-            <LexiBubble mood="studying" size="xs" text={kind === 'writing1' ? 'В Task 1 обязательно напиши обзор (overview) и сравни ключевые цифры.' : kind === 'writing2' ? 'В Task 2 держи одну позицию от начала до конца и развивай каждый аргумент примером.' : 'Отвечай развёрнуто: причина + пример. Не заучивай ответы наизусть.'} />
+            <LexiBubble mood="studying" size="xs" text={kind === 'writing1' ? tr('В Task 1 обязательно напиши обзор (overview) и сравни ключевые цифры.') : kind === 'writing2' ? tr('В Task 2 держи одну позицию от начала до конца и развивай каждый аргумент примером.') : tr('Отвечай развёрнуто: причина + пример. Не заучивай ответы наизусть.')} />
             <Card>
               <CardHeader>
                 <div>
-                  <CardTitle>История</CardTitle>
-                  <CardDescription>Оценённые ответы этого типа</CardDescription>
+                  <CardTitle>{tr('История')}</CardTitle>
+                  <CardDescription>{tr('Оценённые ответы этого типа')}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                {history.length === 0 && <p className="text-sm text-muted-foreground">Пока нет оценённых ответов</p>}
+                {history.length === 0 && <p className="text-sm text-muted-foreground">{tr('Пока нет оценённых ответов')}</p>}
                 {history.slice(0, 8).map((a) => (
                   <details key={a.id} className="rounded-lg border p-2.5 text-sm">
                     <summary className="flex cursor-pointer items-center justify-between gap-2">
                       <span className="text-muted-foreground">{fmtDateTime(a.date)}</span>
                       <Badge variant={a.source === 'ai' ? 'violet' : 'secondary'}>
-                        band {a.band} · {a.source === 'ai' ? 'ИИ' : 'самооценка'}
+                        band {a.band} · {a.source === 'ai' ? tr('ИИ') : tr('самооценка')}
                       </Badge>
                     </summary>
                     <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-muted-foreground">{a.text}</p>

@@ -12,8 +12,9 @@ import { useCoreStats, useWeakTopics } from '@/hooks/useStats';
 import { allRelevantSubjects, difficultyStats, scoreHistory, weeklySeries } from '@/lib/analytics';
 import { DIFFICULTY_LABEL } from '@/data/questions';
 import { SUBJECT_MAP, TOPIC_MAP } from '@/data/subjects';
-import { WEEKDAYS_SHORT, dayKey, addDays } from '@/lib/date';
+import { WEEKDAYS_SHORT, dayKey, addDays, fmtDate } from '@/lib/date';
 import { cn, fmtNum } from '@/lib/utils';
+import { tr } from '@/i18n';
 
 export default function Analytics() {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ export default function Analytics() {
     return totals.map((t, i) => ({ label: WEEKDAYS_SHORT[i], avg: Math.round(t.q / Math.max(1, w)) }));
   }, [periodAttempts, w]);
   const exams = useAppStore((s) => s.exams);
-  const examSeries = useMemo(() => exams.slice(-12).map((e) => ({ label: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(new Date(e.finishedAt)), pct: e.maxScore ? Math.round((e.score / e.maxScore) * 100) : 0 })), [exams]);
+  const examSeries = useMemo(() => exams.slice(-12).map((e) => ({ label: fmtDate(new Date(e.finishedAt)), pct: e.maxScore ? Math.round((e.score / e.maxScore) * 100) : 0 })), [exams]);
   const ratio = useMemo(() => {
     const byMode = { practice: { n: 0, c: 0 }, exam: { n: 0, c: 0 }, review: { n: 0, c: 0 } };
     let correct = 0;
@@ -85,7 +86,7 @@ export default function Analytics() {
   }, [periodAttempts, profile]);
 
   if (attempts.length === 0) {
-    return <EmptyState icon={BarChart3} lexi="reading" title="Пока нет данных для аналитики" description="Пройдите несколько практических сессий — графики и рекомендации построятся автоматически." action={<Button onClick={() => navigate('/practice')}>Начать практику</Button>} />;
+    return <EmptyState icon={BarChart3} lexi="reading" title={tr('Пока нет данных для аналитики')} description={tr('Пройдите несколько практических сессий — графики и рекомендации построятся автоматически.')} action={<Button onClick={() => navigate('/practice')}>{tr('Начать практику')}</Button>} />;
   }
 
   const periodAcc = periodAttempts.length ? Math.round((periodAttempts.filter((a) => a.correct).length / periodAttempts.length) * 100) : 0;
@@ -94,39 +95,39 @@ export default function Analytics() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Segmented value={weeks} onChange={setWeeks} options={[{ value: '4', label: '4 недели' }, { value: '12', label: '3 месяца' }, { value: '26', label: '6 месяцев' }]} />
+        <Segmented value={weeks} onChange={setWeeks} options={[{ value: '4', label: tr('4 недели') }, { value: '12', label: tr('3 месяца') }, { value: '26', label: tr('6 месяцев') }]} />
         <Button variant="secondary" size="sm" onClick={() => setShowTable((v) => !v)} aria-pressed={showTable}>
-          <Table2 /> {showTable ? 'Скрыть таблицу' : 'Таблица данных'}
+          <Table2 /> {showTable ? tr('Скрыть таблицу') : tr('Таблица данных')}
         </Button>
       </div>
 
       <SmartAnalysis />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="Прогноз ЕНТ" value={`${stats.prediction.total}`} hint={`цель ${profile.targetScore}`} />
-        <Kpi label="Точность за период" value={`${periodAcc}%`} hint={`${fmtNum(periodAttempts.length)} ответов`} />
-        <Kpi label="Часов за период" value={periodHours.toFixed(1)} hint={`≈ ${(periodHours / w).toFixed(1)} ч в неделю`} />
-        <Kpi label="Слабых тем" value={String(weak.length)} hint="точность < 70%" />
+        <Kpi label={tr('Прогноз ЕНТ')} value={`${stats.prediction.total}`} hint={tr('цель {0}', profile.targetScore)} />
+        <Kpi label={tr('Точность за период')} value={`${periodAcc}%`} hint={tr('{0} ответов', fmtNum(periodAttempts.length))} />
+        <Kpi label={tr('Часов за период')} value={periodHours.toFixed(1)} hint={tr('≈ {0} ч в неделю', (periodHours / w).toFixed(1))} />
+        <Kpi label={tr('Слабых тем')} value={String(weak.length)} hint={tr('точность < 70%')} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <ChartCard title="Прогноз балла ЕНТ" desc={`По неделям, шкала ${stats.prediction.max}`}>
-          <Legend items={[{ label: 'Прогноз', color: CHART.c1 }, { label: 'Цель', color: CHART.c3, dashed: true }]} />
+        <ChartCard title={tr('Прогноз балла ЕНТ')} desc={tr('По неделям, шкала {0}', stats.prediction.max)}>
+          <Legend items={[{ label: tr('Прогноз'), color: CHART.c1 }, { label: tr('Цель'), color: CHART.c3, dashed: true }]} />
           <div className="mt-3 h-60">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={score} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="label" {...axisProps} minTickGap={20} />
                 <YAxis domain={[0, stats.prediction.max]} {...axisProps} />
-                <Tooltip content={<ChartTooltip fmt={(v) => `${v} б.`} />} />
+                <Tooltip content={<ChartTooltip fmt={(v) => tr('{0} б.', v)} />} />
                 <ReferenceLine y={profile.targetScore} stroke={CHART.c3} strokeDasharray="5 4" />
-                <Line dataKey="score" name="Прогноз" stroke={CHART.c1} strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+                <Line dataKey="score" name={tr('Прогноз')} stroke={CHART.c1} strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
-        <ChartCard title="Точность по неделям" desc="Доля верных ответов, %">
+        <ChartCard title={tr('Точность по неделям')} desc={tr('Доля верных ответов, %')}>
           <div className="h-[268px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={weekly} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
@@ -134,27 +135,27 @@ export default function Analytics() {
                 <XAxis dataKey="label" {...axisProps} minTickGap={20} />
                 <YAxis domain={[0, 100]} {...axisProps} />
                 <Tooltip content={<ChartTooltip fmt={(v) => `${v}%`} />} />
-                <Line dataKey="accuracy" name="Точность" stroke={CHART.c1} strokeWidth={2} dot={{ r: 3 }} connectNulls activeDot={{ r: 5 }} />
+                <Line dataKey="accuracy" name={tr('Точность')} stroke={CHART.c1} strokeWidth={2} dot={{ r: 3 }} connectNulls activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
-        <ChartCard title="Часы занятий" desc="Суммарно за неделю">
+        <ChartCard title={tr('Часы занятий')} desc={tr('Суммарно за неделю')}>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weekly} margin={{ top: 8, right: 4, left: -22, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="label" {...axisProps} minTickGap={16} />
                 <YAxis {...axisProps} />
-                <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => `${v} ч`} />} />
-                <Bar dataKey="hours" name="Часы" fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={26} />
+                <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => tr('{0} ч', v)} />} />
+                <Bar dataKey="hours" name={tr('Часы')} fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={26} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </ChartCard>
 
-        <ChartCard title="Сравнение предметов" desc="Точность за период, %">
+        <ChartCard title={tr('Сравнение предметов')} desc={tr('Точность за период, %')}>
           <div className="space-y-3 pt-1">
             {subjects.map((s) => (
               <div key={s.id} className="flex items-center gap-3">
@@ -163,7 +164,7 @@ export default function Analytics() {
                   <div className="mb-1 flex justify-between text-sm">
                     <span className="truncate">{s.name}</span>
                     <span className="tabular">
-                      <span className="font-semibold">{s.n ? `${s.accuracy}%` : '—'}</span> <span className="text-xs text-muted-foreground">· {s.n} отв.</span>
+                      <span className="font-semibold">{s.n ? `${s.accuracy}%` : '—'}</span> <span className="text-xs text-muted-foreground">{tr('· {0} отв.', s.n)}</span>
                     </span>
                   </div>
                   <Progress value={s.accuracy} className="h-2" />
@@ -173,7 +174,7 @@ export default function Analytics() {
           </div>
         </ChartCard>
 
-        <ChartCard title="Сложность вопросов" desc="Точность по уровню сложности, %">
+        <ChartCard title={tr('Сложность вопросов')} desc={tr('Точность по уровню сложности, %')}>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={diff} margin={{ top: 8, right: 4, left: -22, bottom: 0 }}>
@@ -181,28 +182,28 @@ export default function Analytics() {
                 <XAxis dataKey="name" {...axisProps} />
                 <YAxis domain={[0, 100]} {...axisProps} />
                 <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => `${v}%`} />} />
-                <Bar dataKey="accuracy" name="Точность" fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={48} />
+                <Bar dataKey="accuracy" name={tr('Точность')} fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </div>
           <div className="mt-2 flex justify-around text-xs text-muted-foreground">
             {diff.map((d) => (
               <span key={d.name}>
-                {d.name}: {d.n} отв.
+                {tr('{0}: {1} отв.', d.name, d.n)}
               </span>
             ))}
           </div>
         </ChartCard>
 
-        <ChartCard title="Активность по дням недели" desc="В среднем вопросов в день недели">
+        <ChartCard title={tr('Активность по дням недели')} desc={tr('В среднем вопросов в день недели')}>
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weekdays} margin={{ top: 8, right: 4, left: -22, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="label" {...axisProps} />
                 <YAxis {...axisProps} />
-                <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => `${v} вопр.`} />} />
-                <Bar dataKey="avg" name="В среднем" fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={36} />
+                <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => tr('{0} вопр.', v)} />} />
+                <Bar dataKey="avg" name={tr('В среднем')} fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={36} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -210,9 +211,9 @@ export default function Analytics() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <ChartCard title="История экзаменов" desc="Результат пробных ЕНТ, % от максимума">
+        <ChartCard title={tr('История экзаменов')} desc={tr('Результат пробных ЕНТ, % от максимума')}>
           {examSeries.length === 0 ? (
-            <EmptyState icon={BarChart3} lexi="exam" title="Экзаменов пока нет" description="Пройди пробный экзамен — здесь появится динамика." className="py-6" />
+            <EmptyState icon={BarChart3} lexi="exam" title={tr('Экзаменов пока нет')} description={tr('Пройди пробный экзамен — здесь появится динамика.')} className="py-6" />
           ) : (
             <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">
@@ -221,20 +222,20 @@ export default function Analytics() {
                   <XAxis dataKey="label" {...axisProps} minTickGap={16} />
                   <YAxis domain={[0, 100]} {...axisProps} />
                   <Tooltip content={<ChartTooltip fmt={(v) => `${v}%`} />} />
-                  <Line dataKey="pct" name="Результат" stroke={CHART.c1} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                  <Line dataKey="pct" name={tr('Результат')} stroke={CHART.c1} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
         </ChartCard>
-        <ChartCard title="Верно и неверно" desc="Соотношение ответов за период">
+        <ChartCard title={tr('Верно и неверно')} desc={tr('Соотношение ответов за период')}>
           <div className="space-y-4">
             <div>
               <div className="mb-1.5 flex justify-between text-sm">
-                <span className="text-success">Верно · {fmtNum(ratio.correct)}</span>
-                <span className="text-danger">Неверно · {fmtNum(ratio.wrong)}</span>
+                <span className="text-success">{tr('Верно · {0}', fmtNum(ratio.correct))}</span>
+                <span className="text-danger">{tr('Неверно · {0}', fmtNum(ratio.wrong))}</span>
               </div>
-              <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={`Верно ${ratio.correct}, неверно ${ratio.wrong}`}>
+              <div className="flex h-3 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={tr('Верно {0}, неверно {1}', ratio.correct, ratio.wrong)}>
                 <div className="bg-success" style={{ width: `${ratio.total ? (ratio.correct / ratio.total) * 100 : 0}%` }} />
                 <div className="bg-danger" style={{ width: `${ratio.total ? (ratio.wrong / ratio.total) * 100 : 0}%` }} />
               </div>
@@ -243,9 +244,9 @@ export default function Analytics() {
               const r = ratio.byMode[m];
               return (
                 <div key={m} className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2 text-sm">
-                  <span>{{ practice: 'Практика', exam: 'Экзамены', review: 'Повторение ошибок' }[m]}</span>
+                  <span>{{ practice: tr('Практика'), exam: tr('Экзамены'), review: tr('Повторение ошибок') }[m]}</span>
                   <span className="tabular text-muted-foreground">
-                    <span className="font-semibold text-foreground">{r.n ? `${Math.round((r.c / r.n) * 100)}%` : '—'}</span> · {fmtNum(r.n)} отв.
+                    <span className="font-semibold text-foreground">{r.n ? `${Math.round((r.c / r.n) * 100)}%` : '—'}</span> {tr('· {0} отв.', fmtNum(r.n))}
                   </span>
                 </div>
               );
@@ -259,13 +260,13 @@ export default function Analytics() {
           <CardHeader>
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="size-4 text-violet" /> Слабые темы и рекомендации
+                <Lightbulb className="size-4 text-violet" /> {tr('Слабые темы и рекомендации')}
               </CardTitle>
-              <CardDescription>Рассчитано по последним 25 ответам в каждой теме ЕНТ-предметов</CardDescription>
+              <CardDescription>{tr('Рассчитано по последним 25 ответам в каждой теме ЕНТ-предметов')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {weak.length === 0 ? <LexiBubble mood="default" text="Слабых тем не обнаружено — во всех темах с достаточной статистикой точность выше 70%." tone="success" /> : <LexiBubble mood="thinking" text="Я проанализировал твои ответы. Вот с чего лучше начать:" tone="violet" size="xs" />}
+            {weak.length === 0 ? <LexiBubble mood="default" text={tr('Слабых тем не обнаружено — во всех темах с достаточной статистикой точность выше 70%.')} tone="success" /> : <LexiBubble mood="thinking" text={tr('Я проанализировал твои ответы. Вот с чего лучше начать:')} tone="violet" size="xs" />}
             {weak.map((t) => (
               <div key={t.topicId} className="flex gap-3 rounded-xl border p-3">
                 <SubjectIcon subject={t.subject} className="size-8" />
@@ -278,7 +279,7 @@ export default function Analytics() {
                   </div>
                   <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{t.message}</p>
                   <Button size="sm" variant="link" className="mt-1" onClick={() => navigate(`/practice?subject=${t.subject}&topic=${t.topicId}&count=${t.recommendedCount}`)}>
-                    Решить {t.recommendedCount} вопросов <ArrowRight />
+                    {tr('Решить {0} вопросов', t.recommendedCount)} <ArrowRight />
                   </Button>
                 </div>
               </div>
@@ -289,8 +290,8 @@ export default function Analytics() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Темы с наименьшей точностью</CardTitle>
-              <CardDescription>За выбранный период, минимум 4 ответа</CardDescription>
+              <CardTitle>{tr('Темы с наименьшей точностью')}</CardTitle>
+              <CardDescription>{tr('За выбранный период, минимум 4 ответа')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -305,7 +306,7 @@ export default function Analytics() {
                 <Progress value={t.accuracy} indicatorClassName={t.accuracy < 50 ? 'bg-danger' : t.accuracy < 70 ? 'bg-warning' : 'bg-success'} />
               </button>
             ))}
-            {topicBars.length === 0 && <p className="text-sm text-muted-foreground">Недостаточно данных за период</p>}
+            {topicBars.length === 0 && <p className="text-sm text-muted-foreground">{tr('Недостаточно данных за период')}</p>}
           </CardContent>
         </Card>
       </div>
@@ -313,8 +314,8 @@ export default function Analytics() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Разбор прогноза по блокам ЕНТ</CardTitle>
-            <CardDescription>Взвешенная точность (сложные вопросы весят больше, свежие ответы важнее)</CardDescription>
+            <CardTitle>{tr('Разбор прогноза по блокам ЕНТ')}</CardTitle>
+            <CardDescription>{tr('Взвешенная точность (сложные вопросы весят больше, свежие ответы важнее)')}</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -322,7 +323,7 @@ export default function Analytics() {
             <div key={b.key} className="grid grid-cols-[1fr_auto] items-center gap-3 sm:grid-cols-[220px_1fr_auto]">
               <div className="flex items-center gap-2 text-sm">
                 <SubjectIcon subject={b.subject} className="size-7" />
-                <span className="truncate">{b.label}</span>
+                <span className="truncate">{tr(b.label)}</span>
               </div>
               <Progress value={(b.points / b.maxPoints) * 100} className="col-span-2 h-2 sm:col-span-1" />
               <span className="row-start-1 text-sm tabular sm:row-auto">
@@ -336,16 +337,16 @@ export default function Analytics() {
       {showTable && (
         <Card>
           <CardHeader>
-            <CardTitle>Данные по неделям</CardTitle>
+            <CardTitle>{tr('Данные по неделям')}</CardTitle>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <table className="w-full min-w-[480px] text-sm">
               <thead>
                 <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="py-2 font-medium">Неделя с</th>
-                  <th className="py-2 font-medium">Вопросов</th>
-                  <th className="py-2 font-medium">Точность</th>
-                  <th className="py-2 font-medium">Часы</th>
+                  <th className="py-2 font-medium">{tr('Неделя с')}</th>
+                  <th className="py-2 font-medium">{tr('Вопросов')}</th>
+                  <th className="py-2 font-medium">{tr('Точность')}</th>
+                  <th className="py-2 font-medium">{tr('Часы')}</th>
                 </tr>
               </thead>
               <tbody>

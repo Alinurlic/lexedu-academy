@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from '@/lib/auth';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { BankGate } from '@/components/BankGate';
@@ -7,7 +7,9 @@ import { Toaster } from '@/components/Toaster';
 import { PageSkeleton } from '@/components/PageSkeleton';
 import { useApplyTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui';
-import { STORE_KEY } from '@/store/useAppStore';
+import { STORE_KEY, useAppStore } from '@/store/useAppStore';
+import { loadUiLang, uiLang } from '@/i18n';
+import { tr } from '@/i18n';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Practice = lazy(() => import('@/pages/Practice'));
@@ -41,24 +43,24 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
     return (
       <div className="grid min-h-screen place-items-center p-6">
         <div className="max-w-md rounded-2xl border bg-card p-8 text-center">
-          <h1 className="text-lg font-semibold">Что-то пошло не так</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Произошла непредвиденная ошибка интерфейса. Ваши данные сохранены локально.</p>
+          <h1 className="text-lg font-semibold">{tr('Что-то пошло не так')}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{tr('Произошла непредвиденная ошибка интерфейса. Ваши данные сохранены локально.')}</p>
           <pre className="mt-4 max-h-32 overflow-auto rounded-lg bg-secondary p-3 text-left text-xs text-muted-foreground">{this.state.error.message}</pre>
           <div className="mt-5 flex justify-center gap-2">
             <Button variant="secondary" onClick={() => ((location.hash = '#/'), location.reload())}>
-              На главную
+              {tr('На главную')}
             </Button>
             <Button
               variant="danger"
               onClick={() => {
-                if (confirm('Сбросить все локальные данные LexEdu?')) {
+                if (confirm(tr('Сбросить все локальные данные LexEdu?'))) {
                   localStorage.removeItem(STORE_KEY);
                   location.hash = '#/';
                   location.reload();
                 }
               }}
             >
-              Сбросить данные
+              {tr('Сбросить данные')}
             </Button>
           </div>
         </div>
@@ -67,14 +69,32 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
+/** Язык интерфейса из профиля; при смене загружает словарь и возвращает новый язык (ключ для перерисовки). */
+function useUiLang() {
+  const wanted = useAppStore((s) => s.profile.language) === 'kk' ? 'kk' : 'ru';
+  const [shown, setShown] = useState(uiLang());
+  useEffect(() => {
+    let alive = true;
+    loadUiLang(wanted).then(
+      () => alive && setShown(wanted),
+      () => undefined,
+    );
+    return () => {
+      alive = false;
+    };
+  }, [wanted]);
+  return shown;
+}
+
 export function App() {
   useApplyTheme();
+  const lang = useUiLang();
   useEffect(() => {
     void useAuth.getState().init();
   }, []);
   return (
     <ErrorBoundary>
-      <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <HashRouter key={lang} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Suspense fallback={<PageSkeleton full />}>
           <Routes>
             <Route path="/practice/session" element={<BankGate full><PracticeSession /></BankGate>} />

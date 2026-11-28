@@ -1,4 +1,5 @@
 import type { ExamFormat, Subject, SubjectId, Taxonomy, Topic } from '@/types';
+import { trProp } from '@/i18n';
 
 const t = (id: string, name: string, subtopics: string[], advice: string): Topic => ({ id, name, subtopics, advice });
 
@@ -352,6 +353,26 @@ export const TOPIC_MAP: Record<string, Topic & { subject: SubjectId }> = Object.
 /** Исходный справочник — чтобы правки админ-панели можно было отменить. */
 const BASE = SUBJECTS.map((s) => ({ id: s.id, name: s.name, topics: s.topics.map((t) => ({ ...t, subtopics: [...t.subtopics] })) }));
 
+/**
+ * Названия предметов и тем, сокращения и советы читаются на языке интерфейса (ключ — русский текст).
+ * Вызывается после создания справочника и после применения правок (новые объекты тем).
+ */
+function localizeTaxonomy() {
+  for (const s of SUBJECTS) {
+    trProp(s, 'name');
+    trProp(s, 'short');
+    for (const tp of s.topics) {
+      trProp(tp, 'name');
+      trProp(tp, 'advice');
+    }
+  }
+  for (const tp of Object.values(TOPIC_MAP)) {
+    trProp(tp, 'name');
+    trProp(tp, 'advice');
+  }
+}
+localizeTaxonomy();
+
 export const EMPTY_TAXONOMY: Taxonomy = { subjectNames: {}, topicEdits: {}, customTopics: [] };
 
 /**
@@ -374,6 +395,7 @@ export function applyTaxonomy(t: Taxonomy = EMPTY_TAXONOMY) {
   }
   for (const k of Object.keys(TOPIC_MAP)) delete TOPIC_MAP[k];
   for (const s of SUBJECTS) for (const tp of s.topics) TOPIC_MAP[tp.id] = { ...tp, subject: s.id };
+  localizeTaxonomy();
 }
 
 export function isBuiltinTopic(id: string) {
@@ -427,6 +449,14 @@ export const TRACKS: { id: import('@/types').Track; name: string; full: string; 
   { id: 'sat', name: 'SAT', full: 'Digital SAT', scale: '400–1600' },
   { id: 'ielts', name: 'IELTS', full: 'IELTS Academic', scale: 'Band 0–9' },
 ];
+
+for (const tk of TRACKS) {
+  trProp(tk, 'name');
+  trProp(tk, 'full');
+  trProp(tk, 'scale');
+}
+trProp(DEFAULT_EXAM_FORMAT, 'name');
+for (const b of DEFAULT_EXAM_FORMAT.blocks) trProp(b, 'label');
 
 export function subjectsOf(track: import('@/types').Track) {
   return SUBJECTS.filter((s) => s.track === track);

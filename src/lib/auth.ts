@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import { exportPayload, pickPersisted, useAppStore, type PersistedState } from '@/store/useAppStore';
 import { applyTaxonomy, EMPTY_TAXONOMY } from '@/data/subjects';
+import { tr } from '@/i18n';
 
 /**
  * Аккаунты LexEdu Academy (Supabase Auth).
@@ -68,35 +69,35 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
   signIn: async (email, password, captchaToken) => {
     const sb = await getSupabase();
-    if (!sb) return { ok: false, error: 'Supabase не настроен' };
+    if (!sb) return { ok: false, error: tr('Supabase не настроен') };
     const { error } = await sb.auth.signInWithPassword({ email, password, options: captchaToken ? { captchaToken } : undefined });
     if (error) return { ok: false, error: translate(error.message), unconfirmed: /not confirmed/i.test(error.message) };
     return { ok: true };
   },
   signUp: async (email, password, captchaToken) => {
     const sb = await getSupabase();
-    if (!sb) return { ok: false, error: 'Supabase не настроен' };
+    if (!sb) return { ok: false, error: tr('Supabase не настроен') };
     const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: redirectUrl(), captchaToken } });
     if (error) return { ok: false, error: translate(error.message) };
     // Supabase не раскрывает, существует ли email: при повторной регистрации identities пустой
-    if (data.user && data.user.identities && data.user.identities.length === 0) return { ok: false, error: 'Пользователь с таким email уже зарегистрирован. Войдите или восстановите пароль.' };
+    if (data.user && data.user.identities && data.user.identities.length === 0) return { ok: false, error: tr('Пользователь с таким email уже зарегистрирован. Войдите или восстановите пароль.') };
     return { ok: true, needsConfirmation: !data.session };
   },
   resend: async (email) => {
     const sb = await getSupabase();
-    if (!sb) return 'Supabase не настроен';
+    if (!sb) return tr('Supabase не настроен');
     const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: redirectUrl() } });
     return error ? translate(error.message) : null;
   },
   requestReset: async (email, captchaToken) => {
     const sb = await getSupabase();
-    if (!sb) return 'Supabase не настроен';
+    if (!sb) return tr('Supabase не настроен');
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl(), captchaToken });
     return error ? translate(error.message) : null;
   },
   updatePassword: async (password) => {
     const sb = await getSupabase();
-    if (!sb) return 'Supabase не настроен';
+    if (!sb) return tr('Supabase не настроен');
     const { error } = await sb.auth.updateUser({ password });
     if (error) return translate(error.message);
     set({ recovery: false });
@@ -111,7 +112,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   push: async () => {
     const sb = await getSupabase();
     const uid = get().userId;
-    if (!sb || !uid) return 'Нужно войти в аккаунт';
+    if (!sb || !uid) return tr('Нужно войти в аккаунт');
     const { state } = exportPayload();
     const { error } = await sb.from('user_state').upsert({ user_id: uid, state, updated_at: new Date().toISOString() });
     if (error) return translate(error.message);
@@ -122,17 +123,17 @@ export const useAuth = create<AuthState>((set, get) => ({
   pull: async () => {
     const sb = await getSupabase();
     const uid = get().userId;
-    if (!sb || !uid) return 'Нужно войти в аккаунт';
+    if (!sb || !uid) return tr('Нужно войти в аккаунт');
     const { data, error } = await sb.from('user_state').select('state').eq('user_id', uid).maybeSingle();
     if (error) return translate(error.message);
-    if (!data?.state) return 'В облаке пока нет сохранённого прогресса';
+    if (!data?.state) return tr('В облаке пока нет сохранённого прогресса');
     try {
       localStorage.setItem('lexedu-store-backup-before-pull', JSON.stringify(pickPersisted(useAppStore.getState())));
     } catch {
       /* резервная копия не поместилась — продолжаем, данные из облака проверяются схемой */
     }
     const ok = useAppStore.getState().importData(data.state);
-    if (!ok) return 'Данные в облаке повреждены или устарели';
+    if (!ok) return tr('Данные в облаке повреждены или устарели');
     applyTaxonomy((data.state as Partial<PersistedState>).taxonomy ?? EMPTY_TAXONOMY);
     useAppStore.getState().markSynced();
     return null;
@@ -169,13 +170,13 @@ useAppStore.subscribe((s, prev) => {
 });
 
 function translate(m: string) {
-  if (/Invalid login credentials/i.test(m)) return 'Неверный email или пароль';
-  if (/already registered/i.test(m)) return 'Пользователь с таким email уже зарегистрирован';
-  if (/Password should be/i.test(m)) return 'Пароль слишком короткий (минимум 8 символов)';
-  if (/Email not confirmed/i.test(m)) return 'Email не подтверждён. Перейдите по ссылке из письма или отправьте письмо ещё раз.';
-  if (/captcha/i.test(m)) return 'Подтвердите, что вы не робот';
-  if (/rate limit|too many/i.test(m)) return 'Слишком много попыток. Подождите немного и попробуйте снова.';
-  if (/Unable to validate email|invalid format/i.test(m)) return 'Некорректный email';
+  if (/Invalid login credentials/i.test(m)) return tr('Неверный email или пароль');
+  if (/already registered/i.test(m)) return tr('Пользователь с таким email уже зарегистрирован');
+  if (/Password should be/i.test(m)) return tr('Пароль слишком короткий (минимум 8 символов)');
+  if (/Email not confirmed/i.test(m)) return tr('Email не подтверждён. Перейдите по ссылке из письма или отправьте письмо ещё раз.');
+  if (/captcha/i.test(m)) return tr('Подтвердите, что вы не робот');
+  if (/rate limit|too many/i.test(m)) return tr('Слишком много попыток. Подождите немного и попробуйте снова.');
+  if (/Unable to validate email|invalid format/i.test(m)) return tr('Некорректный email');
   return m;
 }
 

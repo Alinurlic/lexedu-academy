@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSupabase } from './supabase';
+import { tr, uiLang } from '@/i18n';
 
 /**
  * Клиент серверного ИИ LexEdu (Vercel-функция /api/lexi → Claude или Google Gemini).
@@ -21,14 +22,14 @@ export interface AiStatus {
 let statusPromise: Promise<AiStatus> | null = null;
 
 export function aiStatus(): Promise<AiStatus> {
-  if (location.protocol === 'file:') return Promise.resolve({ enabled: false, reason: 'Файл открыт с диска — серверный ИИ недоступен.' });
+  if (location.protocol === 'file:') return Promise.resolve({ enabled: false, reason: tr('Файл открыт с диска — серверный ИИ недоступен.') });
   statusPromise ??= fetch(ENDPOINT, { method: 'GET' })
     .then(async (r) => {
-      if (!r.ok) return { enabled: false, reason: `Сервер ИИ ответил ${r.status}` };
+      if (!r.ok) return { enabled: false, reason: tr('Сервер ИИ ответил {0}', r.status) };
       const data = (await r.json()) as Partial<AiStatus>;
       return { enabled: !!data.enabled, provider: data.provider, model: data.model, requiresAuth: data.requiresAuth, reason: data.reason };
     })
-    .catch(() => ({ enabled: false, reason: 'Серверная функция ИИ не найдена (локальный режим).' }));
+    .catch(() => ({ enabled: false, reason: tr('Серверная функция ИИ не найдена (локальный режим).') }));
   return statusPromise;
 }
 
@@ -55,8 +56,15 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as { error?: string } & T;
-  if (!res.ok) throw new AiError(data.error ?? `Ошибка сервера ИИ (${res.status})`, res.status);
+  if (!res.ok) throw new AiError(data.error ? serverMessage(data.error) : tr('Ошибка сервера ИИ ({0})', res.status), res.status);
   return data;
+}
+
+/** Сервер отвечает по-русски — переводим известные сообщения на язык интерфейса. */
+function serverMessage(s: string) {
+  const limit = s.match(/^Дневной лимит ИИ \((\d+) запросов\) исчерпан\. Возвращайся завтра!$/);
+  if (limit) return tr('Дневной лимит ИИ ({0} запросов) исчерпан. Возвращайся завтра!', limit[1]);
+  return tr(s);
 }
 
 export interface ChatTurn {
@@ -65,7 +73,7 @@ export interface ChatTurn {
 }
 
 export function aiChat(messages: ChatTurn[], context: string) {
-  return call<{ reply: string }>({ action: 'chat', messages, context });
+  return call<{ reply: string }>({ action: 'chat', messages, context, lang: uiLang() });
 }
 
 export interface WritingGrade {
@@ -77,7 +85,7 @@ export interface WritingGrade {
 }
 
 export function aiGradeWriting(task: 'writing1' | 'writing2' | 'speaking', prompt: string, answer: string) {
-  return call<WritingGrade>({ action: 'grade', task, prompt, answer });
+  return call<WritingGrade>({ action: 'grade', task, prompt, answer, lang: uiLang() });
 }
 
 export interface GeneratedQuestion {
@@ -93,7 +101,7 @@ export function aiGenerateQuestions(params: { subject: string; topic: string; co
 }
 
 export function aiAnalyze(summary: string) {
-  return call<{ reply: string }>({ action: 'analyze', summary });
+  return call<{ reply: string }>({ action: 'analyze', summary, lang: uiLang() });
 }
 
 /** Хук: статус ИИ для бейджей в интерфейсе. */

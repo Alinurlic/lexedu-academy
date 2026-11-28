@@ -3,6 +3,7 @@ import { SUBJECT_MAP, TOPIC_MAP, TRACKS } from '@/data/subjects';
 import { predictTrack, trackHistory, weakTopics } from './analytics';
 import { addDays, dayKey, daysBetween, fromKey, startOfWeek } from './date';
 import { trackProfile } from '@/hooks/useTrack';
+import { tr } from '@/i18n';
 
 export interface Insight {
   id: string;
@@ -26,7 +27,7 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
   const tp = trackProfile(profile, track);
   const name = TRACKS.find((t) => t.id === track)!.name;
   if (mine.length < 15) {
-    return [{ id: 'need-data', kind: 'info', tone: 'info', title: 'Нужно больше данных', text: `Реши ещё ${15 - mine.length} заданий по ${name}, и я смогу построить прогноз и найти слабые места.`, action: { label: 'К практике', to: '/practice' } }];
+    return [{ id: 'need-data', kind: 'info', tone: 'info', title: tr('Нужно больше данных'), text: tr('Реши ещё {0} заданий по {1}, и я смогу построить прогноз и найти слабые места.', 15 - mine.length, name), action: { label: tr('К практике'), to: '/practice' } }];
   }
 
   // 1. Прогноз к дате экзамена по текущему темпу
@@ -39,7 +40,7 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
     const weeksLeft = Math.max(0, days / 7);
     const projected = Math.min(pred.max, Math.max(pred.min, Math.round((pred.value + slopePerWeek * weeksLeft) * 2) / 2));
     const gap = Math.round((tp.target - pred.value) * 10) / 10;
-    const unit = track === 'ielts' ? 'band' : 'балла';
+    const unit = track === 'ielts' ? 'band' : tr('балла');
     if (days > 0 && gap > 0) {
       const need = Math.round((gap / Math.max(1, weeksLeft)) * 100) / 100;
       const ok = projected >= tp.target;
@@ -47,12 +48,12 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
         id: 'forecast',
         kind: 'forecast',
         tone: ok ? 'good' : 'warn',
-        title: ok ? 'Успеваешь к цели' : 'Темп ниже нужного',
-        text: `Сейчас прогноз — ${pred.value}, цель — ${tp.target}. За последние недели прогноз меняется на ${slopePerWeek >= 0 ? '+' : ''}${Math.round(slopePerWeek * 100) / 100} ${unit} в неделю. При таком темпе к экзамену (через ${Math.round(weeksLeft)} нед.) выйдет около ${projected}. Нужно в среднем +${need} ${unit} в неделю.`,
-        action: ok ? undefined : { label: 'Составить план', to: '/analytics#plan' },
+        title: ok ? tr('Успеваешь к цели') : tr('Темп ниже нужного'),
+        text: tr('Сейчас прогноз — {0}, цель — {1}. За последние недели прогноз меняется на {2}{3} {4} в неделю. При таком темпе к экзамену (через {5} нед.) выйдет около {6}. Нужно в среднем +{7} {8} в неделю.', pred.value, tp.target, slopePerWeek >= 0 ? '+' : '', Math.round(slopePerWeek * 100) / 100, unit, Math.round(weeksLeft), projected, need, unit),
+        action: ok ? undefined : { label: tr('Составить план'), to: '/analytics#plan' },
       });
     } else if (gap <= 0) {
-      out.push({ id: 'forecast', kind: 'forecast', tone: 'good', title: 'Прогноз выше цели', text: `Прогноз ${pred.value} уже не ниже цели ${tp.target}. Поддерживай форму пробными экзаменами раз в неделю и подними цель, если хочешь большего.`, action: { label: 'Пробный экзамен', to: '/exams' } });
+      out.push({ id: 'forecast', kind: 'forecast', tone: 'good', title: tr('Прогноз выше цели'), text: tr('Прогноз {0} уже не ниже цели {1}. Поддерживай форму пробными экзаменами раз в неделю и подними цель, если хочешь большего.', pred.value, tp.target), action: { label: tr('Пробный экзамен'), to: '/exams' } });
     }
   }
 
@@ -60,7 +61,7 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
   const weak = weakTopics(attempts.filter((a) => rel.has(a.subject)), { ...profile, profileSubjects: profile.profileSubjects }, 3, format).filter((w) => rel.has(w.subject));
   const weakList = weak.length ? weak : weakForTrack(mine, 3);
   for (const w of weakList.slice(0, 2)) {
-    out.push({ id: `weak-${w.topicId}`, kind: 'weak', tone: w.accuracy < 0.5 ? 'bad' : 'warn', title: `Слабая тема: ${TOPIC_MAP[w.topicId]?.name}`, text: `Точность ${Math.round(w.accuracy * 100)}% по последним ответам. Рекомендую ${TOPIC_MAP[w.topicId]?.advice ?? 'повторить теорию'} и решить ${w.accuracy < 0.5 ? 15 : 10} заданий.`, action: { label: 'Тренировать', to: `/practice?subject=${w.subject}&topic=${w.topicId}&count=10` } });
+    out.push({ id: `weak-${w.topicId}`, kind: 'weak', tone: w.accuracy < 0.5 ? 'bad' : 'warn', title: tr('Слабая тема: {0}', TOPIC_MAP[w.topicId]?.name), text: tr('Точность {0}% по последним ответам. Рекомендую {1} и решить {2} заданий.', Math.round(w.accuracy * 100), TOPIC_MAP[w.topicId]?.advice ?? tr('повторить теорию'), w.accuracy < 0.5 ? 15 : 10), action: { label: tr('Тренировать'), to: `/practice?subject=${w.subject}&topic=${w.topicId}&count=10` } });
   }
 
   // 3. Медленные темы: среднее время ответа заметно выше среднего по предмету
@@ -78,7 +79,7 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
       if (ratio >= 1.35 && (!slowest || ratio > slowest.ratio)) slowest = { topic, ratio, sec: Math.round(t / 1000) };
     }
   }
-  if (slowest) out.push({ id: 'slow', kind: 'slow', tone: 'warn', title: `Медленно: ${TOPIC_MAP[slowest.topic]?.name}`, text: `На задания этой темы уходит в среднем ${slowest.sec} с — в ${Math.round(slowest.ratio * 10) / 10} раза дольше, чем на другие темы предмета. На экзамене это съедает время: потренируйся с таймером.`, action: { label: 'Практика с таймером', to: `/practice?subject=${TOPIC_MAP[slowest.topic]?.subject}&topic=${slowest.topic}` } });
+  if (slowest) out.push({ id: 'slow', kind: 'slow', tone: 'warn', title: tr('Медленно: {0}', TOPIC_MAP[slowest.topic]?.name), text: tr('На задания этой темы уходит в среднем {0} с — в {1} раза дольше, чем на другие темы предмета. На экзамене это съедает время: потренируйся с таймером.', slowest.sec, Math.round(slowest.ratio * 10) / 10), action: { label: tr('Практика с таймером'), to: `/practice?subject=${TOPIC_MAP[slowest.topic]?.subject}&topic=${slowest.topic}` } });
 
   // 4. Забытые темы: точность хорошая, но давно не повторялись
   const lastSeen = new Map<string, { date: string; ok: number; n: number }>();
@@ -92,7 +93,7 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
   const stale = [...lastSeen.entries()].filter(([, e]) => e.n >= 5 && e.ok / e.n >= 0.65 && daysBetween(new Date(e.date), new Date()) >= 14).sort((a, b) => a[1].date.localeCompare(b[1].date));
   if (stale.length) {
     const [topic, e] = stale[0];
-    out.push({ id: 'forgotten', kind: 'forgotten', tone: 'info', title: `Пора повторить: ${TOPIC_MAP[topic]?.name}`, text: `Ты хорошо знал(а) эту тему (${Math.round((e.ok / e.n) * 100)}%), но не возвращался(ась) к ней ${daysBetween(new Date(e.date), new Date())} дней. Короткое повторение сейчас закрепит знание надолго.`, action: { label: 'Повторить 5 заданий', to: `/practice?subject=${TOPIC_MAP[topic]?.subject}&topic=${topic}&count=5` } });
+    out.push({ id: 'forgotten', kind: 'forgotten', tone: 'info', title: tr('Пора повторить: {0}', TOPIC_MAP[topic]?.name), text: tr('Ты хорошо знал(а) эту тему ({0}%), но не возвращался(ась) к ней {1} дней. Короткое повторение сейчас закрепит знание надолго.', Math.round((e.ok / e.n) * 100), daysBetween(new Date(e.date), new Date())), action: { label: tr('Повторить 5 заданий'), to: `/practice?subject=${TOPIC_MAP[topic]?.subject}&topic=${topic}&count=5` } });
   }
 
   // 5. Сложность: лёгкие решаются, сложные — нет
@@ -102,7 +103,7 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
   };
   const easy = acc('easy');
   const hard = acc('hard');
-  if (easy !== null && hard !== null && easy - hard >= 0.3) out.push({ id: 'difficulty', kind: 'difficulty', tone: 'warn', title: 'Провал на сложных заданиях', text: `Лёгкие — ${Math.round(easy * 100)}%, сложные — ${Math.round(hard * 100)}%. Основной резерв баллов — в сложных заданиях: выбирай сложность «Сложная» в практике и разбирай решения.`, action: { label: 'Сложные задания', to: '/practice' } });
+  if (easy !== null && hard !== null && easy - hard >= 0.3) out.push({ id: 'difficulty', kind: 'difficulty', tone: 'warn', title: tr('Провал на сложных заданиях'), text: tr('Лёгкие — {0}%, сложные — {1}%. Основной резерв баллов — в сложных заданиях: выбирай сложность «Сложная» в практике и разбирай решения.', Math.round(easy * 100), Math.round(hard * 100)), action: { label: tr('Сложные задания'), to: '/practice' } });
 
   // 6. Экзамен хуже практики
   const pr = mine.filter((a) => a.mode === 'practice').slice(-150);
@@ -110,12 +111,12 @@ export function buildInsights(track: Track, attempts: Attempt[], profile: Profil
   if (pr.length >= 20 && ex.length >= 20) {
     const p = pr.filter((a) => a.correct).length / pr.length;
     const e = ex.filter((a) => a.correct).length / ex.length;
-    if (p - e >= 0.1) out.push({ id: 'exam-gap', kind: 'exam-gap', tone: 'warn', title: 'На экзамене результат ниже', text: `В практике ${Math.round(p * 100)}%, на пробных экзаменах — ${Math.round(e * 100)}%. Вероятные причины — время и волнение. Проходи пробники в полном формате раз в неделю и отмечай трудные вопросы флажком, чтобы не застревать.`, action: { label: 'Пробный экзамен', to: '/exams' } });
+    if (p - e >= 0.1) out.push({ id: 'exam-gap', kind: 'exam-gap', tone: 'warn', title: tr('На экзамене результат ниже'), text: tr('В практике {0}%, на пробных экзаменах — {1}%. Вероятные причины — время и волнение. Проходи пробники в полном формате раз в неделю и отмечай трудные вопросы флажком, чтобы не застревать.', Math.round(p * 100), Math.round(e * 100)), action: { label: tr('Пробный экзамен'), to: '/exams' } });
   }
 
   // 7. Регулярность
   const last14 = new Set(mine.filter((a) => daysBetween(new Date(a.date), new Date()) < 14).map((a) => dayKey(a.date)));
-  if (last14.size < 6) out.push({ id: 'consistency', kind: 'consistency', tone: 'info', title: 'Занимайся чаще, но меньше', text: `За последние 2 недели занятия были только в ${last14.size} дн. Регулярность важнее длительности: 30–40 минут каждый день дают больше, чем 3 часа раз в неделю.`, action: { label: 'План недели', to: '/planner' } });
+  if (last14.size < 6) out.push({ id: 'consistency', kind: 'consistency', tone: 'info', title: tr('Занимайся чаще, но меньше'), text: tr('За последние 2 недели занятия были только в {0} дн. Регулярность важнее длительности: 30–40 минут каждый день дают больше, чем 3 часа раз в неделю.', last14.size), action: { label: tr('План недели'), to: '/planner' } });
 
   return out;
 }
@@ -145,31 +146,31 @@ export function buildWeekPlan(track: Track, attempts: Attempt[], mistakesOpen: n
   const subjects = [...rel].filter((s) => s !== 'ielts-speaking' && s !== 'ielts-writing');
   days.forEach((date, i) => {
     const w = weak[i % Math.max(1, weak.length)];
-    if (w) tasks.push({ date, title: `${TOPIC_MAP[w.topicId]?.name}: 10 заданий`, subject: w.subject, kind: 'questions', target: 10, priority: w.accuracy < 0.5 ? 'high' : 'medium', startTime: '17:00' });
-    else tasks.push({ date, title: `${SUBJECT_MAP[subjects[i % subjects.length]].name}: 15 заданий`, subject: subjects[i % subjects.length], kind: 'questions', target: 15, priority: 'medium', startTime: '17:00' });
-    if (mistakesOpen > 0 && i % 2 === 0) tasks.push({ date, title: 'Повторить ошибки', kind: 'questions', target: Math.min(10, mistakesOpen), priority: 'medium', startTime: '18:00' });
-    if (track === 'ielts' && i % 3 === 1) tasks.push({ date, title: 'IELTS Writing: одно эссе в Студии', subject: 'ielts-writing', kind: 'custom', target: 1, priority: 'medium', startTime: '19:00' });
+    if (w) tasks.push({ date, title: tr('{0}: 10 заданий', TOPIC_MAP[w.topicId]?.name), subject: w.subject, kind: 'questions', target: 10, priority: w.accuracy < 0.5 ? 'high' : 'medium', startTime: '17:00' });
+    else tasks.push({ date, title: tr('{0}: 15 заданий', SUBJECT_MAP[subjects[i % subjects.length]].name), subject: subjects[i % subjects.length], kind: 'questions', target: 15, priority: 'medium', startTime: '17:00' });
+    if (mistakesOpen > 0 && i % 2 === 0) tasks.push({ date, title: tr('Повторить ошибки'), kind: 'questions', target: Math.min(10, mistakesOpen), priority: 'medium', startTime: '18:00' });
+    if (track === 'ielts' && i % 3 === 1) tasks.push({ date, title: tr('IELTS Writing: одно эссе в Студии'), subject: 'ielts-writing', kind: 'custom', target: 1, priority: 'medium', startTime: '19:00' });
   });
   const examDay = days[days.length - 1];
-  tasks.push({ date: examDay, title: `Пробный экзамен ${TRACKS.find((t) => t.id === track)!.name}`, kind: 'custom', target: 1, priority: 'high', startTime: '10:00' });
+  tasks.push({ date: examDay, title: tr('Пробный экзамен {0}', TRACKS.find((t) => t.id === track)!.name), kind: 'custom', target: 1, priority: 'high', startTime: '10:00' });
   return tasks;
 }
 
 /** Компактная сводка для ИИ (чат и персональный план). Без персональных данных, кроме имени. */
 export function studentSummary(profile: Profile, attempts: Attempt[], format: ExamFormat, mistakesOpen: number): string {
-  const lines: string[] = [`Имя: ${profile.name || 'ученик'}, класс: ${profile.grade}`];
+  const lines: string[] = [tr('Имя: {0}, класс: {1}', profile.name || tr('ученик'), profile.grade)];
   for (const t of ['ent', 'sat', 'ielts'] as Track[]) {
     const tp = trackProfile(profile, t);
     if (t !== 'ent' && !tp.enabled) continue;
     const pred = predictTrack(t, attempts, profile, format);
     const days = tp.examDate ? daysBetween(new Date(), fromKey(tp.examDate)) : null;
-    lines.push(`${TRACKS.find((x) => x.id === t)!.name}: уровень ${tp.level}, последний результат ${tp.lastResult ?? 'нет'}, цель ${tp.target}, прогноз по ответам ${pred.value}${days !== null ? `, до экзамена ${days} дн.` : ''}; разделы: ${pred.parts.map((p) => `${p.label} ${p.value ?? '—'}/${p.max}`).join(', ')}`);
+    lines.push(tr('{0}: уровень {1}, последний результат {2}, цель {3}, прогноз по ответам {4}{5}; разделы: {6}', TRACKS.find((x) => x.id === t)!.name, tp.level, tp.lastResult ?? tr('нет'), tp.target, pred.value, days !== null ? tr(', до экзамена {0} дн.', days) : '', pred.parts.map((p) => `${p.label} ${p.value ?? '—'}/${p.max}`).join(', ')));
     const rel = trackSubjects(t);
     const weak = weakForTrack(attempts.filter((a) => rel.has(a.subject)), 5);
-    if (weak.length) lines.push(`  Слабые темы: ${weak.map((w) => `${TOPIC_MAP[w.topicId]?.name} (${SUBJECT_MAP[w.subject].name}) ${Math.round(w.accuracy * 100)}%`).join('; ')}`);
+    if (weak.length) lines.push(tr('  Слабые темы: {0}', weak.map((w) => `${TOPIC_MAP[w.topicId]?.name} (${SUBJECT_MAP[w.subject].name}) ${Math.round(w.accuracy * 100)}%`).join('; ')));
   }
-  if (t14(attempts)) lines.push(`Ответов за 14 дней: ${t14(attempts)}`);
-  lines.push(`Неосвоенных ошибок: ${mistakesOpen}`);
+  if (t14(attempts)) lines.push(tr('Ответов за 14 дней: {0}', t14(attempts)));
+  lines.push(tr('Неосвоенных ошибок: {0}', mistakesOpen));
   return lines.join('\n');
 }
 

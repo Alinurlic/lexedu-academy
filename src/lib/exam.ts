@@ -3,6 +3,7 @@ import type { Answer, Difficulty, ExamConfig, ExamFormat, ExamModule, ExamResult
 import { checkAnswer, maxPoints, scoreAnswer } from '@/data/questions';
 import { SUBJECT_MAP } from '@/data/subjects';
 import { plural, shuffle, uid } from './utils';
+import { tr } from '@/i18n';
 
 /* ------------------------------------------------------------------ */
 /* Общие помощники                                                     */
@@ -41,7 +42,7 @@ function byLang(pool: Question[], entLang: EntLang) {
 function langNote(subject: SubjectId, count: number, entLang: EntLang) {
   const study = studyLang(subject, entLang);
   const other = study === 'kk' ? 'ru' : 'kk';
-  return `${SUBJECT_MAP[subject].name}: ${count} ${plural(count, ['задание', 'задания', 'заданий'])} ${LANG_LABEL[other]} (${LANG_LABEL[study]} пока не хватает)`;
+  return tr('{0}: {1} {2} {3} ({4} пока не хватает)', SUBJECT_MAP[subject].name, count, plural(count, ['задание', 'задания', 'заданий']), LANG_LABEL[other], LANG_LABEL[study]);
 }
 const isContext = (q: Question) => q.type === 'single' && !!q.context;
 
@@ -65,7 +66,7 @@ export function buildExamQuestions(config: ExamConfig, questions: Question[], en
     ids.push(...picked.map((q) => q.id));
     return { ...s, count: picked.length };
   });
-  return { ids, config: { ...config, sections }, langNote: notes.length ? `Часть заданий на другом языке — ${notes.join('; ')}.` : undefined };
+  return { ids, config: { ...config, sections }, langNote: notes.length ? tr('Часть заданий на другом языке — {0}.', notes.join('; ')) : undefined };
 }
 
 /** Простой подсчёт (совместимость): доля верных × баллы раздела. */
@@ -145,18 +146,18 @@ export function planEntFull(format: ExamFormat, profileSubjects: [SubjectId, Sub
       picked = [...picked, ...extra];
     }
     picked.forEach((q) => used.add(q.id));
-    if (picked.length < b.questions) shortages.push(`${SUBJECT_MAP[subject].name}: ${picked.length} из ${b.questions}`);
+    if (picked.length < b.questions) shortages.push(tr('{0}: {1} из {2}', SUBJECT_MAP[subject].name, picked.length, b.questions));
     ids.push(...picked.map((q) => q.id));
     sections.push({ subject, count: picked.length, maxPoints: b.maxPoints });
   }
   const total = ids.length;
   const formatQuestions = format.blocks.reduce((s, b) => s + b.questions, 0);
   const timeLimitMin = total >= formatQuestions ? format.totalMinutes : Math.max(10, Math.round((format.totalMinutes * total) / formatQuestions));
-  const config: ExamConfig = { title: total >= formatQuestions ? 'Полный пробный ЕНТ' : 'Полный пробный ЕНТ (сокращённый)', kind: 'full', sections, timeLimitMin, track: 'ent', scoring: 'ent' };
+  const config: ExamConfig = { title: total >= formatQuestions ? tr('Полный пробный ЕНТ') : tr('Полный пробный ЕНТ (сокращённый)'), kind: 'full', sections, timeLimitMin, track: 'ent', scoring: 'ent' };
   return {
     config,
-    modules: [{ id: uid('mod'), title: 'ЕНТ', subject: sections[0]?.subject ?? 'history', questionIds: ids, timeLimitSec: timeLimitMin * 60 }],
-    shortened: [shortages.length ? `В банке не хватило заданий: ${shortages.join('; ')}.` : '', langNotes.length ? `Часть заданий на другом языке — ${langNotes.join('; ')}.` : ''].filter(Boolean).join(' ') || undefined,
+    modules: [{ id: uid('mod'), title: tr('ЕНТ'), subject: sections[0]?.subject ?? 'history', questionIds: ids, timeLimitSec: timeLimitMin * 60 }],
+    shortened: [shortages.length ? tr('В банке не хватило заданий: {0}.', shortages.join('; ')) : '', langNotes.length ? tr('Часть заданий на другом языке — {0}.', langNotes.join('; ')) : ''].filter(Boolean).join(' ') || undefined,
   };
 }
 
@@ -199,7 +200,7 @@ export function planSat(questions: Question[], part: 'full' | 'rw' | 'math'): Ex
   if (part !== 'rw') add('math', part === 'full' ? SAT_SPEC.breakSec : undefined);
   const sections = [...new Set(modules.map((m) => m.subject))].map((s) => ({ subject: s, count: (s === 'sat-rw' ? SAT_SPEC.rw.perModule : SAT_SPEC.math.perModule) * 2, maxPoints: 800 }));
   const minutes = modules.reduce((s, m) => s + m.timeLimitSec / 60, 0);
-  const title = part === 'full' ? 'Digital SAT — полный пробный тест' : part === 'rw' ? 'SAT Reading and Writing' : 'SAT Math';
+  const title = part === 'full' ? tr('Digital SAT — полный пробный тест') : part === 'rw' ? 'SAT Reading and Writing' : 'SAT Math';
   return { config: { title, kind: part === 'full' ? 'full' : 'subject', sections, timeLimitMin: minutes, track: 'sat', scoring: 'flat' }, modules };
 }
 
@@ -267,7 +268,7 @@ export function planIelts(questions: Question[], part: 'full' | 'listening' | 'r
     modules.push({ id: uid('mod'), title: 'Writing', subject: 'ielts-writing', questionIds: [t1, t2].filter(Boolean).map((q) => q.id), timeLimitSec: 60 * 60 });
   }
   const sections = modules.map((m) => ({ subject: m.subject, count: m.questionIds.length, maxPoints: 9 }));
-  const title = part === 'full' ? 'IELTS Academic — пробный тест' : `IELTS ${modules[0]?.title ?? ''}`;
+  const title = part === 'full' ? tr('IELTS Academic — пробный тест') : `IELTS ${modules[0]?.title ?? ''}`;
   return { config: { title, kind: part === 'full' ? 'full' : 'subject', sections, timeLimitMin: modules.reduce((s, m) => s + m.timeLimitSec / 60, 0), track: 'ielts', scoring: 'flat' }, modules };
 }
 
@@ -320,7 +321,7 @@ export function scoreFull(
       sectionScores,
       score: total,
       maxScore: max,
-      scaled: { label: parts.length === 2 ? 'SAT Total' : parts[0]?.label ?? 'SAT', value: total, max, parts: parts.map((p) => ({ label: p.label, value: p.value, max: 800 })), note: 'Приблизительная оценка по доле верных ответов и пути адаптивного модуля. Официальная шкала College Board рассчитывается методом IRT.' },
+      scaled: { label: parts.length === 2 ? 'SAT Total' : parts[0]?.label ?? 'SAT', value: total, max, parts: parts.map((p) => ({ label: p.label, value: p.value, max: 800 })), note: tr('Приблизительная оценка по доле верных ответов и пути адаптивного модуля. Официальная шкала College Board рассчитывается методом IRT.') },
     };
   }
 
@@ -356,7 +357,7 @@ export function scoreFull(
       sectionScores,
       score: overall,
       maxScore: 9,
-      scaled: { label: 'IELTS Overall', value: overall, max: 9, parts, note: `Перевод Listening/Reading — по распространённым таблицам (границы немного различаются между версиями теста).${missingWriting ? ' Writing ещё не оценён — оцените эссе, чтобы получить итоговый band.' : ''}` },
+      scaled: { label: 'IELTS Overall', value: overall, max: 9, parts, note: tr('Перевод Listening/Reading — по распространённым таблицам (границы немного различаются между версиями теста).{0}', missingWriting ? tr(' Writing ещё не оценён — оцените эссе, чтобы получить итоговый band.') : '') },
     };
   }
 
@@ -369,5 +370,5 @@ export function scoreFull(
   });
   const score = sectionScores.reduce((s, x) => s + x.score, 0);
   const maxScore = sectionScores.reduce((s, x) => s + x.maxPoints, 0);
-  return { sectionScores, score, maxScore, scaled: { label: 'Баллы ЕНТ', value: score, max: maxScore, parts: sectionScores.map((s) => ({ label: SUBJECT_MAP[s.subject]?.name ?? s.subject, value: s.score, max: s.maxPoints })) } };
+  return { sectionScores, score, maxScore, scaled: { label: tr('Баллы ЕНТ'), value: score, max: maxScore, parts: sectionScores.map((s) => ({ label: SUBJECT_MAP[s.subject]?.name ?? s.subject, value: s.score, max: s.maxPoints })) } };
 }

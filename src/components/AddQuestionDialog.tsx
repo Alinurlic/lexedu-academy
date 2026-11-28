@@ -6,6 +6,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { toast } from '@/store/toast';
 import { cn, uid } from '@/lib/utils';
 import type { Difficulty, Question, SubjectId } from '@/types';
+import { tr } from '@/i18n';
 
 type FormType = 'single' | 'boolean' | 'numeric';
 
@@ -33,12 +34,12 @@ export function AddQuestionDialog({ open, onClose, subject }: { open: boolean; o
     const res = customQuestionFormSchema.safeParse(form);
     if (!res.success) {
       const e: Record<string, string> = {};
-      for (const issue of res.error.issues) e[String(issue.path[0])] ??= issue.message;
+      for (const issue of res.error.issues) e[String(issue.path[0])] ??= tr(issue.message);
       setErrors(e);
       return;
     }
     const v = res.data;
-    const base = { id: uid('uq'), subject, topic: v.topic, difficulty: v.difficulty, question: v.question, explanation: v.explanation, source: 'user' as const, sourceNote: 'Вопрос добавлен пользователем.', tags: ['мой вопрос'] };
+    const base = { id: uid('uq'), subject, topic: v.topic, difficulty: v.difficulty, question: v.question, explanation: v.explanation, source: 'user' as const, sourceNote: tr('Вопрос добавлен пользователем.'), tags: [tr('мой вопрос')] };
     let q: Question;
     if (v.type === 'single') {
       const opts = v.options.map((o, i) => ({ o, i })).filter((x) => x.o.length > 0);
@@ -49,7 +50,7 @@ export function AddQuestionDialog({ open, onClose, subject }: { open: boolean; o
       q = { ...base, type: 'numeric', correctAnswer: Number(v.correctNumber.replace(',', '.')), tolerance: 1e-6 };
     }
     add(q);
-    toast.success('Вопрос добавлен', `${s.name} · помечен как «Мой вопрос»`);
+    toast.success(tr('Вопрос добавлен'), tr('{0} · помечен как «Мой вопрос»', s.name));
     setForm(initial(s.topics[0].id));
     setErrors({});
     onClose();
@@ -59,27 +60,27 @@ export function AddQuestionDialog({ open, onClose, subject }: { open: boolean; o
     <Dialog
       open={open}
       onClose={onClose}
-      title={`Новый вопрос: ${s.name}`}
-      description="Пользовательские вопросы отмечаются отдельно от демо-вопросов и официальных источников."
+      title={tr('Новый вопрос: {0}', s.name)}
+      description={tr('Пользовательские вопросы отмечаются отдельно от демо-вопросов и официальных источников.')}
       size="lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
-            Отмена
+            {tr('Отмена')}
           </Button>
-          <Button onClick={save}>Сохранить вопрос</Button>
+          <Button onClick={save}>{tr('Сохранить вопрос')}</Button>
         </>
       }
     >
       <div className="space-y-4 pb-2">
         <div>
-          <Label htmlFor="aq-q">Текст вопроса</Label>
-          <Textarea id="aq-q" value={form.question} onChange={(e) => set('question', e.target.value)} placeholder="Например: Найдите корень уравнения 2x + 3 = 11" />
+          <Label htmlFor="aq-q">{tr('Текст вопроса')}</Label>
+          <Textarea id="aq-q" value={form.question} onChange={(e) => set('question', e.target.value)} placeholder={tr('Например: Найдите корень уравнения 2x + 3 = 11')} />
           <FieldError>{errors.question}</FieldError>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="aq-topic">Тема</Label>
+            <Label htmlFor="aq-topic">{tr('Тема')}</Label>
             <Select id="aq-topic" value={form.topic} onChange={(e) => set('topic', e.target.value)}>
               {s.topics.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -89,30 +90,30 @@ export function AddQuestionDialog({ open, onClose, subject }: { open: boolean; o
             </Select>
           </div>
           <div>
-            <Label>Сложность</Label>
-            <Segmented value={form.difficulty} onChange={(v) => set('difficulty', v)} options={[{ value: 'easy', label: 'Лёгкий' }, { value: 'medium', label: 'Средний' }, { value: 'hard', label: 'Сложный' }]} />
+            <Label>{tr('Сложность')}</Label>
+            <Segmented value={form.difficulty} onChange={(v) => set('difficulty', v)} options={[{ value: 'easy', label: tr('Лёгкий') }, { value: 'medium', label: tr('Средний') }, { value: 'hard', label: tr('Сложный') }]} />
           </div>
         </div>
         <div>
-          <Label>Тип ответа</Label>
-          <Segmented value={form.type} onChange={(v) => set('type', v)} options={[{ value: 'single', label: 'Один из вариантов' }, { value: 'boolean', label: 'Верно / Неверно' }, { value: 'numeric', label: 'Число' }]} />
+          <Label>{tr('Тип ответа')}</Label>
+          <Segmented value={form.type} onChange={(v) => set('type', v)} options={[{ value: 'single', label: tr('Один из вариантов') }, { value: 'boolean', label: tr('Верно / Неверно') }, { value: 'numeric', label: tr('Число') }]} />
         </div>
         {form.type === 'single' && (
           <div>
-            <Label>Варианты ответа (отметьте правильный)</Label>
+            <Label>{tr('Варианты ответа (отметьте правильный)')}</Label>
             <div className="space-y-2">
               {form.options.map((o, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => set('correctIndex', i)}
-                    aria-label={`Вариант ${i + 1} правильный`}
+                    aria-label={tr('Вариант {0} правильный', i + 1)}
                     aria-pressed={form.correctIndex === i}
                     className={cn('grid size-8 shrink-0 place-items-center rounded-full border-2 text-xs font-semibold', form.correctIndex === i ? 'border-success bg-success text-white' : 'border-input text-muted-foreground')}
                   >
                     {String.fromCharCode(65 + i)}
                   </button>
-                  <Input value={o} onChange={(e) => set('options', form.options.map((x, j) => (j === i ? e.target.value : x)))} placeholder={`Вариант ${i + 1}${i > 1 ? ' (необязательно)' : ''}`} />
+                  <Input value={o} onChange={(e) => set('options', form.options.map((x, j) => (j === i ? e.target.value : x)))} placeholder={tr('Вариант {0}{1}', i + 1, i > 1 ? tr(' (необязательно)') : '')} />
                 </div>
               ))}
             </div>
@@ -121,20 +122,20 @@ export function AddQuestionDialog({ open, onClose, subject }: { open: boolean; o
         )}
         {form.type === 'boolean' && (
           <div>
-            <Label>Правильный ответ</Label>
-            <Segmented value={form.correctBool ? 't' : 'f'} onChange={(v) => set('correctBool', v === 't')} options={[{ value: 't', label: 'Верно' }, { value: 'f', label: 'Неверно' }]} />
+            <Label>{tr('Правильный ответ')}</Label>
+            <Segmented value={form.correctBool ? 't' : 'f'} onChange={(v) => set('correctBool', v === 't')} options={[{ value: 't', label: tr('Верно') }, { value: 'f', label: tr('Неверно') }]} />
           </div>
         )}
         {form.type === 'numeric' && (
           <div className="max-w-xs">
-            <Label htmlFor="aq-num">Правильный ответ (число)</Label>
-            <Input id="aq-num" inputMode="decimal" value={form.correctNumber} onChange={(e) => set('correctNumber', e.target.value)} placeholder="Например: 4 или 2,5" />
+            <Label htmlFor="aq-num">{tr('Правильный ответ (число)')}</Label>
+            <Input id="aq-num" inputMode="decimal" value={form.correctNumber} onChange={(e) => set('correctNumber', e.target.value)} placeholder={tr('Например: 4 или 2,5')} />
             <FieldError>{errors.correctNumber}</FieldError>
           </div>
         )}
         <div>
-          <Label htmlFor="aq-expl">Объяснение</Label>
-          <Textarea id="aq-expl" value={form.explanation} onChange={(e) => set('explanation', e.target.value)} placeholder="Почему этот ответ верный" />
+          <Label htmlFor="aq-expl">{tr('Объяснение')}</Label>
+          <Textarea id="aq-expl" value={form.explanation} onChange={(e) => set('explanation', e.target.value)} placeholder={tr('Почему этот ответ верный')} />
           <FieldError>{errors.explanation}</FieldError>
         </div>
       </div>

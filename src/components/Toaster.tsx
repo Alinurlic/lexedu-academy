@@ -1,6 +1,7 @@
 import { CheckCircle2, Info, Sparkles, X, XCircle } from 'lucide-react';
 import { useToasts } from '@/store/toast';
 import { cn } from '@/lib/utils';
+import { tr } from '@/i18n';
 
 const ICON = { success: CheckCircle2, error: XCircle, info: Info, xp: Sparkles };
 const COLOR = { success: 'text-success', error: 'text-danger', info: 'text-primary', xp: 'text-violet' };
@@ -29,7 +30,7 @@ export function Toaster() {
                 </button>
               )}
             </div>
-            <button onClick={() => dismiss(t.id)} className="text-muted-foreground hover:text-foreground" aria-label="Закрыть уведомление">
+            <button onClick={() => dismiss(t.id)} className="text-muted-foreground hover:text-foreground" aria-label={tr('Закрыть уведомление')}>
               <X className="size-4" />
             </button>
           </div>

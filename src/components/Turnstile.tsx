@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { tr } from '@/i18n';
 
 /**
  * Необязательная защита от ботов (Cloudflare Turnstile).
@@ -19,7 +20,7 @@ function loadScript() {
     s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     s.async = true;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Turnstile не загрузился'));
+    s.onerror = () => reject(new Error(tr('Turnstile не загрузился')));
     document.head.appendChild(s);
   });
   return scriptPromise;

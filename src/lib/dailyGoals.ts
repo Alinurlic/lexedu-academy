@@ -1,6 +1,7 @@
 import type { Attempt, PracticeSessionResult, Profile, SubjectId } from '@/types';
 import { SUBJECT_MAP } from '@/data/subjects';
 import { dayKey } from './date';
+import { tr } from '@/i18n';
 
 export interface DailyGoal {
   id: string;
@@ -22,9 +23,9 @@ export function dailyGoals(profile: Profile, attempts: Attempt[], sessions: Prac
   const shortTest = todaySessions.some((s) => s.answers.length >= 10) ? 1 : 0;
   const subjAcc = SUBJECT_MAP[main].name.toLowerCase();
   return [
-    { id: 'main20', title: `Решить 20 вопросов: ${subjAcc}`, hint: 'Практика по первому профильному предмету', progress: Math.min(20, mainCount), target: 20, link: `/practice?subject=${main}` },
-    { id: 'mistakes10', title: 'Повторить 10 ошибок', hint: 'Режим повторения в тетради ошибок', progress: Math.min(10, reviewCount), target: 10, link: '/mistakes?review=1' },
-    { id: 'history1', title: 'Пройти одну тему по истории Казахстана', hint: 'Сессия от 5 вопросов по истории', progress: historySession, target: 1, link: '/practice?subject=history' },
-    { id: 'short1', title: 'Пройти короткий тест', hint: 'Любая практическая сессия от 10 вопросов', progress: shortTest, target: 1, link: '/practice' },
+    { id: 'main20', title: tr('Решить 20 вопросов: {0}', subjAcc), hint: tr('Практика по первому профильному предмету'), progress: Math.min(20, mainCount), target: 20, link: `/practice?subject=${main}` },
+    { id: 'mistakes10', title: tr('Повторить 10 ошибок'), hint: tr('Режим повторения в тетради ошибок'), progress: Math.min(10, reviewCount), target: 10, link: '/mistakes?review=1' },
+    { id: 'history1', title: tr('Пройти одну тему по истории Казахстана'), hint: tr('Сессия от 5 вопросов по истории'), progress: historySession, target: 1, link: '/practice?subject=history' },
+    { id: 'short1', title: tr('Пройти короткий тест'), hint: tr('Любая практическая сессия от 10 вопросов'), progress: shortTest, target: 1, link: '/practice' },
   ];
 }

@@ -27,6 +27,7 @@ import type { SubjectId } from '@/types';
 import { SUBJECT_MAP } from '@/data/subjects';
 import { cn } from '@/lib/utils';
 import { LexiAvatar } from '@/components/lexi/Lexi';
+import { tr } from '@/i18n';
 
 export const ICONS: Record<string, LucideIcon> = {
   sigma: Sigma,
@@ -76,7 +77,7 @@ export function Logo({ collapsed }: { collapsed?: boolean }) {
             Lex<span className="bg-gradient-to-r from-primary to-violet bg-clip-text text-transparent">Edu</span>
             <span className="ml-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">Academy</span>
           </div>
-          <div className="text-[11px] text-muted-foreground">ЕНТ · SAT · IELTS</div>
+          <div className="text-[11px] text-muted-foreground">{tr('ЕНТ · SAT · IELTS')}</div>
         </div>
       )}
     </div>

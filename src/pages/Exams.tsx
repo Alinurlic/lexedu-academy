@@ -15,26 +15,57 @@ import { fmtDate, fmtDateTime, fmtDuration } from '@/lib/date';
 import { cn, pct, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { ExamConfig, SubjectId, Track } from '@/types';
+import { tr } from '@/i18n';
 
 type Preset = string;
 
 const PRESETS: Record<Track, { id: Preset; icon: React.ComponentType<{ className?: string }>; title: string; desc: string }[]> = {
   ent: [
-    { id: 'full', icon: ClipboardCheck, title: 'Полный пробный ЕНТ', desc: '120 заданий · 240 минут · 140 баллов, по регламенту' },
-    { id: 'profile', icon: Layers, title: 'Профильные предметы', desc: '2 × 40 заданий по составу ЕНТ' },
-    { id: 'subject', icon: FileText, title: 'Предметный пробник', desc: 'Один предмет, выбранное число заданий' },
-    { id: 'custom', icon: Settings2, title: 'Свой вариант', desc: 'Любые предметы, количество и время' },
+    { id: 'full', icon: ClipboardCheck, get title() {
+    return tr('Полный пробный ЕНТ');
+  }, get desc() {
+    return tr('120 заданий · 240 минут · 140 баллов, по регламенту');
+  } },
+    { id: 'profile', icon: Layers, get title() {
+    return tr('Профильные предметы');
+  }, get desc() {
+    return tr('2 × 40 заданий по составу ЕНТ');
+  } },
+    { id: 'subject', icon: FileText, get title() {
+    return tr('Предметный пробник');
+  }, get desc() {
+    return tr('Один предмет, выбранное число заданий');
+  } },
+    { id: 'custom', icon: Settings2, get title() {
+    return tr('Свой вариант');
+  }, get desc() {
+    return tr('Любые предметы, количество и время');
+  } },
   ],
   sat: [
-    { id: 'full', icon: ClipboardCheck, title: 'Full Digital SAT', desc: '98 вопросов · 4 модуля · 2 ч 14 мин + перерыв' },
-    { id: 'rw', icon: BookOpen, title: 'Reading and Writing', desc: '2 модуля × 27 вопросов, по 32 минуты' },
-    { id: 'math', icon: Sigma, title: 'Math', desc: '2 модуля × 22 вопроса, по 35 минут' },
+    { id: 'full', icon: ClipboardCheck, title: 'Full Digital SAT', get desc() {
+    return tr('98 вопросов · 4 модуля · 2 ч 14 мин + перерыв');
+  } },
+    { id: 'rw', icon: BookOpen, title: 'Reading and Writing', get desc() {
+    return tr('2 модуля × 27 вопросов, по 32 минуты');
+  } },
+    { id: 'math', icon: Sigma, title: 'Math', get desc() {
+    return tr('2 модуля × 22 вопроса, по 35 минут');
+  } },
   ],
   ielts: [
-    { id: 'full', icon: ClipboardCheck, title: 'IELTS Academic', desc: 'Listening + Reading + Writing (≈2 ч 30 мин)' },
-    { id: 'listening', icon: Headphones, title: 'Listening', desc: '4 части · 40 вопросов · озвучка' },
-    { id: 'reading', icon: BookOpen, title: 'Reading', desc: '3 текста · 40 вопросов · 60 минут' },
-    { id: 'writing', icon: PenLine, title: 'Writing', desc: 'Task 1 + Task 2 · 60 минут' },
+    { id: 'full', icon: ClipboardCheck, title: 'IELTS Academic', get desc() {
+    return tr('Listening + Reading + Writing (≈2 ч 30 мин)');
+  } },
+    { id: 'listening', icon: Headphones, title: 'Listening', get desc() {
+    return tr('4 части · 40 вопросов · озвучка');
+  } },
+    { id: 'reading', icon: BookOpen, title: 'Reading', get desc() {
+    return tr('3 текста · 40 вопросов · 60 минут');
+  } },
+    { id: 'writing', icon: PenLine, title: 'Writing', get desc() {
+    return tr('Task 1 + Task 2 · 60 минут');
+  } },
   ],
 };
 
@@ -75,12 +106,12 @@ export default function Exams() {
     let config: ExamConfig;
     if (preset === 'subject') {
       const n = Math.min(subjectCount, available(subject));
-      config = { title: `Пробник: ${SUBJECT_MAP[subject].name}`, kind: 'subject', sections: [{ subject, count: n, maxPoints: n }], timeLimitMin: Math.max(5, Math.round(n * 2)), track: 'ent', scoring: 'flat' };
+      config = { title: tr('Пробник: {0}', SUBJECT_MAP[subject].name), kind: 'subject', sections: [{ subject, count: n, maxPoints: n }], timeLimitMin: Math.max(5, Math.round(n * 2)), track: 'ent', scoring: 'flat' };
     } else {
       const sections = Object.entries(custom)
         .filter(([, n]) => n > 0)
         .map(([s, n]) => ({ subject: s as SubjectId, count: Math.min(n, available(s as SubjectId)), maxPoints: Math.min(n, available(s as SubjectId)) }));
-      config = { title: 'Свой вариант', kind: 'custom', sections, timeLimitMin: customTime, track: 'ent', scoring: 'flat' };
+      config = { title: tr('Свой вариант'), kind: 'custom', sections, timeLimitMin: customTime, track: 'ent', scoring: 'flat' };
     }
     return config.sections.length ? planSimple(config, questions, entLang) : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -111,23 +142,23 @@ export default function Exams() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Segmented value={track} onChange={setTrack} options={TRACKS.map((t) => ({ value: t.id, label: t.name }))} />
-        <span className="text-sm text-muted-foreground">Шкала: {scale}</span>
+        <span className="text-sm text-muted-foreground">{tr('Шкала: {0}', scale)}</span>
       </div>
 
       {activeExam && (
         <Card className="flex flex-col gap-3 border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center">
           <div className="flex-1">
-            <div className="text-sm font-medium">Незавершённый экзамен: {activeExam.config.title}</div>
+            <div className="text-sm font-medium">{tr('Незавершённый экзамен: {0}', activeExam.config.title)}</div>
             <div className="text-xs text-muted-foreground">
-              Часть {activeExam.moduleIndex + 1} из {activeExam.modules.length} · таймер продолжает идти
+              {tr('Часть {0} из {1} · таймер продолжает идти', activeExam.moduleIndex + 1, activeExam.modules.length)}
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => (setExam(null), toast.info('Экзамен отменён'))}>
-              Отменить
+            <Button variant="secondary" size="sm" onClick={() => (setExam(null), toast.info(tr('Экзамен отменён')))}>
+              {tr('Отменить')}
             </Button>
             <Button size="sm" onClick={() => navigate('/exams/session')}>
-              <Play /> Вернуться
+              <Play /> {tr('Вернуться')}
             </Button>
           </div>
         </Card>
@@ -138,8 +169,8 @@ export default function Exams() {
           <Card>
             <CardHeader>
               <div>
-                <CardTitle>Формат</CardTitle>
-                <CardDescription>Таймер по частям, навигация, флажки, автосдача, разбор каждого вопроса</CardDescription>
+                <CardTitle>{tr('Формат')}</CardTitle>
+                <CardDescription>{tr('Таймер по частям, навигация, флажки, автосдача, разбор каждого вопроса')}</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -160,11 +191,11 @@ export default function Exams() {
           {track === 'ent' && preset === 'subject' && (
             <Card>
               <CardHeader>
-                <CardTitle>Настройки пробника</CardTitle>
+                <CardTitle>{tr('Настройки пробника')}</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="exam-subj">Предмет</Label>
+                  <Label htmlFor="exam-subj">{tr('Предмет')}</Label>
                   <Select id="exam-subj" value={subject} onChange={(e) => setSubject(e.target.value as SubjectId)}>
                     {subjectsOf('ent').map((s) => (
                       <option key={s.id} value={s.id}>
@@ -174,7 +205,7 @@ export default function Exams() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Количество заданий</Label>
+                  <Label>{tr('Количество заданий')}</Label>
                   <Segmented value={String(subjectCount)} onChange={(v) => setSubjectCount(Number(v))} options={[10, 20, 30, 40].map((n) => ({ value: String(n), label: String(n) }))} />
                 </div>
               </CardContent>
@@ -185,8 +216,8 @@ export default function Exams() {
             <Card>
               <CardHeader>
                 <div>
-                  <CardTitle>Свой вариант</CardTitle>
-                  <CardDescription>Число заданий по каждому предмету (0 — не включать)</CardDescription>
+                  <CardTitle>{tr('Свой вариант')}</CardTitle>
+                  <CardDescription>{tr('Число заданий по каждому предмету (0 — не включать)')}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -196,14 +227,14 @@ export default function Exams() {
                       <SubjectIcon subject={s.id} className="size-8" />
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{s.name}</div>
-                        <div className="text-[11px] text-muted-foreground">доступно {available(s.id)}</div>
+                        <div className="text-[11px] text-muted-foreground">{tr('доступно {0}', available(s.id))}</div>
                       </div>
-                      <Input type="number" min={0} max={available(s.id)} value={custom[s.id] ?? 0} onChange={(e) => setCustom({ ...custom, [s.id]: Math.max(0, Math.min(available(s.id), Math.floor(Number(e.target.value) || 0))) })} className="h-9 w-20 text-center tabular" aria-label={`Заданий: ${s.name}`} />
+                      <Input type="number" min={0} max={available(s.id)} value={custom[s.id] ?? 0} onChange={(e) => setCustom({ ...custom, [s.id]: Math.max(0, Math.min(available(s.id), Math.floor(Number(e.target.value) || 0))) })} className="h-9 w-20 text-center tabular" aria-label={tr('Заданий: {0}', s.name)} />
                     </div>
                   ))}
                 </div>
                 <div className="max-w-xs">
-                  <Label htmlFor="custom-time">Лимит времени (мин)</Label>
+                  <Label htmlFor="custom-time">{tr('Лимит времени (мин)')}</Label>
                   <Input id="custom-time" type="number" min={5} max={300} value={customTime} onChange={(e) => setCustomTime(Math.max(5, Math.min(300, Math.floor(Number(e.target.value) || 5))))} />
                 </div>
               </CardContent>
@@ -214,9 +245,9 @@ export default function Exams() {
             <Info className="mt-0.5 size-4 shrink-0 text-primary" />
             <p>
               {track === 'ent' &&
-                `Формат «${examFormat.name}»: ${examFormat.blocks.reduce((n, b) => n + b.questions, 0)} заданий, ${examFormat.totalMinutes} мин, максимум ${formatMax(examFormat)} баллов. В профильных предметах: 25 заданий с одним ответом и 5 контекстных (по 1 баллу), 5 на соответствие и 5 с несколькими ответами (по 2 балла; при одной ошибке — 1 балл). Формат меняется в админ-панели.`}
-              {track === 'sat' && 'Digital SAT: два раздела по два модуля. Второй модуль адаптивный: он сложнее, если в первом вы ответили верно на 60% и больше. Между разделами — перерыв 10 минут. Итоговый балл приблизительный: официальная шкала College Board рассчитывается методом IRT.'}
-              {track === 'ielts' && 'Listening озвучивается синтезатором речи браузера; запись можно прослушать один раз. Reading — 3 текста. Writing оценивается ИИ (если он подключён) или по критериям самооценки. Перевод сырых баллов в band — по распространённым таблицам.'}
+                tr('Формат «{0}»: {1} заданий, {2} мин, максимум {3} баллов. В профильных предметах: 25 заданий с одним ответом и 5 контекстных (по 1 баллу), 5 на соответствие и 5 с несколькими ответами (по 2 балла; при одной ошибке — 1 балл). Формат меняется в админ-панели.', tr(examFormat.name), examFormat.blocks.reduce((n, b) => n + b.questions, 0), examFormat.totalMinutes, formatMax(examFormat))}
+              {track === 'sat' && tr('Digital SAT: два раздела по два модуля. Второй модуль адаптивный: он сложнее, если в первом вы ответили верно на 60% и больше. Между разделами — перерыв 10 минут. Итоговый балл приблизительный: официальная шкала College Board рассчитывается методом IRT.')}
+              {track === 'ielts' && tr('Listening озвучивается синтезатором речи браузера; запись можно прослушать один раз. Reading — 3 текста. Writing оценивается ИИ (если он подключён) или по критериям самооценки. Перевод сырых баллов в band — по распространённым таблицам.')}
             </p>
           </Card>
         </div>
@@ -225,8 +256,8 @@ export default function Exams() {
           <Card>
             <CardHeader>
               <div>
-                <CardTitle>{plan?.config.title ?? 'Экзамен'}</CardTitle>
-                <CardDescription>Структура</CardDescription>
+                <CardTitle>{plan?.config.title ?? tr('Экзамен')}</CardTitle>
+                <CardDescription>{tr('Структура')}</CardDescription>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -238,12 +269,12 @@ export default function Exams() {
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{m.title}</span>
                         <span className="text-xs text-muted-foreground">
-                          {m.questionIds.length || (m.subject === 'sat-rw' ? 27 : 22)} {m.subject.startsWith('ielts-w') ? 'задания' : 'вопросов'}
-                          {m.questionIds.length === 0 && ' · адаптивный'}
-                          {m.breakBeforeSec ? ' · после перерыва' : ''}
+                          {m.questionIds.length || (m.subject === 'sat-rw' ? 27 : 22)} {m.subject.startsWith('ielts-w') ? tr('задания') : tr('вопросов')}
+                          {m.questionIds.length === 0 && tr(' · адаптивный')}
+                          {m.breakBeforeSec ? tr(' · после перерыва') : ''}
                         </span>
                       </span>
-                      <span className="text-xs text-muted-foreground tabular">{Math.round(m.timeLimitSec / 60)} мин</span>
+                      <span className="text-xs text-muted-foreground tabular">{tr('{0} мин', Math.round(m.timeLimitSec / 60))}</span>
                     </li>
                   ))}
                 </ol>
@@ -257,7 +288,7 @@ export default function Exams() {
                         {s.count} {plural(s.count, ['задание', 'задания', 'заданий'])}
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground tabular">{s.maxPoints} б.</span>
+                    <span className="text-xs text-muted-foreground tabular">{tr('{0} б.', s.maxPoints)}</span>
                   </div>
                 ))
               )}
@@ -265,21 +296,21 @@ export default function Exams() {
               <div className="grid grid-cols-3 gap-2 border-t pt-3 text-center">
                 <div>
                   <div className="text-lg font-semibold tabular">{track === 'sat' ? (preset === 'full' ? 98 : preset === 'rw' ? 54 : 44) : totalQ}</div>
-                  <div className="text-[11px] text-muted-foreground">вопросов</div>
+                  <div className="text-[11px] text-muted-foreground">{tr('вопросов')}</div>
                 </div>
                 <div>
                   <div className="text-lg font-semibold tabular">{plan ? Math.round(plan.config.timeLimitMin) : 0}</div>
-                  <div className="text-[11px] text-muted-foreground">минут</div>
+                  <div className="text-[11px] text-muted-foreground">{tr('минут')}</div>
                 </div>
                 <div>
                   <div className="text-lg font-semibold tabular">{track === 'ent' ? plan?.config.sections.reduce((s, x) => s + x.maxPoints, 0) : track === 'sat' ? (preset === 'full' ? 1600 : 800) : '9.0'}</div>
-                  <div className="text-[11px] text-muted-foreground">максимум</div>
+                  <div className="text-[11px] text-muted-foreground">{tr('максимум')}</div>
                 </div>
               </div>
               <Button size="lg" className="w-full" onClick={start} disabled={!plan || !totalQ}>
-                <Play /> Начать экзамен
+                <Play /> {tr('Начать экзамен')}
               </Button>
-              <p className="text-center text-[11px] text-muted-foreground">Откроется полноэкранный режим. По истечении времени часть сдаётся автоматически.</p>
+              <p className="text-center text-[11px] text-muted-foreground">{tr('Откроется полноэкранный режим. По истечении времени часть сдаётся автоматически.')}</p>
             </CardContent>
           </Card>
         </div>
@@ -289,7 +320,7 @@ export default function Exams() {
         <Card className="xl:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle>История: {TRACKS.find((t) => t.id === track)!.name}</CardTitle>
+              <CardTitle>{tr('История: {0}', TRACKS.find((t) => t.id === track)!.name)}</CardTitle>
               <CardDescription>
                 {trackExams.length} {plural(trackExams.length, ['экзамен', 'экзамена', 'экзаменов'])}
               </CardDescription>
@@ -297,7 +328,7 @@ export default function Exams() {
           </CardHeader>
           <CardContent>
             {history.length === 0 ? (
-              <EmptyState icon={ClipboardCheck} lexi="exam" title="Экзаменов пока нет" description="Пройдите первый пробный экзамен — результаты и разбор появятся здесь." />
+              <EmptyState icon={ClipboardCheck} lexi="exam" title={tr('Экзаменов пока нет')} description={tr('Пройдите первый пробный экзамен — результаты и разбор появятся здесь.')} />
             ) : (
               <div className="divide-y rounded-xl border">
                 {history.map((e) => {
@@ -309,7 +340,7 @@ export default function Exams() {
                         <span className="block truncate text-sm font-medium">{e.config.title}</span>
                         <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                           {fmtDateTime(e.finishedAt)} · <Clock className="size-3" /> {fmtDuration(e.durationSec)}
-                          {e.autoSubmitted && <Badge variant="warning">автосдача</Badge>}
+                          {e.autoSubmitted && <Badge variant="warning">{tr('автосдача')}</Badge>}
                         </span>
                       </span>
                       <span className="hidden text-sm font-semibold tabular sm:block">
@@ -326,13 +357,13 @@ export default function Exams() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Динамика результатов</CardTitle>
-              <CardDescription>% от максимума, последние 10</CardDescription>
+              <CardTitle>{tr('Динамика результатов')}</CardTitle>
+              <CardDescription>{tr('% от максимума, последние 10')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
-              <LexiBubble mood="exam" text="Здесь появится график твоих пробных экзаменов. Удачи!" size="xs" />
+              <LexiBubble mood="exam" text={tr('Здесь появится график твоих пробных экзаменов. Удачи!')} size="xs" />
             ) : (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -341,7 +372,7 @@ export default function Exams() {
                     <XAxis dataKey="label" {...axisProps} />
                     <YAxis domain={[0, 100]} {...axisProps} />
                     <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => `${v}%`} />} />
-                    <Bar dataKey="pct" name="Результат" fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={28} />
+                    <Bar dataKey="pct" name={tr('Результат')} fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={28} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -350,7 +381,7 @@ export default function Exams() {
         </Card>
       </div>
 
-      <ConfirmDialog open={confirmReplace} onClose={() => setConfirmReplace(false)} title="Начать новый экзамен?" description="Незавершённый экзамен будет отменён без сохранения результата." confirmLabel="Начать новый" danger onConfirm={begin} />
+      <ConfirmDialog open={confirmReplace} onClose={() => setConfirmReplace(false)} title={tr('Начать новый экзамен?')} description={tr('Незавершённый экзамен будет отменён без сохранения результата.')} confirmLabel={tr('Начать новый')} danger onConfirm={begin} />
     </div>
   );
 }

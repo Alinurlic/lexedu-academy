@@ -16,6 +16,7 @@ import { fmtDate, fmtDateTime, fmtDuration } from '@/lib/date';
 import { cn, pct } from '@/lib/utils';
 import { Markdown } from '@/components/Markdown';
 import { MathText } from '@/components/MathText';
+import { tr } from '@/i18n';
 
 type Filter = 'all' | 'wrong' | 'empty' | 'flagged';
 
@@ -60,7 +61,7 @@ export default function ExamResult() {
   }, [exam, exams, qmap]);
 
   if (!exam || !data) {
-    return <EmptyState icon={Trophy} lexi="thinking" title="Экзамен не найден" description="Возможно, он был удалён." action={<Button onClick={() => navigate('/exams')}>К экзаменам</Button>} />;
+    return <EmptyState icon={Trophy} lexi="thinking" title={tr('Экзамен не найден')} description={tr('Возможно, он был удалён.')} action={<Button onClick={() => navigate('/exams')}>{tr('К экзаменам')}</Button>} />;
   }
 
   // для SAT/IELTS шкала нелинейная (SAT начинается с 400), поэтому процент считаем по верным ответам
@@ -76,14 +77,14 @@ export default function ExamResult() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button variant="ghost" onClick={() => navigate('/exams')}>
-          <ArrowLeft /> Все экзамены
+          <ArrowLeft /> {tr('Все экзамены')}
         </Button>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(true)}>
-            <Trash2 /> Удалить
+            <Trash2 /> {tr('Удалить')}
           </Button>
           <Button variant="secondary" size="sm" onClick={() => navigate('/exams')}>
-            <RotateCcw /> Пройти ещё раз
+            <RotateCcw /> {tr('Пройти ещё раз')}
           </Button>
         </div>
       </div>
@@ -97,24 +98,24 @@ export default function ExamResult() {
             <div className={cn('grid size-28 shrink-0 place-items-center rounded-3xl', p >= 75 ? 'bg-success/15 text-success' : p >= 50 ? 'bg-warning/15 text-warning' : 'bg-danger/15 text-danger')}>
               <div className="text-center">
                 <div className="text-3xl font-semibold tabular">{exam.scaled?.value ?? exam.score}</div>
-                <div className="text-xs opacity-80">из {exam.scaled?.max ?? exam.maxScore}</div>
+                <div className="text-xs opacity-80">{tr('из {0}', exam.scaled?.max ?? exam.maxScore)}</div>
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground">{fmtDateTime(exam.finishedAt)}</div>
               <h2 className="mt-1 text-xl font-semibold">{exam.config.title}</h2>
               <div className="mt-2 flex flex-wrap gap-2">
-                <Badge variant="default">{scaledTrack ? `${p}% верных` : `${p}%`}</Badge>
-                {diff !== null && <Badge variant={diff >= 0 ? 'success' : 'danger'}>{diff >= 0 ? `+${diff}` : diff} п.п. к прошлому</Badge>}
-                {exam.autoSubmitted && <Badge variant="warning">Сдано автоматически</Badge>}
+                <Badge variant="default">{scaledTrack ? tr('{0}% верных', p) : `${p}%`}</Badge>
+                {diff !== null && <Badge variant={diff >= 0 ? 'success' : 'danger'}>{tr('{0} п.п. к прошлому', diff >= 0 ? `+${diff}` : diff)}</Badge>}
+                {exam.autoSubmitted && <Badge variant="warning">{tr('Сдано автоматически')}</Badge>}
               </div>
             </div>
           </div>
           <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
-            <Metric icon={CheckCircle2} label="Верно" value={data.correct} tone="text-success" />
-            <Metric icon={XCircle} label="Неверно" value={data.wrong} tone="text-danger" />
-            <Metric icon={CircleSlash} label="Без ответа" value={data.unanswered} />
-            <Metric icon={Clock} label="Время" value={fmtDuration(exam.durationSec)} />
+            <Metric icon={CheckCircle2} label={tr('Верно')} value={data.correct} tone="text-success" />
+            <Metric icon={XCircle} label={tr('Неверно')} value={data.wrong} tone="text-danger" />
+            <Metric icon={CircleSlash} label={tr('Без ответа')} value={data.unanswered} />
+            <Metric icon={Clock} label={tr('Время')} value={fmtDuration(exam.durationSec)} />
           </div>
         </div>
       </Card>
@@ -137,7 +138,7 @@ export default function ExamResult() {
             ))}
             {exam.modules?.some((m) => m.adaptive) && (
               <div className="text-xs text-muted-foreground">
-                Адаптивные модули: {exam.modules.filter((m) => m.adaptive).map((m) => `${m.title.replace(' — Module 2', '')}: ${m.adaptive === 'hard' ? 'сложный' : 'простой'}`).join(', ')}
+                {tr('Адаптивные модули: {0}', exam.modules.filter((m) => m.adaptive).map((m) => `${m.title.replace(' — Module 2', '')}: ${m.adaptive === 'hard' ? tr('сложный') : tr('простой')}`).join(', '))}
               </div>
             )}
           </div>
@@ -149,8 +150,8 @@ export default function ExamResult() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Writing: оценка эссе</CardTitle>
-              <CardDescription>Итоговый band IELTS пересчитается после оценки обоих заданий (Task 2 весит вдвое больше)</CardDescription>
+              <CardTitle>{tr('Writing: оценка эссе')}</CardTitle>
+              <CardDescription>{tr('Итоговый band IELTS пересчитается после оценки обоих заданий (Task 2 весит вдвое больше)')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -162,7 +163,7 @@ export default function ExamResult() {
                 <div key={id} className="space-y-3">
                   <div className="text-sm font-medium">{q.task === 'writing1' ? 'Task 1' : 'Task 2'}</div>
                   <p className="whitespace-pre-line rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground"><MathText text={q.question.split('\n\n|')[0]} /></p>
-                  <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border p-3 text-sm">{text || <span className="text-muted-foreground">Ответ не написан</span>}</div>
+                  <div className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg border p-3 text-sm">{text || <span className="text-muted-foreground">{tr('Ответ не написан')}</span>}</div>
                   <EssayGrader q={q} text={text} existing={exam.essays?.[id]} onGraded={(g) => gradeEssay(exam.id, id, { band: g.band, feedback: g.feedback, self: g.source === 'self' })} />
                   {exam.essays?.[id]?.feedback && <Markdown text={exam.essays[id].feedback!} className="text-sm text-muted-foreground" />}
                 </div>
@@ -176,8 +177,8 @@ export default function ExamResult() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>{exam.config.track === 'sat' ? 'Разделы SAT' : exam.config.track === 'ielts' ? 'Секции IELTS' : 'Баллы по предметам'}</CardTitle>
-              <CardDescription>{exam.config.scoring === 'ent' ? 'Соответствие и множественный выбор — 2 балла (1 при одной ошибке)' : 'Доля верных ответов по разделам'}</CardDescription>
+              <CardTitle>{exam.config.track === 'sat' ? tr('Разделы SAT') : exam.config.track === 'ielts' ? tr('Секции IELTS') : tr('Баллы по предметам')}</CardTitle>
+              <CardDescription>{exam.config.scoring === 'ent' ? tr('Соответствие и множественный выбор — 2 балла (1 при одной ошибке)') : tr('Доля верных ответов по разделам')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -194,7 +195,7 @@ export default function ExamResult() {
                   </div>
                   <Progress value={pct(s.score, s.maxPoints)} />
                   <div className="mt-1 text-[11px] text-muted-foreground">
-                    {s.correct} из {s.total} верно
+                    {tr('{0} из {1} верно', s.correct, s.total)}
                   </div>
                 </div>
               </div>
@@ -204,8 +205,8 @@ export default function ExamResult() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Сравнение с прошлыми попытками</CardTitle>
-              <CardDescription>Тот же формат, % от максимума</CardDescription>
+              <CardTitle>{tr('Сравнение с прошлыми попытками')}</CardTitle>
+              <CardDescription>{tr('Тот же формат, % от максимума')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -216,7 +217,7 @@ export default function ExamResult() {
                   <XAxis dataKey="label" {...axisProps} />
                   <YAxis domain={[0, 100]} {...axisProps} />
                   <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => `${v}%`} />} />
-                  <Bar dataKey="pct" name="Результат" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                  <Bar dataKey="pct" name={tr('Результат')} radius={[4, 4, 0, 0]} maxBarSize={32}>
                     {data.comparison.map((c) => (
                       <Cell key={c.id} fill={c.current ? CHART.c1 : 'hsl(var(--muted-foreground) / 0.35)'} />
                     ))}
@@ -224,7 +225,7 @@ export default function ExamResult() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">Синим выделена текущая попытка</p>
+            <p className="mt-2 text-xs text-muted-foreground">{tr('Синим выделена текущая попытка')}</p>
           </CardContent>
         </Card>
       </div>
@@ -232,8 +233,8 @@ export default function ExamResult() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Результаты по темам</CardTitle>
-            <CardDescription>Отсортировано от слабых к сильным</CardDescription>
+            <CardTitle>{tr('Результаты по темам')}</CardTitle>
+            <CardDescription>{tr('Отсортировано от слабых к сильным')}</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="grid gap-x-8 gap-y-3 md:grid-cols-2">
@@ -256,30 +257,30 @@ export default function ExamResult() {
       <Card>
         <CardHeader className="flex-wrap">
           <div>
-            <CardTitle>Разбор заданий</CardTitle>
-            <CardDescription>Нажмите на задание, чтобы увидеть ответ и объяснение</CardDescription>
+            <CardTitle>{tr('Разбор заданий')}</CardTitle>
+            <CardDescription>{tr('Нажмите на задание, чтобы увидеть ответ и объяснение')}</CardDescription>
           </div>
           <Segmented
             size="sm"
             value={filter}
             onChange={setFilter}
             options={[
-              { value: 'all', label: `Все ${data.rows.length}` },
-              { value: 'wrong', label: `Ошибки ${data.wrong}` },
-              { value: 'empty', label: `Пустые ${data.unanswered}` },
-              { value: 'flagged', label: `Флажки ${exam.flagged.length}` },
+              { value: 'all', label: tr('Все {0}', data.rows.length) },
+              { value: 'wrong', label: tr('Ошибки {0}', data.wrong) },
+              { value: 'empty', label: tr('Пустые {0}', data.unanswered) },
+              { value: 'flagged', label: tr('Флажки {0}', exam.flagged.length) },
             ]}
           />
         </CardHeader>
         <CardContent>
           {rows.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Нет заданий в этой категории</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{tr('Нет заданий в этой категории')}</p>
           ) : (
             <div className="divide-y rounded-xl border">
               {rows.map((r) => (
                 <button key={r.qid} onClick={() => setOpen(open === r.qid ? null : r.qid)} className="flex w-full items-center gap-3 p-3 text-left hover:bg-secondary/50">
                   <span className={cn('grid size-8 shrink-0 place-items-center rounded-lg text-xs font-semibold tabular', r.correct ? 'bg-success/15 text-success' : r.answered ? 'bg-danger/15 text-danger' : 'bg-secondary text-muted-foreground')}>{r.i + 1}</span>
-                  <span className="line-clamp-1 flex-1 text-sm">{r.q ? <MathText text={r.q.question} noSub={r.q.subject === 'informatics'} /> : 'Вопрос удалён'}</span>
+                  <span className="line-clamp-1 flex-1 text-sm">{r.q ? <MathText text={r.q.question} noSub={r.q.subject === 'informatics'} /> : tr('Вопрос удалён')}</span>
                   {r.flagged && <Flag className="size-3.5 shrink-0 fill-warning text-warning" />}
                   <span className="hidden shrink-0 text-xs text-muted-foreground sm:block">{r.q ? SUBJECT_MAP[r.q.subject].short : ''}</span>
                 </button>
@@ -289,14 +290,14 @@ export default function ExamResult() {
           {openRow?.q && (
             <div className="mt-4 rounded-2xl border p-5 animate-fade-up">
               <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Задание {openRow.i + 1}</span>
+                <span className="text-sm text-muted-foreground">{tr('Задание {0}', openRow.i + 1)}</span>
                 <Button size="sm" variant="ghost" onClick={() => setOpen(null)}>
-                  Скрыть
+                  {tr('Скрыть')}
                 </Button>
               </div>
               <QuestionMeta q={openRow.q} className="mb-3" />
               <QuestionView q={openRow.q} value={openRow.ans} onChange={() => undefined} reveal keyboard={false} />
-              {!openRow.answered && <p className="mt-3 text-sm text-warning">Ответ не был дан</p>}
+              {!openRow.answered && <p className="mt-3 text-sm text-warning">{tr('Ответ не был дан')}</p>}
               <Explanation q={openRow.q} correct={openRow.correct} />
             </div>
           )}
@@ -307,9 +308,9 @@ export default function ExamResult() {
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         danger
-        title="Удалить результат экзамена?"
-        description="Запись исчезнет из истории экзаменов. Ответы останутся в общей статистике."
-        confirmLabel="Удалить"
+        title={tr('Удалить результат экзамена?')}
+        description={tr('Запись исчезнет из истории экзаменов. Ответы останутся в общей статистике.')}
+        confirmLabel={tr('Удалить')}
         onConfirm={() => {
           deleteExam(exam.id);
           navigate('/exams');

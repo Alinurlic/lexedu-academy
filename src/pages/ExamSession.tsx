@@ -12,6 +12,7 @@ import { satModule2, scoreFull } from '@/lib/exam';
 import { fmtClock } from '@/lib/date';
 import { cn } from '@/lib/utils';
 import { toast } from '@/store/toast';
+import { tr } from '@/i18n';
 
 export default function ExamSession() {
   const exam = useSession((s) => s.exam);
@@ -75,7 +76,7 @@ export default function ExamSession() {
       });
       setExam(null);
       if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
-      toast.success(auto ? 'Время вышло — работа сдана автоматически' : 'Экзамен завершён', `${sc.scaled.label}: ${sc.scaled.value} из ${sc.scaled.max}`);
+      toast.success(auto ? tr('Время вышло — работа сдана автоматически') : tr('Экзамен завершён'), tr('{0}: {1} из {2}', sc.scaled.label, sc.scaled.value, sc.scaled.max));
       navigate(`/exams/${res.id}`, { replace: true });
     },
     [qmap, recordExam, setExam, navigate],
@@ -102,7 +103,7 @@ export default function ExamSession() {
       const t = Date.now();
       const breakUntil = next.breakBeforeSec ? t + next.breakBeforeSec * 1000 : null;
       patch({ modules, moduleIndex: ni, current: 0, breakUntil, deadline: (breakUntil ?? t) + next.timeLimitSec * 1000 });
-      if (auto) toast.info('Время модуля вышло', 'Начинается следующая часть');
+      if (auto) toast.info(tr('Время модуля вышло'), tr('Начинается следующая часть'));
     },
     [allQuestions, qmap, patch, submit],
   );
@@ -144,7 +145,7 @@ export default function ExamSession() {
   if (!exam || !mod) {
     return (
       <div className="grid min-h-screen place-items-center p-6">
-        <EmptyState icon={ClipboardCheck} lexi="exam" title="Нет активного экзамена" description="Выберите формат и начните пробный экзамен." action={<Button onClick={() => navigate('/exams')}>К экзаменам</Button>} />
+        <EmptyState icon={ClipboardCheck} lexi="exam" title={tr('Нет активного экзамена')} description={tr('Выберите формат и начните пробный экзамен.')} action={<Button onClick={() => navigate('/exams')}>{tr('К экзаменам')}</Button>} />
       </div>
     );
   }
@@ -154,8 +155,8 @@ export default function ExamSession() {
       <div className="grid min-h-screen place-items-center p-6">
         <Card className="max-w-md p-8 text-center">
           <Coffee className="mx-auto size-10 text-primary" />
-          <h1 className="mt-3 text-xl font-semibold">Перерыв</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Следующая часть: {mod.title}. На реальном SAT перерыв длится 10 минут.</p>
+          <h1 className="mt-3 text-xl font-semibold">{tr('Перерыв')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{tr('Следующая часть: {0}. На реальном SAT перерыв длится 10 минут.', mod.title)}</p>
           <div className="my-5 text-4xl font-semibold tabular">{fmtClock((exam.breakUntil! - now) / 1000)}</div>
           <Button
             onClick={() => {
@@ -163,7 +164,7 @@ export default function ExamSession() {
               patch({ breakUntil: null, deadline: t + mod.timeLimitSec * 1000 });
             }}
           >
-            Начать сейчас
+            {tr('Начать сейчас')}
           </Button>
         </Card>
       </div>
@@ -173,7 +174,7 @@ export default function ExamSession() {
   if (!q || !qid) {
     return (
       <div className="grid min-h-screen place-items-center p-6">
-        <EmptyState icon={ClipboardCheck} title="Модуль пуст" description="В банке не нашлось вопросов для этой части." action={<Button onClick={() => nextModule(false)}>Дальше</Button>} />
+        <EmptyState icon={ClipboardCheck} title={tr('Модуль пуст')} description={tr('В банке не нашлось вопросов для этой части.')} action={<Button onClick={() => nextModule(false)}>{tr('Дальше')}</Button>} />
       </div>
     );
   }
@@ -202,23 +203,23 @@ export default function ExamSession() {
               {multiModule && <span className="text-muted-foreground"> · {mod.title} ({exam.moduleIndex + 1}/{exam.modules.length})</span>}
             </div>
             <div className="text-xs text-muted-foreground tabular">
-              Отвечено {stats.answered}/{total} · флажков {stats.flagged}
-              {mod.adaptive && <span> · адаптивный модуль: {mod.adaptive === 'hard' ? 'сложнее' : 'проще'}</span>}
+              {tr('Отвечено')} {stats.answered}/{total} {tr('· флажков')} {stats.flagged}
+              {mod.adaptive && <span> {tr('· адаптивный модуль: {0}', mod.adaptive === 'hard' ? tr('сложнее') : tr('проще'))}</span>}
             </div>
           </div>
-          <div className={cn('flex items-center gap-2 rounded-lg border px-3 py-1.5 font-semibold tabular', lowTime ? 'border-danger/50 bg-danger/10 text-danger' : 'bg-surface')} role="timer" aria-label="Оставшееся время модуля">
+          <div className={cn('flex items-center gap-2 rounded-lg border px-3 py-1.5 font-semibold tabular', lowTime ? 'border-danger/50 bg-danger/10 text-danger' : 'bg-surface')} role="timer" aria-label={tr('Оставшееся время модуля')}>
             <Timer className="size-4" /> {fmtClock(remaining)}
           </div>
           <Button
             variant="ghost"
             size="icon"
             className="hidden sm:inline-flex"
-            aria-label={isFs ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим'}
+            aria-label={isFs ? tr('Выйти из полноэкранного режима') : tr('Полноэкранный режим')}
             onClick={() => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.())?.catch?.(() => undefined)}
           >
             {isFs ? <Minimize2 /> : <Maximize2 />}
           </Button>
-          <Button onClick={() => setConfirmOpen(true)}>{isLastModule ? 'Завершить' : 'Следующая часть'}</Button>
+          <Button onClick={() => setConfirmOpen(true)}>{isLastModule ? tr('Завершить') : tr('Следующая часть')}</Button>
         </div>
       </header>
 
@@ -227,42 +228,42 @@ export default function ExamSession() {
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <div className="mb-2 text-sm text-muted-foreground">
-                {exam.config.track === 'ent' ? 'Задание' : 'Question'} {exam.current + 1} из {total} · {SUBJECT_MAP[q.subject].name}
+                {tr('{0} {1} из {2} · {3}', exam.config.track === 'ent' ? tr('Задание') : 'Question', exam.current + 1, total, SUBJECT_MAP[q.subject].name)}
               </div>
               <QuestionMeta q={q} />
             </div>
             <div className="flex shrink-0 gap-1">
-              <Button variant="ghost" size="icon-sm" onClick={() => toast.success(toggleBookmark(qid) ? 'Добавлено в закладки' : 'Удалено из закладок')} aria-pressed={bookmarks.includes(qid)} aria-label={bookmarks.includes(qid) ? 'Убрать из закладок' : 'Добавить в закладки'}>
+              <Button variant="ghost" size="icon-sm" onClick={() => toast.success(toggleBookmark(qid) ? tr('Добавлено в закладки') : tr('Удалено из закладок'))} aria-pressed={bookmarks.includes(qid)} aria-label={bookmarks.includes(qid) ? tr('Убрать из закладок') : tr('Добавить в закладки')}>
                 {bookmarks.includes(qid) ? <BookmarkCheck className="text-primary" /> : <Bookmark />}
               </Button>
               <Button variant={flagged ? 'secondary' : 'ghost'} size="sm" onClick={() => patch({ flagged: flagged ? exam.flagged.filter((f) => f !== qid) : [...exam.flagged, qid] })} aria-pressed={flagged} className={cn(flagged && 'text-warning')}>
-                <Flag className={cn(flagged && 'fill-current')} /> {flagged ? 'Отмечено' : 'На проверку'}
+                <Flag className={cn(flagged && 'fill-current')} /> {flagged ? tr('Отмечено') : tr('На проверку')}
               </Button>
             </div>
           </div>
           <QuestionView q={q} value={exam.answers[qid] ?? null} onChange={(v) => patch({ answers: { ...useSession.getState().exam!.answers, [qid]: v } })} />
           <div className="mt-6 flex items-center justify-between gap-2">
             <Button variant="ghost" onClick={() => goto(exam.current - 1)} disabled={exam.current === 0}>
-              <ArrowLeft /> Назад
+              <ArrowLeft /> {tr('Назад')}
             </Button>
             <div className="flex gap-1">
               {isAnswered(exam.answers[qid]) && q.type !== 'essay' && (
                 <Button variant="ghost" size="sm" onClick={() => patch({ answers: { ...exam.answers, [qid]: null } })}>
-                  Сбросить
+                  {tr('Сбросить')}
                 </Button>
               )}
               {stats.unanswered > 0 && (
-                <Button variant="ghost" size="sm" onClick={gotoNextUnanswered} title="Перейти к следующему заданию без ответа">
-                  <CircleDashed /> <span className="hidden sm:inline">К пропущенным</span>
+                <Button variant="ghost" size="sm" onClick={gotoNextUnanswered} title={tr('Перейти к следующему заданию без ответа')}>
+                  <CircleDashed /> <span className="hidden sm:inline">{tr('К пропущенным')}</span>
                 </Button>
               )}
             </div>
             {exam.current < total - 1 ? (
               <Button onClick={() => goto(exam.current + 1)}>
-                Далее <ArrowRight />
+                {tr('Далее')} <ArrowRight />
               </Button>
             ) : (
-              <Button onClick={() => setConfirmOpen(true)}>{isLastModule ? 'Завершить' : 'Следующая часть'}</Button>
+              <Button onClick={() => setConfirmOpen(true)}>{isLastModule ? tr('Завершить') : tr('Следующая часть')}</Button>
             )}
           </div>
         </Card>
@@ -270,20 +271,20 @@ export default function ExamSession() {
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {multiModule && (
             <Card className="p-4">
-              <div className="mb-2 text-sm font-medium">Части экзамена</div>
+              <div className="mb-2 text-sm font-medium">{tr('Части экзамена')}</div>
               <ol className="space-y-1.5 text-sm">
                 {exam.modules.map((m, i) => (
                   <li key={m.id} className={cn('flex items-center gap-2', i === exam.moduleIndex ? 'font-medium text-foreground' : 'text-muted-foreground')}>
                     <span className={cn('size-2 rounded-full', i < exam.moduleIndex ? 'bg-success' : i === exam.moduleIndex ? 'bg-primary' : 'bg-border')} />
-                    {m.title} · {Math.round(m.timeLimitSec / 60)} мин
+                    {tr('{0} · {1} мин', m.title, Math.round(m.timeLimitSec / 60))}
                   </li>
                 ))}
               </ol>
-              <p className="mt-2 text-[11px] text-muted-foreground">После перехода к следующей части вернуться к предыдущей нельзя.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">{tr('После перехода к следующей части вернуться к предыдущей нельзя.')}</p>
             </Card>
           )}
           <Card className="p-4">
-            <div className="mb-3 text-sm font-medium">Навигация</div>
+            <div className="mb-3 text-sm font-medium">{tr('Навигация')}</div>
             <div className="scrollbar-thin max-h-[50vh] space-y-3 overflow-y-auto pr-1">
               {groups.map((g) => (
                 <div key={g.subject}>
@@ -296,7 +297,7 @@ export default function ExamSession() {
                         <button
                           key={id}
                           onClick={() => goto(i)}
-                          aria-label={`Задание ${i + 1}${answered ? ', есть ответ' : ''}${fl ? ', отмечено' : ''}`}
+                          aria-label={tr('Задание {0}{1}{2}', i + 1, answered ? tr(', есть ответ') : '', fl ? tr(', отмечено') : '')}
                           className={cn('relative aspect-square rounded-md border text-[11px] font-medium tabular transition-colors', answered ? 'border-primary/50 bg-primary/15 text-primary' : 'hover:bg-secondary', i === exam.current && 'ring-2 ring-primary ring-offset-1 ring-offset-background')}
                         >
                           {i + 1}
@@ -309,14 +310,16 @@ export default function ExamSession() {
               ))}
             </div>
             <div className="mt-4 flex flex-wrap gap-3 border-t pt-3 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-primary/40" /> есть ответ</span>
-              <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm border" /> без ответа</span>
-              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-warning" /> флажок</span>
+              <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm bg-primary/40" /> {tr('есть ответ')}</span>
+              <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm border" /> {tr('без ответа')}</span>
+              <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-warning" /> {tr('флажок')}</span>
             </div>
           </Card>
           <Card className="p-4 text-xs text-muted-foreground">
-            Ответы сохраняются автоматически. Стрелки ← → переключают задания. По истечении времени {isLastModule ? 'работа сдаётся' : 'начинается следующая часть'} автоматически.
-            {exam.config.scoring === 'ent' && ' Задания на соответствие и с несколькими ответами оцениваются в 2 балла (1 балл при одной ошибке).'}
+            {isLastModule
+              ? tr('Ответы сохраняются автоматически. Стрелки ← → переключают задания. Когда время закончится, работа сдастся автоматически.')
+              : tr('Ответы сохраняются автоматически. Стрелки ← → переключают задания. Когда время закончится, автоматически начнётся следующая часть.')}
+            {exam.config.scoring === 'ent' && tr(' Задания на соответствие и с несколькими ответами оцениваются в 2 балла (1 балл при одной ошибке).')}
           </Card>
         </aside>
       </div>
@@ -324,41 +327,41 @@ export default function ExamSession() {
       <Dialog
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title={isLastModule ? 'Завершить экзамен?' : `Завершить часть «${mod.title}»?`}
-        description={isLastModule ? 'После сдачи изменить ответы будет нельзя.' : 'Вернуться к этой части после перехода будет нельзя.'}
+        title={isLastModule ? tr('Завершить экзамен?') : tr('Завершить часть «{0}»?', mod.title)}
+        description={isLastModule ? tr('После сдачи изменить ответы будет нельзя.') : tr('Вернуться к этой части после перехода будет нельзя.')}
         size="sm"
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
-              Вернуться к заданиям
+              {tr('Вернуться к заданиям')}
             </Button>
-            <Button onClick={() => (setConfirmOpen(false), isLastModule ? submit(false) : nextModule(false))}>{isLastModule ? 'Сдать работу' : 'Перейти дальше'}</Button>
+            <Button onClick={() => (setConfirmOpen(false), isLastModule ? submit(false) : nextModule(false))}>{isLastModule ? tr('Сдать работу') : tr('Перейти дальше')}</Button>
           </>
         }
       >
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-xl border p-3">
             <div className="text-lg font-semibold tabular">{stats.answered}</div>
-            <div className="text-[11px] text-muted-foreground">с ответом</div>
+            <div className="text-[11px] text-muted-foreground">{tr('с ответом')}</div>
           </div>
           <div className={cn('rounded-xl border p-3', stats.unanswered && 'border-danger/40 text-danger')}>
             <div className="text-lg font-semibold tabular">{stats.unanswered}</div>
-            <div className="text-[11px] text-muted-foreground">без ответа</div>
+            <div className="text-[11px] text-muted-foreground">{tr('без ответа')}</div>
           </div>
           <div className={cn('rounded-xl border p-3', stats.flagged && 'border-warning/40 text-warning')}>
             <div className="text-lg font-semibold tabular">{stats.flagged}</div>
-            <div className="text-[11px] text-muted-foreground">с флажком</div>
+            <div className="text-[11px] text-muted-foreground">{tr('с флажком')}</div>
           </div>
         </div>
         {stats.unanswered > 0 && (
           <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
-            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" /> Вопросы без ответа будут засчитаны как неверные.
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" /> {tr('Вопросы без ответа будут засчитаны как неверные.')}
           </p>
         )}
-        {stats.unansweredIdx.length > 0 && <JumpList title="Без ответа" items={stats.unansweredIdx} onJump={(i) => (goto(i), setConfirmOpen(false))} tone="danger" />}
-        {stats.flaggedIdx.length > 0 && <JumpList title="С флажком «на проверку»" items={stats.flaggedIdx} onJump={(i) => (goto(i), setConfirmOpen(false))} tone="warning" />}
+        {stats.unansweredIdx.length > 0 && <JumpList title={tr('Без ответа')} items={stats.unansweredIdx} onJump={(i) => (goto(i), setConfirmOpen(false))} tone="danger" />}
+        {stats.flaggedIdx.length > 0 && <JumpList title={tr('С флажком «на проверку»')} items={stats.flaggedIdx} onJump={(i) => (goto(i), setConfirmOpen(false))} tone="warning" />}
         <div className="mt-3">
-          <Badge variant="outline">Осталось времени: {fmtClock(remaining)}</Badge>
+          <Badge variant="outline">{tr('Осталось времени: {0}', fmtClock(remaining))}</Badge>
         </div>
       </Dialog>
     </div>
@@ -368,14 +371,14 @@ export default function ExamSession() {
 function JumpList({ title, items, onJump, tone }: { title: string; items: number[]; onJump: (i: number) => void; tone: 'danger' | 'warning' }) {
   return (
     <div className="mt-3">
-      <div className="mb-1.5 text-xs font-medium text-muted-foreground">{title} — нажмите, чтобы вернуться</div>
+      <div className="mb-1.5 text-xs font-medium text-muted-foreground">{tr('{0} — нажмите, чтобы вернуться', title)}</div>
       <div className="flex flex-wrap gap-1">
         {items.slice(0, 60).map((i) => (
           <button key={i} onClick={() => onJump(i)} className={cn('h-7 min-w-7 rounded-md border px-1.5 text-xs font-medium tabular', tone === 'danger' ? 'border-danger/40 text-danger hover:bg-danger/10' : 'border-warning/40 text-warning hover:bg-warning/10')}>
             {i + 1}
           </button>
         ))}
-        {items.length > 60 && <span className="text-xs text-muted-foreground">и ещё {items.length - 60}</span>}
+        {items.length > 60 && <span className="text-xs text-muted-foreground">{tr('и ещё {0}', items.length - 60)}</span>}
       </div>
     </div>
   );

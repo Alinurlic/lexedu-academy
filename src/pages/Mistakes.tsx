@@ -13,11 +13,18 @@ import { cn, plural, shuffle } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Answer, Mistake, MistakeStatus, SubjectId } from '@/types';
 import { MathText } from '@/components/MathText';
+import { tr } from '@/i18n';
 
 export const STATUS_META: Record<MistakeStatus, { label: string; variant: 'danger' | 'warning' | 'success' }> = {
-  new: { label: 'Новая', variant: 'danger' },
-  learning: { label: 'Изучаю', variant: 'warning' },
-  mastered: { label: 'Освоена', variant: 'success' },
+  new: { get label() {
+    return tr('Новая');
+  }, variant: 'danger' },
+  learning: { get label() {
+    return tr('Изучаю');
+  }, variant: 'warning' },
+  mastered: { get label() {
+    return tr('Освоена');
+  }, variant: 'success' },
 };
 
 export default function Mistakes() {
@@ -86,7 +93,7 @@ export default function Mistakes() {
   const startReview = (ids?: string[]) => {
     const pool = ids ?? filtered.filter(({ m }) => m.status !== 'mastered').map(({ m }) => m.questionId);
     if (!pool.length) {
-      toast.info('Нечего повторять', 'Все ошибки в выбранном фильтре освоены');
+      toast.info(tr('Нечего повторять'), tr('Все ошибки в выбранном фильтре освоены'));
       return;
     }
     setReviewQueue(shuffle(pool).slice(0, 20));
@@ -112,7 +119,7 @@ export default function Mistakes() {
         <Card className="p-5">
           <div className="flex flex-wrap items-center gap-6">
             <div>
-              <div className="text-xs text-muted-foreground">Всего ошибок</div>
+              <div className="text-xs text-muted-foreground">{tr('Всего ошибок')}</div>
               <div className="text-2xl font-semibold tabular">{total}</div>
             </div>
             {(Object.keys(STATUS_META) as MistakeStatus[]).map((s) => (
@@ -122,12 +129,12 @@ export default function Mistakes() {
               </button>
             ))}
             <div>
-              <div className="text-xs text-muted-foreground">Верно при повторе</div>
+              <div className="text-xs text-muted-foreground">{tr('Верно при повторе')}</div>
               <div className="text-2xl font-semibold tabular">{afterTotals.n ? `${Math.round((afterTotals.c / afterTotals.n) * 100)}%` : '—'}</div>
             </div>
             <div className="min-w-40 flex-1">
               <div className="mb-1 flex justify-between text-xs text-muted-foreground">
-                <span>Освоено</span>
+                <span>{tr('Освоено')}</span>
                 <span className="tabular">{total ? Math.round((counts.mastered / total) * 100) : 0}%</span>
               </div>
               <Progress value={total ? (counts.mastered / total) * 100 : 0} indicatorClassName="bg-success" />
@@ -136,47 +143,47 @@ export default function Mistakes() {
         </Card>
         <Card className="flex flex-col justify-center gap-2 p-5">
           <Button size="lg" onClick={() => startReview()} disabled={!filtered.some(({ m }) => m.status !== 'mastered')}>
-            <Brain /> Режим повторения
+            <Brain /> {tr('Режим повторения')}
           </Button>
-          <p className="text-center text-[11px] text-muted-foreground">До 20 ошибок из текущего фильтра</p>
+          <p className="text-center text-[11px] text-muted-foreground">{tr('До 20 ошибок из текущего фильтра')}</p>
         </Card>
       </div>
 
       <Card>
         <CardHeader className="flex-wrap">
           <div>
-            <CardTitle>Тетрадь ошибок</CardTitle>
-            <CardDescription>Неверные ответы добавляются сюда автоматически</CardDescription>
+            <CardTitle>{tr('Тетрадь ошибок')}</CardTitle>
+            <CardDescription>{tr('Неверные ответы добавляются сюда автоматически')}</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по вопросу" className="pl-9" aria-label="Поиск ошибок" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tr('Поиск по вопросу')} className="pl-9" aria-label={tr('Поиск ошибок')} />
             </div>
-            <Select value={subject} onChange={(e) => (setSubject(e.target.value as SubjectId | 'all'), setTopic('all'))} aria-label="Предмет">
-              <option value="all">Все предметы</option>
+            <Select value={subject} onChange={(e) => (setSubject(e.target.value as SubjectId | 'all'), setTopic('all'))} aria-label={tr('Предмет')}>
+              <option value="all">{tr('Все предметы')}</option>
               {SUBJECTS.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
             </Select>
-            <Select value={topic} onChange={(e) => setTopic(e.target.value)} disabled={!subj} aria-label="Тема">
-              <option value="all">{subj ? 'Все темы' : 'Сначала выберите предмет'}</option>
+            <Select value={topic} onChange={(e) => setTopic(e.target.value)} disabled={!subj} aria-label={tr('Тема')}>
+              <option value="all">{subj ? tr('Все темы') : tr('Сначала выберите предмет')}</option>
               {subj?.topics.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
               ))}
             </Select>
-            <Select value={status} onChange={(e) => setStatusFilter(e.target.value as MistakeStatus | 'all' | 'active')} aria-label="Статус">
-              <option value="active">Неосвоенные</option>
-              <option value="all">Все статусы</option>
-              <option value="new">Новые</option>
-              <option value="learning">Изучаю</option>
-              <option value="mastered">Освоенные</option>
+            <Select value={status} onChange={(e) => setStatusFilter(e.target.value as MistakeStatus | 'all' | 'active')} aria-label={tr('Статус')}>
+              <option value="active">{tr('Неосвоенные')}</option>
+              <option value="all">{tr('Все статусы')}</option>
+              <option value="new">{tr('Новые')}</option>
+              <option value="learning">{tr('Изучаю')}</option>
+              <option value="mastered">{tr('Освоенные')}</option>
             </Select>
           </div>
 
@@ -184,8 +191,8 @@ export default function Mistakes() {
             <EmptyState
               icon={NotebookPen}
               lexi={total ? 'thinking' : 'perfect'}
-              title={total ? 'Нет ошибок под этот фильтр' : 'Тетрадь ошибок пуста'}
-              description={total ? 'Измените фильтры, чтобы увидеть другие записи.' : 'Когда вы ответите неверно в практике или экзамене, вопрос появится здесь.'}
+              title={total ? tr('Нет ошибок под этот фильтр') : tr('Тетрадь ошибок пуста')}
+              description={total ? tr('Измените фильтры, чтобы увидеть другие записи.') : tr('Когда вы ответите неверно в практике или экзамене, вопрос появится здесь.')}
             />
           ) : (
             <div className="space-y-2">
@@ -199,8 +206,8 @@ export default function Mistakes() {
                         <div className={cn('text-sm', !open && 'line-clamp-1')}><MathText text={q.question} noSub={q.subject === 'informatics'} /></div>
                         <div className="mt-0.5 text-[11px] text-muted-foreground">
                           {SUBJECT_MAP[q.subject].name} · {TOPIC_MAP[q.topic]?.name} · {fmtDate(m.date)}
-                          {m.reviewCount > 0 && ` · повторений: ${m.reviewCount}`}
-                          {after.get(m.questionId) && ` · после ошибки: ${after.get(m.questionId)!.c} из ${after.get(m.questionId)!.n} верно`}
+                          {m.reviewCount > 0 && tr(' · повторений: {0}', m.reviewCount)}
+                          {after.get(m.questionId) && tr(' · после ошибки: {0} из {1} верно', after.get(m.questionId)!.c, after.get(m.questionId)!.n)}
                         </div>
                       </div>
                       <Badge variant={STATUS_META[m.status].variant}>{STATUS_META[m.status].label}</Badge>
@@ -211,31 +218,31 @@ export default function Mistakes() {
                         {q.passage && <p className="mb-3 line-clamp-4 rounded-lg bg-secondary/60 p-3 text-xs text-muted-foreground">{q.passage}</p>}
                         <div className="grid gap-3 text-sm sm:grid-cols-2">
                           <div className="rounded-lg border border-danger/30 bg-danger/5 p-3">
-                            <div className="text-xs text-muted-foreground">Ваш ответ</div>
+                            <div className="text-xs text-muted-foreground">{tr('Ваш ответ')}</div>
                             <div className="mt-0.5 font-medium text-danger"><MathText text={formatAnswer(q, m.studentAnswer)} noSub={q.subject === 'informatics'} /></div>
                           </div>
                           <div className="rounded-lg border border-success/30 bg-success/5 p-3">
-                            <div className="text-xs text-muted-foreground">Правильный ответ</div>
+                            <div className="text-xs text-muted-foreground">{tr('Правильный ответ')}</div>
                             <div className="mt-0.5 font-medium text-success"><MathText text={formatCorrect(q)} noSub={q.subject === 'informatics'} /></div>
                           </div>
                         </div>
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{q.explanation}</p>
                         <div className="mt-4 flex flex-wrap items-center gap-2">
                           <Button size="sm" onClick={() => startReview([q.id])}>
-                            <RotateCcw /> Повторить вопрос
+                            <RotateCcw /> {tr('Повторить вопрос')}
                           </Button>
                           {m.status !== 'mastered' && (
-                            <Button size="sm" variant="secondary" onClick={() => (setStatus(m.id, 'mastered'), toast.success('Отмечено как освоенное'))}>
-                              <CheckCircle2 /> Освоено
+                            <Button size="sm" variant="secondary" onClick={() => (setStatus(m.id, 'mastered'), toast.success(tr('Отмечено как освоенное')))}>
+                              <CheckCircle2 /> {tr('Освоено')}
                             </Button>
                           )}
-                          <Select value={m.status} onChange={(e) => setStatus(m.id, e.target.value as MistakeStatus)} className="h-8 w-32 text-xs" aria-label="Статус ошибки">
-                            <option value="new">Новая</option>
-                            <option value="learning">Изучаю</option>
-                            <option value="mastered">Освоена</option>
+                          <Select value={m.status} onChange={(e) => setStatus(m.id, e.target.value as MistakeStatus)} className="h-8 w-32 text-xs" aria-label={tr('Статус ошибки')}>
+                            <option value="new">{tr('Новая')}</option>
+                            <option value="learning">{tr('Изучаю')}</option>
+                            <option value="mastered">{tr('Освоена')}</option>
                           </Select>
                           <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setToDelete(m)}>
-                            <Trash2 /> Удалить
+                            <Trash2 /> {tr('Удалить')}
                           </Button>
                         </div>
                       </div>
@@ -252,13 +259,13 @@ export default function Mistakes() {
         open={!!toDelete}
         onClose={() => setToDelete(null)}
         danger
-        title="Удалить запись?"
-        description="Ошибка будет удалена из тетради. Если вы снова ошибётесь в этом вопросе, она появится заново."
-        confirmLabel="Удалить"
+        title={tr('Удалить запись?')}
+        description={tr('Ошибка будет удалена из тетради. Если вы снова ошибётесь в этом вопросе, она появится заново.')}
+        confirmLabel={tr('Удалить')}
         onConfirm={() => {
           if (toDelete) {
             deleteMistake(toDelete.id);
-            toast.success('Запись удалена');
+            toast.success(tr('Запись удалена'));
           }
         }}
       />
@@ -309,15 +316,15 @@ function ReviewMode({ queue, onExit }: { queue: string[]; onExit: () => void }) 
     return (
       <Card className="mx-auto max-w-lg p-8 text-center animate-fade-up">
         <Lexi mood={correct === results.length && results.length > 0 ? 'perfect' : correct >= results.length / 2 ? 'studying' : 'sad'} size="lg" className="mx-auto" animate />
-        <h2 className="mt-4 text-xl font-semibold">Повторение завершено</h2>
+        <h2 className="mt-4 text-xl font-semibold">{tr('Повторение завершено')}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Верно {correct} из {results.length}. Освоено {mastered} {plural(mastered, ['ошибка', 'ошибки', 'ошибок'])}.
+          {tr('Верно {0} из {1}. Освоено {2} {3}.', correct, results.length, mastered, plural(mastered, ['ошибка', 'ошибки', 'ошибок']))}
         </p>
         <div className="mt-6 flex justify-center gap-2">
           <Button variant="secondary" onClick={onExit}>
-            К тетради ошибок
+            {tr('К тетради ошибок')}
           </Button>
-          <Button onClick={() => navigate('/')}>На главную</Button>
+          <Button onClick={() => navigate('/')}>{tr('На главную')}</Button>
         </div>
       </Card>
     );
@@ -325,18 +332,18 @@ function ReviewMode({ queue, onExit }: { queue: string[]; onExit: () => void }) 
 
   if (!q) {
     return (
-      <EmptyState icon={NotebookPen} lexi="thinking" title="Вопрос не найден" action={<Button onClick={next}>Пропустить</Button>} />
+      <EmptyState icon={NotebookPen} lexi="thinking" title={tr('Вопрос не найден')} action={<Button onClick={next}>{tr('Пропустить')}</Button>} />
     );
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={onExit} aria-label="Выйти из повторения">
+        <Button variant="ghost" size="icon" onClick={onExit} aria-label={tr('Выйти из повторения')}>
           <X />
         </Button>
         <div className="flex-1">
-          <div className="text-sm font-medium">Повторение ошибок</div>
+          <div className="text-sm font-medium">{tr('Повторение ошибок')}</div>
           <Progress value={(idx / queue.length) * 100} className="mt-1 h-1" />
         </div>
         <span className="text-sm text-muted-foreground tabular">
@@ -351,7 +358,7 @@ function ReviewMode({ queue, onExit }: { queue: string[]; onExit: () => void }) 
             <Explanation q={q} correct={checked.correct} lexi />
             {checked.status && (
               <p className="mt-3 text-sm text-muted-foreground">
-                Новый статус: <Badge variant={STATUS_META[checked.status].variant}>{STATUS_META[checked.status].label}</Badge>
+                {tr('Новый статус:')} <Badge variant={STATUS_META[checked.status].variant}>{STATUS_META[checked.status].label}</Badge>
               </p>
             )}
           </>
@@ -360,20 +367,20 @@ function ReviewMode({ queue, onExit }: { queue: string[]; onExit: () => void }) 
           {!checked ? (
             <>
               <Button variant="ghost" onClick={next}>
-                Пропустить
+                {tr('Пропустить')}
               </Button>
               <Button onClick={check} disabled={!isAnswered(draft)}>
-                Проверить
+                {tr('Проверить')}
               </Button>
             </>
           ) : (
             <Button onClick={next}>
-              {idx === queue.length - 1 ? 'Завершить' : 'Дальше'} <ArrowRight />
+              {idx === queue.length - 1 ? tr('Завершить') : tr('Дальше')} <ArrowRight />
             </Button>
           )}
         </div>
       </Card>
-      <p className="text-center text-xs text-muted-foreground">Верный ответ переводит ошибку: «Новая» → «Изучаю» → «Освоена». Неверный — возвращает в «Изучаю».</p>
+      <p className="text-center text-xs text-muted-foreground">{tr('Верный ответ переводит ошибку: «Новая» → «Изучаю» → «Освоена». Неверный — возвращает в «Изучаю».')}</p>
     </div>
   );
 }

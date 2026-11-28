@@ -13,10 +13,14 @@ import { cn, downloadJson, fmtNum } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Level, Profile, SubjectId, ThemeMode, Track, TrackProfile } from '@/types';
 import { LEVEL_LABEL, trackProfile } from '@/hooks/useTrack';
+import { tr } from '@/i18n';
+import { setUiLanguage } from '@/lib/uiLang';
 
 const TRACK_NAME: Record<Track, string> = { ent: 'ЕНТ (ҰБТ)', sat: 'SAT', ielts: 'IELTS Academic' };
 const TRACK_LIMITS: Record<Track, { min: number; max: number; step: number; unit: string }> = {
-  ent: { min: 0, max: 140, step: 1, unit: 'из 140' },
+  ent: { min: 0, max: 140, step: 1, get unit() {
+    return tr('из 140');
+  } },
   sat: { min: 400, max: 1600, step: 10, unit: '400–1600' },
   ielts: { min: 0, max: 9, step: 0.5, unit: 'band' },
 };
@@ -56,14 +60,14 @@ export default function Settings() {
     const res = profileSchema.safeParse(draft);
     if (!res.success) {
       const e: Record<string, string> = {};
-      for (const i of res.error.issues) e[String(i.path[0])] ??= i.message;
+      for (const i of res.error.issues) e[String(i.path[0])] ??= tr(i.message);
       setErrors(e);
-      toast.error('Проверьте поля профиля');
+      toast.error(tr('Проверьте поля профиля'));
       return;
     }
     setErrors({});
     updateProfile(res.data as Profile);
-    toast.success('Настройки сохранены');
+    toast.success(tr('Настройки сохранены'));
   };
 
   const setTheme = (t: ThemeMode) => {
@@ -75,14 +79,14 @@ export default function Settings() {
 
   const onImport = async (file: File) => {
     try {
-      if (file.size > 10 * 1024 * 1024) throw new Error('Файл слишком большой');
+      if (file.size > 10 * 1024 * 1024) throw new Error(tr('Файл слишком большой'));
       const json = JSON.parse(await file.text());
       if (importData(json)) {
         setDraft(useAppStore.getState().profile);
-        toast.success('Данные импортированы', file.name);
-      } else toast.error('Не удалось импортировать', 'Файл не похож на резервную копию LexEdu или ExamPilot');
+        toast.success(tr('Данные импортированы'), file.name);
+      } else toast.error(tr('Не удалось импортировать'), tr('Файл не похож на резервную копию LexEdu или ExamPilot'));
     } catch (e) {
-      toast.error('Ошибка чтения файла', e instanceof Error ? e.message : undefined);
+      toast.error(tr('Ошибка чтения файла'), e instanceof Error ? e.message : undefined);
     }
   };
 
@@ -92,23 +96,23 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Профиль</CardTitle>
-            <CardDescription>Эти данные используются для прогноза и персональных рекомендаций</CardDescription>
+            <CardTitle>{tr('Профиль')}</CardTitle>
+            <CardDescription>{tr('Эти данные используются для прогноза и персональных рекомендаций')}</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="flex flex-wrap items-center gap-4">
             <Avatar className="size-16 text-xl" name={draft.name} color={draft.avatarColor} emoji={draft.avatarEmoji} />
             <div className="space-y-2">
-              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Цвет аватара">
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={tr('Цвет аватара')}>
                 {COLORS.map((c) => (
-                  <button key={c} role="radio" aria-checked={draft.avatarColor === c} aria-label={`Цвет ${c}`} onClick={() => setDraft({ ...draft, avatarColor: c })} className={cn('size-7 rounded-full ring-offset-2 ring-offset-card', draft.avatarColor === c && 'ring-2 ring-foreground')} style={{ backgroundColor: c }} />
+                  <button key={c} role="radio" aria-checked={draft.avatarColor === c} aria-label={tr('Цвет {0}', c)} onClick={() => setDraft({ ...draft, avatarColor: c })} className={cn('size-7 rounded-full ring-offset-2 ring-offset-card', draft.avatarColor === c && 'ring-2 ring-foreground')} style={{ backgroundColor: c }} />
                 ))}
               </div>
-              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Значок аватара">
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={tr('Значок аватара')}>
                 {EMOJI.map((e) => (
                   <button key={e || 'none'} role="radio" aria-checked={draft.avatarEmoji === e} onClick={() => setDraft({ ...draft, avatarEmoji: e })} className={cn('grid size-7 place-items-center rounded-md border text-sm', draft.avatarEmoji === e && 'border-primary bg-primary/10')}>
-                    {e || 'Аа'}
+                    {e || tr('Аа')}
                   </button>
                 ))}
               </div>
@@ -116,27 +120,27 @@ export default function Settings() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="s-name">Имя</Label>
+              <Label htmlFor="s-name">{tr('Имя')}</Label>
               <Input id="s-name" value={draft.name} maxLength={40} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
               <FieldError>{errors.name}</FieldError>
             </div>
             <div>
-              <Label htmlFor="s-grade">Класс</Label>
+              <Label htmlFor="s-grade">{tr('Класс')}</Label>
               <Select id="s-grade" value={draft.grade} onChange={(e) => setDraft({ ...draft, grade: Number(e.target.value) })}>
                 {[9, 10, 11, 12].map((g) => (
                   <option key={g} value={g}>
-                    {g === 12 ? 'Выпускник прошлых лет' : `${g} класс`}
+                    {g === 12 ? tr('Выпускник прошлых лет') : tr('{0} класс', g)}
                   </option>
                 ))}
               </Select>
             </div>
             <div>
-              <Label htmlFor="s-target">Целевой балл ЕНТ (из 140)</Label>
+              <Label htmlFor="s-target">{tr('Целевой балл ЕНТ (из 140)')}</Label>
               <Input id="s-target" type="number" min={50} max={140} value={draft.targetScore} onChange={(e) => setDraft({ ...draft, targetScore: Math.floor(Number(e.target.value) || 0) })} />
               <FieldError>{errors.targetScore}</FieldError>
             </div>
             <div>
-              <Label htmlFor="s-combo">Профильные предметы</Label>
+              <Label htmlFor="s-combo">{tr('Профильные предметы')}</Label>
               <Select
                 id="s-combo"
                 value={comboKey}
@@ -150,29 +154,29 @@ export default function Settings() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="s-entlang">Язык сдачи ЕНТ</Label>
+              <Label htmlFor="s-entlang">{tr('Язык сдачи ЕНТ')}</Label>
               <Select id="s-entlang" value={draft.entLang ?? 'ru'} onChange={(e) => setDraft({ ...draft, entLang: e.target.value as 'ru' | 'kk' })}>
-                <option value="ru">Русский</option>
-                <option value="kk">Қазақ тілі (казахский)</option>
+                <option value="ru">{tr('Русский')}</option>
+                <option value="kk">{tr('Қазақ тілі (казахский)')}</option>
               </Select>
-              <p className="mt-1 text-xs text-muted-foreground">Задания в практике и пробных ЕНТ будут на этом языке</p>
+              <p className="mt-1 text-xs text-muted-foreground">{tr('Задания в практике и пробных ЕНТ будут на этом языке')}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 rounded-xl bg-secondary/50 p-4 text-sm sm:grid-cols-4">
             <div>
-              <div className="text-xs text-muted-foreground">Вопросов решено</div>
+              <div className="text-xs text-muted-foreground">{tr('Вопросов решено')}</div>
               <div className="font-semibold tabular">{fmtNum(stats.totalQuestions)}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Точность</div>
+              <div className="text-xs text-muted-foreground">{tr('Точность')}</div>
               <div className="font-semibold tabular">{Math.round(stats.accuracy * 100)}%</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Экзаменов</div>
+              <div className="text-xs text-muted-foreground">{tr('Экзаменов')}</div>
               <div className="font-semibold tabular">{counts.exams}</div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground">Уровень</div>
+              <div className="text-xs text-muted-foreground">{tr('Уровень')}</div>
               <div className="font-semibold">
                 {stats.level.current.index} · {stats.level.current.name}
               </div>
@@ -185,23 +189,23 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Учебные цели</CardTitle>
-            <CardDescription>Используются в плане, напоминаниях и на главной</CardDescription>
+            <CardTitle>{tr('Учебные цели')}</CardTitle>
+            <CardDescription>{tr('Используются в плане, напоминаниях и на главной')}</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div>
-            <Label htmlFor="s-date">Дата ЕНТ</Label>
+            <Label htmlFor="s-date">{tr('Дата ЕНТ')}</Label>
             <Input id="s-date" type="date" value={draft.examDate} onChange={(e) => setDraft({ ...draft, examDate: e.target.value })} />
             <FieldError>{errors.examDate}</FieldError>
           </div>
           <div>
-            <Label htmlFor="s-min">Минут в день</Label>
+            <Label htmlFor="s-min">{tr('Минут в день')}</Label>
             <Input id="s-min" type="number" min={10} max={600} value={draft.dailyGoalMin} onChange={(e) => setDraft({ ...draft, dailyGoalMin: Math.floor(Number(e.target.value) || 0) })} />
             <FieldError>{errors.dailyGoalMin}</FieldError>
           </div>
           <div>
-            <Label htmlFor="s-q">Вопросов в день</Label>
+            <Label htmlFor="s-q">{tr('Вопросов в день')}</Label>
             <Input id="s-q" type="number" min={5} max={300} value={draft.dailyQuestionGoal} onChange={(e) => setDraft({ ...draft, dailyQuestionGoal: Math.floor(Number(e.target.value) || 0) })} />
             <FieldError>{errors.dailyQuestionGoal}</FieldError>
           </div>
@@ -212,11 +216,11 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Экзамены: уровень, результаты и цели</CardTitle>
-            <CardDescription>По этим данным Lexi строит прогноз, план и умный анализ</CardDescription>
+            <CardTitle>{tr('Экзамены: уровень, результаты и цели')}</CardTitle>
+            <CardDescription>{tr('По этим данным Lexi строит прогноз, план и умный анализ')}</CardDescription>
           </div>
           <Button variant="secondary" size="sm" onClick={() => navigate('/onboarding')}>
-            <RotateCcw /> Пройти анкету заново
+            <RotateCcw /> {tr('Пройти анкету заново')}
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -233,16 +237,16 @@ export default function Settings() {
             return (
               <div key={t} className={cn('rounded-xl border p-4', !tp.enabled && 'opacity-70')}>
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="font-medium">{TRACK_NAME[t]}</div>
+                  <div className="font-medium">{tr(TRACK_NAME[t])}</div>
                   <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                    Готовлюсь
-                    <Switch checked={tp.enabled} onChange={(v) => set({ enabled: v })} label={`Готовлюсь к ${TRACK_NAME[t]}`} />
+                    {tr('Готовлюсь')}
+                    <Switch checked={tp.enabled} onChange={(v) => set({ enabled: v })} label={tr('Готовлюсь к {0}', tr(TRACK_NAME[t]))} />
                   </label>
                 </div>
                 {tp.enabled && (
                   <div className="grid gap-3 sm:grid-cols-4">
                     <div>
-                      <Label htmlFor={`tr-${t}-lv`}>Уровень</Label>
+                      <Label htmlFor={`tr-${t}-lv`}>{tr('Уровень')}</Label>
                       <Select id={`tr-${t}-lv`} value={tp.level} onChange={(e) => set({ level: e.target.value as Level })}>
                         {Object.entries(LEVEL_LABEL).map(([k, v]) => (
                           <option key={k} value={k}>
@@ -252,24 +256,24 @@ export default function Settings() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor={`tr-${t}-last`}>Последний результат</Label>
+                      <Label htmlFor={`tr-${t}-last`}>{tr('Последний результат')}</Label>
                       <Input
                         id={`tr-${t}-last`}
                         type="number"
                         min={lim.min}
                         max={lim.max}
                         step={lim.step}
-                        placeholder="не сдавал"
+                        placeholder={tr('не сдавал')}
                         value={tp.lastResult ?? ''}
                         onChange={(e) => set({ lastResult: e.target.value === '' ? null : clampNum(Number(e.target.value), lim) })}
                       />
                     </div>
                     <div>
-                      <Label htmlFor={`tr-${t}-goal`}>Цель ({lim.unit})</Label>
+                      <Label htmlFor={`tr-${t}-goal`}>{tr('Цель ({0})', lim.unit)}</Label>
                       <Input id={`tr-${t}-goal`} type="number" min={lim.min} max={lim.max} step={lim.step} value={tp.target} onChange={(e) => set({ target: clampNum(Number(e.target.value), t === 'ent' ? { ...lim, min: 50 } : lim) })} />
                     </div>
                     <div>
-                      <Label htmlFor={`tr-${t}-date`}>Дата экзамена</Label>
+                      <Label htmlFor={`tr-${t}-date`}>{tr('Дата экзамена')}</Label>
                       <Input id={`tr-${t}-date`} type="date" value={tp.examDate} onChange={(e) => set({ examDate: e.target.value })} />
                     </div>
                   </div>
@@ -283,17 +287,17 @@ export default function Settings() {
       {/* Интерфейс */}
       <Card>
         <CardHeader>
-          <CardTitle>Интерфейс и уведомления</CardTitle>
+          <CardTitle>{tr('Интерфейс и уведомления')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
           <div>
-            <Label>Тема оформления</Label>
+            <Label>{tr('Тема оформления')}</Label>
             <div className="grid grid-cols-3 gap-2 sm:max-w-md">
               {(
                 [
-                  ['dark', Moon, 'Тёмная'],
-                  ['light', Sun, 'Светлая'],
-                  ['system', Monitor, 'Системная'],
+                  ['dark', Moon, tr('Тёмная')],
+                  ['light', Sun, tr('Светлая')],
+                  ['system', Monitor, tr('Системная')],
                 ] as const
               ).map(([t, Icon, l]) => (
                 <button key={t} onClick={() => setTheme(t)} aria-pressed={profile.theme === t} className={cn('flex flex-col items-center gap-1.5 rounded-xl border p-3 text-sm', profile.theme === t ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'hover:border-primary/40')}>
@@ -303,20 +307,19 @@ export default function Settings() {
             </div>
           </div>
           <div className="sm:max-w-xs">
-            <Label htmlFor="s-lang">Язык интерфейса</Label>
-            <Select id="s-lang" value={draft.language} onChange={(e) => setDraft({ ...draft, language: e.target.value as 'ru' | 'kk' })}>
+            <Label htmlFor="s-lang">{tr('Язык интерфейса')}</Label>
+            <Select id="s-lang" value={profile.language === 'kk' ? 'kk' : 'ru'} onChange={(e) => void setUiLanguage(e.target.value as 'ru' | 'kk')}>
               <option value="ru">Русский</option>
-              <option value="kk" disabled>
-                Қазақша (в разработке)
-              </option>
+              <option value="kk">Қазақша</option>
             </Select>
+            <p className="mt-1.5 text-xs text-muted-foreground">{tr('Меняется сразу. Язык заданий ЕНТ — отдельная настройка в разделе «Профиль».')}</p>
           </div>
           <div className="divide-y rounded-xl border">
             {(
               [
-                ['reminders', 'Ежедневные напоминания', 'Дни до ЕНТ и новые ошибки для повторения'],
-                ['achievements', 'Достижения и уровни', 'Уведомлять о новых наградах'],
-                ['weeklyReport', 'Недельный отчёт', 'Сводка прогресса в начале недели'],
+                ['reminders', tr('Ежедневные напоминания'), tr('Дни до ЕНТ и новые ошибки для повторения')],
+                ['achievements', tr('Достижения и уровни'), tr('Уведомлять о новых наградах')],
+                ['weeklyReport', tr('Недельный отчёт'), tr('Сводка прогресса в начале недели')],
               ] as const
             ).map(([k, title, desc]) => (
               <div key={k} className="flex items-center justify-between gap-4 p-3.5">
@@ -332,12 +335,12 @@ export default function Settings() {
       </Card>
 
       <div className={cn('sticky bottom-4 z-10 flex items-center justify-end gap-2 rounded-xl border bg-popover/95 p-3 shadow-lg backdrop-blur transition-opacity', dirty ? 'opacity-100' : 'pointer-events-none opacity-0')}>
-        <span className="mr-auto text-sm text-muted-foreground">Есть несохранённые изменения</span>
+        <span className="mr-auto text-sm text-muted-foreground">{tr('Есть несохранённые изменения')}</span>
         <Button variant="ghost" onClick={() => (setDraft(profile), setErrors({}))}>
-          Отменить
+          {tr('Отменить')}
         </Button>
         <Button onClick={save}>
-          <Save /> Сохранить
+          <Save /> {tr('Сохранить')}
         </Button>
       </div>
 
@@ -345,19 +348,19 @@ export default function Settings() {
       <Card id="data">
         <CardHeader>
           <div>
-            <CardTitle>Данные</CardTitle>
-            <CardDescription>Всё хранится локально в этом браузере и сохраняется автоматически</CardDescription>
+            <CardTitle>{tr('Данные')}</CardTitle>
+            <CardDescription>{tr('Всё хранится локально в этом браузере и сохраняется автоматически')}</CardDescription>
           </div>
-          <Badge variant={dataMode === 'demo' ? 'violet' : 'secondary'}>{dataMode === 'demo' ? 'Демо-профиль' : 'Личные данные'}</Badge>
+          <Badge variant={dataMode === 'demo' ? 'violet' : 'secondary'}>{dataMode === 'demo' ? tr('Демо-профиль') : tr('Личные данные')}</Badge>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-5">
             {[
-              ['Ответов', counts.attempts],
-              ['Экзаменов', counts.exams],
-              ['Ошибок', counts.mistakes],
-              ['Задач', counts.tasks],
-              ['Своих вопросов', counts.custom],
+              [tr('Ответов'), counts.attempts],
+              [tr('Экзаменов'), counts.exams],
+              [tr('Ошибок'), counts.mistakes],
+              [tr('Задач'), counts.tasks],
+              [tr('Своих вопросов'), counts.custom],
             ].map(([l, v]) => (
               <div key={String(l)} className="rounded-lg bg-secondary/60 p-2.5">
                 <div className="text-[11px] text-muted-foreground">{l}</div>
@@ -370,13 +373,13 @@ export default function Settings() {
               variant="secondary"
               onClick={() => {
                 downloadJson(exportPayload(), `lexedu-backup-${new Date().toISOString().slice(0, 10)}.json`);
-                toast.success('Экспорт выполнен', 'Файл JSON сохранён');
+                toast.success(tr('Экспорт выполнен'), tr('Файл JSON сохранён'));
               }}
             >
-              <Download /> Экспорт JSON
+              <Download /> {tr('Экспорт JSON')}
             </Button>
             <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-              <Upload /> Импорт JSON
+              <Upload /> {tr('Импорт JSON')}
             </Button>
             <input
               ref={fileRef}
@@ -390,20 +393,20 @@ export default function Settings() {
               }}
             />
             <Button variant="secondary" onClick={() => setConfirm('demo')}>
-              <RotateCcw /> Сбросить демо-данные
+              <RotateCcw /> {tr('Сбросить демо-данные')}
             </Button>
             <Button variant="danger" onClick={() => setConfirm('clear')}>
-              <Trash2 /> Начать с чистого листа
+              <Trash2 /> {tr('Начать с чистого листа')}
             </Button>
           </div>
           <div className="flex items-start gap-3 rounded-xl border p-4">
             {isSupabaseConfigured ? <Cloud className="mt-0.5 size-5 text-success" /> : <CloudOff className="mt-0.5 size-5 text-muted-foreground" />}
             <div className="text-sm">
-              <div className="font-medium">Облачная синхронизация {isSupabaseConfigured ? 'настроена' : 'не подключена'}</div>
+              <div className="font-medium">{tr('Облачная синхронизация {0}', isSupabaseConfigured ? tr('настроена') : tr('не подключена'))}</div>
               <p className="mt-0.5 text-muted-foreground">
                 {isSupabaseConfigured
-                  ? 'Ключи Supabase найдены. Вход и синхронизация используют схему из supabase/schema.sql.'
-                  : 'Работает локальный режим. Чтобы включить аккаунты, задайте VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY в .env и примените supabase/schema.sql.'}
+                  ? tr('Ключи Supabase найдены. Вход и синхронизация используют схему из supabase/schema.sql.')
+                  : tr('Работает локальный режим. Чтобы включить аккаунты, задайте VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY в .env и примените supabase/schema.sql.')}
               </p>
             </div>
             <Database className="ml-auto hidden size-5 text-muted-foreground sm:block" />
@@ -414,25 +417,25 @@ export default function Settings() {
       <ConfirmDialog
         open={confirm === 'demo'}
         onClose={() => setConfirm(null)}
-        title="Сбросить демо-данные?"
-        description="Текущая история будет заменена демо-профилем с годом подготовки. Рекомендуем сначала сделать экспорт."
-        confirmLabel="Сбросить"
+        title={tr('Сбросить демо-данные?')}
+        description={tr('Текущая история будет заменена демо-профилем с годом подготовки. Рекомендуем сначала сделать экспорт.')}
+        confirmLabel={tr('Сбросить')}
         onConfirm={() => {
           resetDemo();
           setDraft(useAppStore.getState().profile);
-          toast.success('Демо-данные восстановлены');
+          toast.success(tr('Демо-данные восстановлены'));
         }}
       />
       <ConfirmDialog
         open={confirm === 'clear'}
         danger
         onClose={() => setConfirm(null)}
-        title="Удалить всю историю?"
-        description="Будут удалены ответы, экзамены, ошибки, план и достижения. Профиль и настройки сохранятся. Действие необратимо."
-        confirmLabel="Удалить всё"
+        title={tr('Удалить всю историю?')}
+        description={tr('Будут удалены ответы, экзамены, ошибки, план и достижения. Профиль и настройки сохранятся. Действие необратимо.')}
+        confirmLabel={tr('Удалить всё')}
         onConfirm={() => {
           clearAll();
-          toast.success('История очищена', 'Можно начинать подготовку с нуля');
+          toast.success(tr('История очищена'), tr('Можно начинать подготовку с нуля'));
         }}
       />
     </div>

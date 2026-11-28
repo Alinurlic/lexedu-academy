@@ -16,6 +16,7 @@ import { toast } from '@/store/toast';
 import type { Answer, PracticeSessionResult } from '@/types';
 import { MathText } from '@/components/MathText';
 import { ReportButton } from '@/components/ReportButton';
+import { tr } from '@/i18n';
 
 export default function PracticeSession() {
   const practice = useSession((s) => s.practice);
@@ -55,7 +56,7 @@ export default function PracticeSession() {
       if (!p) return;
       if (!Object.values(p.entries).some((e) => e.submitted)) {
         setPractice(null);
-        toast.info(auto ? 'Время вышло' : 'Сессия закрыта', 'Нет отвеченных вопросов — результат не сохранён');
+        toast.info(auto ? tr('Время вышло') : tr('Сессия закрыта'), tr('Нет отвеченных вопросов — результат не сохранён'));
         navigate('/practice');
         return;
       }
@@ -67,8 +68,8 @@ export default function PracticeSession() {
       const res = recordPractice({ subject: p.subject, topics: p.topics, startedAt: p.startedAt, answers, durationSec });
       setResult(res);
       setPractice(null);
-      if (auto) toast.info('Время вышло', 'Сессия завершена автоматически');
-      toast.xp(`+${res.xpEarned} XP`, 'Сессия завершена');
+      if (auto) toast.info(tr('Время вышло'), tr('Сессия завершена автоматически'));
+      toast.xp(`+${res.xpEarned} XP`, tr('Сессия завершена'));
     },
     [recordPractice, setPractice, navigate],
   );
@@ -115,7 +116,7 @@ export default function PracticeSession() {
   if (!practice || !q || !qid) {
     return (
       <div className="grid min-h-screen place-items-center p-6">
-        <EmptyState icon={Target} lexi="reading" title="Нет активной сессии" description="Настройте практику и начните новую сессию." action={<Button onClick={() => navigate('/practice')}>К настройкам практики</Button>} />
+        <EmptyState icon={Target} lexi="reading" title={tr('Нет активной сессии')} description={tr('Настройте практику и начните новую сессию.')} action={<Button onClick={() => navigate('/practice')}>{tr('К настройкам практики')}</Button>} />
       </div>
     );
   }
@@ -127,7 +128,7 @@ export default function PracticeSession() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-4xl items-center gap-3 px-4">
-          <Button variant="ghost" size="icon" onClick={() => setConfirmExit(true)} aria-label="Выйти из сессии">
+          <Button variant="ghost" size="icon" onClick={() => setConfirmExit(true)} aria-label={tr('Выйти из сессии')}>
             <X />
           </Button>
           <div className="hidden sm:block">
@@ -148,20 +149,20 @@ export default function PracticeSession() {
             </Badge>
           )}
           <Button variant="secondary" size="sm" onClick={() => (answeredCount === total ? finish() : setConfirmFinish(true))}>
-            <Flag /> Завершить
+            <Flag /> {tr('Завершить')}
           </Button>
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-6">
-        <div className="mb-4 flex flex-wrap gap-1.5" role="navigation" aria-label="Навигация по вопросам">
+        <div className="mb-4 flex flex-wrap gap-1.5" role="navigation" aria-label={tr('Навигация по вопросам')}>
           {practice.questionIds.map((id, i) => {
             const e = practice.entries[id];
             return (
               <button
                 key={id}
                 onClick={() => goto(i)}
-                aria-label={`Вопрос ${i + 1}`}
+                aria-label={tr('Вопрос {0}', i + 1)}
                 aria-current={i === practice.current}
                 className={cn(
                   'size-8 rounded-lg border text-xs font-medium tabular transition-colors',
@@ -179,7 +180,7 @@ export default function PracticeSession() {
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <div className="mb-2 text-sm text-muted-foreground">
-                Вопрос {practice.current + 1} из {total} · {SUBJECT_MAP[q.subject].name}
+                {tr('Вопрос {0} из {1} · {2}', practice.current + 1, total, SUBJECT_MAP[q.subject].name)}
               </div>
               <QuestionMeta q={q} />
             </div>
@@ -190,9 +191,9 @@ export default function PracticeSession() {
                 size="icon"
                 onClick={() => {
                   const added = toggleBookmark(qid);
-                  toast.success(added ? 'Добавлено в закладки' : 'Удалено из закладок');
+                  toast.success(added ? tr('Добавлено в закладки') : tr('Удалено из закладок'));
                 }}
-                aria-label={bookmarked ? 'Убрать из закладок' : 'Добавить в закладки'}
+                aria-label={bookmarked ? tr('Убрать из закладок') : tr('Добавить в закладки')}
                 aria-pressed={bookmarked}
               >
                 {bookmarked ? <BookmarkCheck className="text-primary" /> : <Bookmark />}
@@ -205,20 +206,20 @@ export default function PracticeSession() {
 
           <div className="mt-6 flex items-center justify-between gap-3">
             <Button variant="ghost" onClick={() => goto(practice.current - 1)} disabled={practice.current === 0}>
-              <ArrowLeft /> Назад
+              <ArrowLeft /> {tr('Назад')}
             </Button>
             {!entry?.submitted ? (
               <div className="flex gap-2">
                 <Button variant="secondary" onClick={() => goto(practice.current + 1)} disabled={isLast}>
-                  Пропустить
+                  {tr('Пропустить')}
                 </Button>
                 <Button onClick={submit} disabled={!isAnswered(draft)}>
-                  Проверить
+                  {tr('Проверить')}
                 </Button>
               </div>
             ) : (
               <Button onClick={next}>
-                {isLast ? 'Завершить сессию' : 'Следующий'} <ArrowRight />
+                {isLast ? tr('Завершить сессию') : tr('Следующий')} <ArrowRight />
               </Button>
             )}
           </div>
@@ -228,17 +229,17 @@ export default function PracticeSession() {
       <ConfirmDialog
         open={confirmExit}
         onClose={() => setConfirmExit(false)}
-        title="Выйти из сессии?"
-        description="Прогресс сохранится — вы сможете продолжить со страницы «Практика». Чтобы засчитать результат, нажмите «Завершить»."
-        confirmLabel="Выйти"
+        title={tr('Выйти из сессии?')}
+        description={tr('Прогресс сохранится — вы сможете продолжить со страницы «Практика». Чтобы засчитать результат, нажмите «Завершить».')}
+        confirmLabel={tr('Выйти')}
         onConfirm={() => navigate('/practice')}
       />
       <ConfirmDialog
         open={confirmFinish}
         onClose={() => setConfirmFinish(false)}
-        title="Завершить сессию?"
-        description={`Отвечено ${answeredCount} из ${total}. Неотвеченные вопросы не попадут в статистику.`}
-        confirmLabel="Завершить"
+        title={tr('Завершить сессию?')}
+        description={tr('Отвечено {0} из {1}. Неотвеченные вопросы не попадут в статистику.', answeredCount, total)}
+        confirmLabel={tr('Завершить')}
         onConfirm={() => finish()}
       />
     </div>
@@ -269,10 +270,10 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
 
   const weakest = topics.find((t) => t.p < 70);
   const recommendation = weakest
-    ? { text: `Повторите тему «${weakest.name}» (${weakest.p}%): ${TOPIC_MAP[weakest.id]?.advice}.`, cta: 'Тренировать тему', to: `/practice?subject=${result.subject}&topic=${weakest.id}&count=10` }
+    ? { text: tr('Повторите тему «{0}» ({1}%): {2}.', weakest.name, weakest.p, TOPIC_MAP[weakest.id]?.advice), cta: tr('Тренировать тему'), to: `/practice?subject=${result.subject}&topic=${weakest.id}&count=10` }
     : wrong > 0
-      ? { text: 'Отличный результат! Закрепите его: разберите ошибки этой сессии.', cta: 'Повторить ошибки', to: '/mistakes?review=1' }
-      : { text: 'Безупречно! Пора проверить себя в формате экзамена.', cta: `Пробный ${TRACKS.find((t) => t.id === (SUBJECT_MAP[result.subject]?.track ?? 'ent'))?.name ?? 'экзамен'}`, to: '/exams' };
+      ? { text: tr('Отличный результат! Закрепите его: разберите ошибки этой сессии.'), cta: tr('Повторить ошибки'), to: '/mistakes?review=1' }
+      : { text: tr('Безупречно! Пора проверить себя в формате экзамена.'), cta: tr('Пробный {0}', TRACKS.find((t) => t.id === (SUBJECT_MAP[result.subject]?.track ?? 'ent'))?.name ?? tr('экзамен')), to: '/exams' };
 
   const lexiLine = useMemo(() => {
     if (answered.length >= 5 && wrong === 0) return lexiSay('perfect');
@@ -286,7 +287,7 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
         <div className="flex items-center justify-between">
           <Logo />
           <Button variant="ghost" onClick={() => navigate('/')}>
-            На главную
+            {tr('На главную')}
           </Button>
         </div>
         <Card className="brand-glow animate-fade-up p-6 sm:p-8">
@@ -296,9 +297,9 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
               {accuracy}%
             </div>
             <div className="flex-1">
-              <div className="text-sm text-muted-foreground">{SUBJECT_MAP[result.subject].name} · сессия завершена</div>
+              <div className="text-sm text-muted-foreground">{tr('{0} · сессия завершена', SUBJECT_MAP[result.subject].name)}</div>
               <h1 className="mt-1 text-2xl font-semibold">
-                {correct} из {result.answers.length} верно
+                {tr('{0} из {1} верно', correct, result.answers.length)}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 <span className="font-medium text-violet">Lexi:</span> {lexiLine.text}
@@ -314,20 +315,20 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
             </div>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Metric icon={Target} label="Баллы" value={`${correct}/${result.answers.length}`} />
-            <Metric icon={CheckCircle2} label="Верно" value={String(correct)} tone="success" />
-            <Metric icon={XCircle} label="Ошибки" value={String(wrong)} tone="danger" />
-            <Metric icon={Clock} label="Пропущено" value={String(skipped)} />
+            <Metric icon={Target} label={tr('Баллы')} value={`${correct}/${result.answers.length}`} />
+            <Metric icon={CheckCircle2} label={tr('Верно')} value={String(correct)} tone="success" />
+            <Metric icon={XCircle} label={tr('Ошибки')} value={String(wrong)} tone="danger" />
+            <Metric icon={Clock} label={tr('Пропущено')} value={String(skipped)} />
           </div>
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Результаты по темам</CardTitle>
+              <CardTitle>{tr('Результаты по темам')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {topics.length === 0 && <p className="text-sm text-muted-foreground">Нет отвеченных вопросов.</p>}
+              {topics.length === 0 && <p className="text-sm text-muted-foreground">{tr('Нет отвеченных вопросов.')}</p>}
               {topics.map((t) => (
                 <div key={t.id}>
                   <div className="mb-1 flex justify-between text-sm">
@@ -343,7 +344,7 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
           </Card>
           <Card className="border-violet/30">
             <CardHeader>
-              <CardTitle>Что дальше</CardTitle>
+              <CardTitle>{tr('Что дальше')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm leading-relaxed text-muted-foreground">{recommendation.text}</p>
@@ -352,7 +353,7 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
                   {recommendation.cta} <ArrowRight />
                 </Button>
                 <Button variant="secondary" onClick={onAgain}>
-                  <RotateCcw /> Новая сессия
+                  <RotateCcw /> {tr('Новая сессия')}
                 </Button>
               </div>
             </CardContent>
@@ -362,11 +363,11 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
         <Card>
           <CardHeader>
             <CardTitle>
-              Ошибки сессии {wrong > 0 && <span className="text-muted-foreground">· {wrong} {plural(wrong, ['вопрос', 'вопроса', 'вопросов'])} добавлены в тетрадь ошибок</span>}
+              {tr('Ошибки сессии')} {wrong > 0 && <span className="text-muted-foreground">{tr('· {0} {1} добавлены в тетрадь ошибок', wrong, plural(wrong, ['вопрос', 'вопроса', 'вопросов']))}</span>}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {wrong === 0 && <p className="text-sm text-muted-foreground">Ошибок нет — отличная работа!</p>}
+            {wrong === 0 && <p className="text-sm text-muted-foreground">{tr('Ошибок нет — отличная работа!')}</p>}
             {answered
               .filter((a) => !a.correct)
               .map((a) => {
@@ -377,11 +378,11 @@ function PracticeResults({ result, onAgain }: { result: PracticeSessionResult; o
                     <p className="text-sm font-medium"><MathText text={q.question} noSub={q.subject === 'informatics'} /></p>
                     <div className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
                       <div>
-                        <span className="text-muted-foreground">Ваш ответ: </span>
+                        <span className="text-muted-foreground">{tr('Ваш ответ:')} </span>
                         <span className="text-danger"><MathText text={formatAnswer(q, a.answer)} noSub={q.subject === 'informatics'} /></span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Правильный: </span>
+                        <span className="text-muted-foreground">{tr('Правильный:')} </span>
                         <span className="text-success"><MathText text={formatCorrect(q)} noSub={q.subject === 'informatics'} /></span>
                       </div>
                     </div>

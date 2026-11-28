@@ -1,5 +1,6 @@
 import { useAppStore } from '@/store/useAppStore';
 import type { Profile, Track, TrackProfile } from '@/types';
+import { tr } from '@/i18n';
 
 /** Значения по умолчанию для каждого трека (используются до прохождения онбординга). */
 export const TRACK_DEFAULTS: Record<Track, TrackProfile> = {
@@ -29,9 +30,19 @@ export function enabledTracks(profile: Profile): Track[] {
 }
 
 export const LEVEL_LABEL: Record<TrackProfile['level'], string> = {
-  beginner: 'Начальный',
-  elementary: 'Базовый',
-  intermediate: 'Средний',
-  upper: 'Выше среднего',
-  advanced: 'Продвинутый',
+  get beginner() {
+    return tr('Начальный');
+  },
+  get elementary() {
+    return tr('Базовый');
+  },
+  get intermediate() {
+    return tr('Средний');
+  },
+  get upper() {
+    return tr('Выше среднего');
+  },
+  get advanced() {
+    return tr('Продвинутый');
+  },
 };

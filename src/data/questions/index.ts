@@ -14,6 +14,7 @@ import { GENERATED_QUESTIONS } from './generated';
 import { ENT_HISTORY_QUESTIONS } from './entHistory';
 import { ENT_READING_QUESTIONS } from './entReading';
 import { KK_LITERACY_QUESTIONS } from './kkLiteracy';
+import { tr } from '@/i18n';
 
 /** Весь встроенный банк LexEdu Academy: оригинальные демо-вопросы + сгенерированные по шаблонам. */
 export const DEMO_QUESTIONS: Question[] = [
@@ -38,29 +39,63 @@ export const DEMO_QUESTIONS: Question[] = [
 ];
 
 export const SOURCE_LABEL: Record<Question['source'], string> = {
-  demo: 'Демо-вопрос',
-  user: 'Мой вопрос',
-  verified: 'Официальный источник',
-  open: 'Открытый источник',
+  get demo() {
+    return tr('Демо-вопрос');
+  },
+  get user() {
+    return tr('Мой вопрос');
+  },
+  get verified() {
+    return tr('Официальный источник');
+  },
+  get open() {
+    return tr('Открытый источник');
+  },
 };
 
 export const VERIFICATION_LABEL: Record<NonNullable<Question['verification']>, string> = {
-  unverified: 'Не проверен экспертом',
-  reviewed: 'Проверен',
-  needs_review: 'Требует проверки',
+  get unverified() {
+    return tr('Не проверен экспертом');
+  },
+  get reviewed() {
+    return tr('Проверен');
+  },
+  get needs_review() {
+    return tr('Требует проверки');
+  },
 };
 
 export const TYPE_LABEL: Record<Question['type'], string> = {
-  single: 'Один ответ',
-  multiple: 'Несколько ответов',
-  numeric: 'Числовой ответ',
-  boolean: 'Верно / Неверно',
-  matching: 'Соответствие',
-  text: 'Краткий ответ',
-  essay: 'Развёрнутый ответ',
+  get single() {
+    return tr('Один ответ');
+  },
+  get multiple() {
+    return tr('Несколько ответов');
+  },
+  get numeric() {
+    return tr('Числовой ответ');
+  },
+  get boolean() {
+    return tr('Верно / Неверно');
+  },
+  get matching() {
+    return tr('Соответствие');
+  },
+  get text() {
+    return tr('Краткий ответ');
+  },
+  get essay() {
+    return tr('Развёрнутый ответ');
+  },
 };
 
-export const DIFFICULTY_LABEL = { easy: 'Лёгкий', medium: 'Средний', hard: 'Сложный' } as const;
+export const DIFFICULTY_LABEL = { get easy() {
+    return tr('Лёгкий');
+  }, get medium() {
+    return tr('Средний');
+  }, get hard() {
+    return tr('Сложный');
+  } } as const;
 
 export function parseNumeric(value: string): number | null {
   const normalized = value.replace(/\s/g, '').replace(',', '.').replace('−', '-');
@@ -155,7 +190,7 @@ export function rightAnswer(q: Question): Answer | null {
 }
 
 export function formatAnswer(q: Question, answer: Answer | null | undefined): string {
-  if (!isAnswered(answer)) return 'Нет ответа';
+  if (!isAnswered(answer)) return tr('Нет ответа');
   switch (q.type) {
     case 'single':
       return typeof answer === 'number' ? (q.options[answer] ?? '—') : '—';
@@ -166,7 +201,7 @@ export function formatAnswer(q: Question, answer: Answer | null | undefined): st
     case 'numeric':
       return `${String(answer).replace('.', ',')}${q.unit ? ' ' + q.unit : ''}`;
     case 'boolean':
-      return answer ? 'Верно' : 'Неверно';
+      return answer ? tr('Верно') : tr('Неверно');
     case 'text':
     case 'essay':
       return String(answer).length > 160 ? String(answer).slice(0, 160) + '…' : String(answer);
@@ -184,10 +219,10 @@ export function formatCorrect(q: Question): string {
     case 'numeric':
       return `${String(q.correctAnswer).replace('.', ',')}${q.unit ? ' ' + q.unit : ''}`;
     case 'boolean':
-      return q.correctAnswer ? 'Верно' : 'Неверно';
+      return q.correctAnswer ? tr('Верно') : tr('Неверно');
     case 'text':
       return q.correctAnswer.join(' / ');
     case 'essay':
-      return 'Оценивается по критериям';
+      return tr('Оценивается по критериям');
   }
 }

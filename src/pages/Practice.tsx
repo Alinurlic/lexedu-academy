@@ -14,6 +14,7 @@ import { cn, pct, plural } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Difficulty, PracticeSessionResult, SubjectId } from '@/types';
 import { MathText } from '@/components/MathText';
+import { tr } from '@/i18n';
 
 const COUNTS = [5, 10, 15, 20];
 const TIMERS = [5, 10, 20, 30];
@@ -76,7 +77,7 @@ export default function Practice() {
       entries: {},
       startedAt: new Date().toISOString(),
       timeLimitSec: timerOn ? timerMin * 60 : null,
-      label: subj ? subj.name : source === 'bookmarks' ? 'Закладки' : source === 'mistakes' ? 'Ошибки' : 'Смешанная практика',
+      label: subj ? subj.name : source === 'bookmarks' ? tr('Закладки') : source === 'mistakes' ? tr('Ошибки') : tr('Смешанная практика'),
     });
     navigate('/practice/session');
   };
@@ -87,7 +88,7 @@ export default function Practice() {
     setDifficulty('any');
     setSource('bookmarks');
     setTab('new');
-    toast.info('Выбраны закладки', 'Проверьте настройки и нажмите «Начать сессию»');
+    toast.info(tr('Выбраны закладки'), tr('Проверьте настройки и нажмите «Начать сессию»'));
   };
 
   const qmap = useQuestionMap();
@@ -99,17 +100,17 @@ export default function Practice() {
       {active && (
         <Card className="flex flex-col gap-3 border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center">
           <div className="flex-1">
-            <div className="text-sm font-medium">У вас есть незавершённая сессия: {active.label}</div>
+            <div className="text-sm font-medium">{tr('У вас есть незавершённая сессия: {0}', active.label)}</div>
             <div className="text-xs text-muted-foreground">
-              Отвечено {Object.values(active.entries).filter((e) => e.submitted).length} из {active.questionIds.length}
+              {tr('Отвечено {0} из {1}', Object.values(active.entries).filter((e) => e.submitted).length, active.questionIds.length)}
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => (setPractice(null), toast.info('Сессия отменена'))}>
-              Отменить
+            <Button variant="secondary" size="sm" onClick={() => (setPractice(null), toast.info(tr('Сессия отменена')))}>
+              {tr('Отменить')}
             </Button>
             <Button size="sm" onClick={() => navigate('/practice/session')}>
-              <Play /> Продолжить
+              <Play /> {tr('Продолжить')}
             </Button>
           </div>
         </Card>
@@ -119,9 +120,9 @@ export default function Practice() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: 'new', label: 'Новая сессия' },
-          { value: 'bookmarks', label: `Закладки (${bookmarks.length})` },
-          { value: 'history', label: 'История' },
+          { value: 'new', label: tr('Новая сессия') },
+          { value: 'bookmarks', label: tr('Закладки ({0})', bookmarks.length) },
+          { value: 'history', label: tr('История') },
         ]}
       />
 
@@ -131,8 +132,8 @@ export default function Practice() {
             <Card>
               <CardHeader>
                 <div>
-                  <CardTitle>1. Предмет</CardTitle>
-                  <CardDescription>Выберите предмет для тренировки</CardDescription>
+                  <CardTitle>{tr('1. Предмет')}</CardTitle>
+                  <CardDescription>{tr('Выберите предмет для тренировки')}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent>
@@ -148,7 +149,7 @@ export default function Practice() {
                         <SubjectIcon subject={s.id} className="size-8" />
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-medium">{s.name}</span>
-                          <span className="text-[11px] text-muted-foreground">{n} вопр.</span>
+                          <span className="text-[11px] text-muted-foreground">{tr('{0} вопр.', n)}</span>
                         </span>
                       </button>
                     );
@@ -161,8 +162,8 @@ export default function Practice() {
                       <Shuffle className="size-4" />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">Все предметы</span>
-                      <span className="text-[11px] text-muted-foreground">{questions.length} вопр.</span>
+                      <span className="block truncate text-sm font-medium">{tr('Все предметы')}</span>
+                      <span className="text-[11px] text-muted-foreground">{tr('{0} вопр.', questions.length)}</span>
                     </span>
                   </button>
                 </div>
@@ -173,12 +174,12 @@ export default function Practice() {
               <Card>
                 <CardHeader>
                   <div>
-                    <CardTitle>2. Темы</CardTitle>
-                    <CardDescription>Без выбора — все темы предмета</CardDescription>
+                    <CardTitle>{tr('2. Темы')}</CardTitle>
+                    <CardDescription>{tr('Без выбора — все темы предмета')}</CardDescription>
                   </div>
                   {topics.length > 0 && (
                     <Button variant="ghost" size="sm" onClick={() => setTopics([])}>
-                      Сбросить
+                      {tr('Сбросить')}
                     </Button>
                   )}
                 </CardHeader>
@@ -203,47 +204,47 @@ export default function Practice() {
 
             <Card>
               <CardHeader>
-                <CardTitle>{subj ? '3' : '2'}. Параметры</CardTitle>
+                <CardTitle>{tr('{0}. Параметры', subj ? '3' : '2')}</CardTitle>
               </CardHeader>
               <CardContent className="grid gap-5 md:grid-cols-2">
                 <div>
-                  <div className="mb-2 text-sm font-medium">Сложность</div>
+                  <div className="mb-2 text-sm font-medium">{tr('Сложность')}</div>
                   <Segmented
                     value={difficulty}
                     onChange={setDifficulty}
                     options={[
-                      { value: 'any', label: 'Любая' },
-                      { value: 'easy', label: 'Лёгкая' },
-                      { value: 'medium', label: 'Средняя' },
-                      { value: 'hard', label: 'Сложная' },
+                      { value: 'any', label: tr('Любая') },
+                      { value: 'easy', label: tr('Лёгкая') },
+                      { value: 'medium', label: tr('Средняя') },
+                      { value: 'hard', label: tr('Сложная') },
                     ]}
                   />
                 </div>
                 <div>
-                  <div className="mb-2 text-sm font-medium">Количество вопросов</div>
+                  <div className="mb-2 text-sm font-medium">{tr('Количество вопросов')}</div>
                   <Segmented value={String(count)} onChange={(v) => setCount(Number(v))} options={COUNTS.map((c) => ({ value: String(c), label: String(c) }))} />
                 </div>
                 <div>
-                  <div className="mb-2 text-sm font-medium">Источник</div>
+                  <div className="mb-2 text-sm font-medium">{tr('Источник')}</div>
                   <Segmented
                     value={source}
                     onChange={setSource}
                     options={[
-                      { value: 'all', label: 'Все' },
-                      { value: 'unseen', label: 'Новые' },
-                      { value: 'mistakes', label: 'Ошибки' },
-                      { value: 'bookmarks', label: 'Закладки' },
+                      { value: 'all', label: tr('Все') },
+                      { value: 'unseen', label: tr('Новые') },
+                      { value: 'mistakes', label: tr('Ошибки') },
+                      { value: 'bookmarks', label: tr('Закладки') },
                     ]}
                   />
                 </div>
                 <div>
                   <div className="mb-2 flex items-center gap-3 text-sm font-medium">
-                    <Switch checked={timerOn} onChange={setTimerOn} label="Таймер" /> Таймер
+                    <Switch checked={timerOn} onChange={setTimerOn} label={tr('Таймер')} /> {tr('Таймер')}
                   </div>
                   {timerOn ? (
-                    <Segmented value={String(timerMin)} onChange={(v) => setTimerMin(Number(v))} options={TIMERS.map((t) => ({ value: String(t), label: `${t} мин` }))} />
+                    <Segmented value={String(timerMin)} onChange={(v) => setTimerMin(Number(v))} options={TIMERS.map((t) => ({ value: String(t), label: tr('{0} мин', t) }))} />
                   ) : (
-                    <p className="text-xs text-muted-foreground">Без ограничения по времени</p>
+                    <p className="text-xs text-muted-foreground">{tr('Без ограничения по времени')}</p>
                   )}
                 </div>
               </CardContent>
@@ -254,23 +255,23 @@ export default function Practice() {
             <Card>
               <CardHeader>
                 <div>
-                  <CardTitle>Сводка</CardTitle>
-                  <CardDescription>Проверьте настройки перед стартом</CardDescription>
+                  <CardTitle>{tr('Сводка')}</CardTitle>
+                  <CardDescription>{tr('Проверьте настройки перед стартом')}</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                <Row label="Предмет" value={subj?.name ?? 'Все предметы'} />
-                <Row label="Темы" value={topics.length ? topics.map((t) => TOPIC_MAP[t]?.name).join(', ') : 'Все'} />
-                <Row label="Сложность" value={{ any: 'Любая', easy: 'Лёгкая', medium: 'Средняя', hard: 'Сложная' }[difficulty]} />
-                <Row label="Доступно" value={`${pool.length} ${plural(pool.length, ['вопрос', 'вопроса', 'вопросов'])}`} />
-                <Row label="В сессии" value={String(realCount)} />
-                <Row label="Таймер" value={timerOn ? `${timerMin} мин` : 'Выключен'} />
-                {pool.length > 0 && pool.length < count && <p className="rounded-lg bg-warning/10 p-2.5 text-xs text-warning">В пуле меньше вопросов, чем выбрано: будет {pool.length}.</p>}
-                {pool.length === 0 && <p className="rounded-lg bg-danger/10 p-2.5 text-xs text-danger">Под эти фильтры нет вопросов. Измените тему, сложность или источник.</p>}
+                <Row label={tr('Предмет')} value={subj?.name ?? tr('Все предметы')} />
+                <Row label={tr('Темы')} value={topics.length ? topics.map((t) => TOPIC_MAP[t]?.name).join(', ') : tr('Все')} />
+                <Row label={tr('Сложность')} value={{ any: tr('Любая'), easy: tr('Лёгкая'), medium: tr('Средняя'), hard: tr('Сложная') }[difficulty]} />
+                <Row label={tr('Доступно')} value={`${pool.length} ${plural(pool.length, ['вопрос', 'вопроса', 'вопросов'])}`} />
+                <Row label={tr('В сессии')} value={String(realCount)} />
+                <Row label={tr('Таймер')} value={timerOn ? tr('{0} мин', timerMin) : tr('Выключен')} />
+                {pool.length > 0 && pool.length < count && <p className="rounded-lg bg-warning/10 p-2.5 text-xs text-warning">{tr('В пуле меньше вопросов, чем выбрано: будет {0}.', pool.length)}</p>}
+                {pool.length === 0 && <p className="rounded-lg bg-danger/10 p-2.5 text-xs text-danger">{tr('Под эти фильтры нет вопросов. Измените тему, сложность или источник.')}</p>}
                 <Button className="mt-2 w-full" size="lg" onClick={start} disabled={!pool.length}>
-                  <Play /> Начать сессию
+                  <Play /> {tr('Начать сессию')}
                 </Button>
-                <p className="text-center text-[11px] text-muted-foreground">Клавиши 1–4 — выбор ответа, Enter — проверить</p>
+                <p className="text-center text-[11px] text-muted-foreground">{tr('Клавиши 1–4 — выбор ответа, Enter — проверить')}</p>
               </CardContent>
             </Card>
           </div>
@@ -281,16 +282,16 @@ export default function Practice() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Закладки</CardTitle>
-              <CardDescription>Вопросы, которые вы отметили для повторения</CardDescription>
+              <CardTitle>{tr('Закладки')}</CardTitle>
+              <CardDescription>{tr('Вопросы, которые вы отметили для повторения')}</CardDescription>
             </div>
             <Button size="sm" onClick={startBookmarks} disabled={!bookmarks.length}>
-              <Target /> Практиковать закладки
+              <Target /> {tr('Практиковать закладки')}
             </Button>
           </CardHeader>
           <CardContent>
             {bookmarks.length === 0 ? (
-              <EmptyState icon={Bookmark} lexi="reading" title="Закладок пока нет" description="Во время практики нажмите на значок закладки, чтобы сохранить вопрос." />
+              <EmptyState icon={Bookmark} lexi="reading" title={tr('Закладок пока нет')} description={tr('Во время практики нажмите на значок закладки, чтобы сохранить вопрос.')} />
             ) : (
               <div className="divide-y rounded-xl border">
                 {bookmarks.map((id) => {
@@ -308,13 +309,13 @@ export default function Practice() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>История сессий</CardTitle>
-              <CardDescription>Последние 30 практических сессий</CardDescription>
+              <CardTitle>{tr('История сессий')}</CardTitle>
+              <CardDescription>{tr('Последние 30 практических сессий')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
             {recent.length === 0 ? (
-              <EmptyState icon={History} lexi="motivating" title="Сессий пока нет" description="Пройдите первую практическую сессию — результаты появятся здесь." action={<Button onClick={() => setTab('new')}>Начать</Button>} />
+              <EmptyState icon={History} lexi="motivating" title={tr('Сессий пока нет')} description={tr('Пройдите первую практическую сессию — результаты появятся здесь.')} action={<Button onClick={() => setTab('new')}>{tr('Начать')}</Button>} />
             ) : (
               <div className="divide-y rounded-xl border">
                 {recent.map((s) => {
@@ -326,7 +327,7 @@ export default function Practice() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{SUBJECT_MAP[s.subject].name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {fmtDateTime(s.finishedAt)} · {s.answers.length} вопр. · {fmtDuration(s.durationSec)}
+                          {tr('{0} · {1} вопр. · {2}', fmtDateTime(s.finishedAt), s.answers.length, fmtDuration(s.durationSec))}
                         </div>
                       </div>
                       <Badge variant={p >= 75 ? 'success' : p >= 50 ? 'warning' : 'danger'}>{p}%</Badge>
@@ -339,7 +340,7 @@ export default function Practice() {
         </Card>
       )}
 
-      <Dialog open={!!previewQ} onClose={() => setPreview(null)} title="Вопрос" size="lg">
+      <Dialog open={!!previewQ} onClose={() => setPreview(null)} title={tr('Вопрос')} size="lg">
         {previewQ && (
           <div className="pb-4">
             <QuestionMeta q={previewQ} className="mb-4" />
@@ -353,8 +354,8 @@ export default function Practice() {
         {historyItem && (
           <div className="space-y-2 pb-4">
             <div className="mb-3 flex flex-wrap gap-2 text-sm">
-              <Badge variant="success">Верно: {historyItem.answers.filter((a) => a.correct).length}</Badge>
-              <Badge variant="danger">Ошибок: {historyItem.answers.filter((a) => !a.correct).length}</Badge>
+              <Badge variant="success">{tr('Верно: {0}', historyItem.answers.filter((a) => a.correct).length)}</Badge>
+              <Badge variant="danger">{tr('Ошибок: {0}', historyItem.answers.filter((a) => !a.correct).length)}</Badge>
               <Badge variant="outline">
                 <Clock /> {fmtDuration(historyItem.durationSec)}
               </Badge>
@@ -397,10 +398,10 @@ function BookmarkRow({ id, title, subject, onOpen }: { id: string; title: string
       <Button
         variant="ghost"
         size="icon-sm"
-        aria-label="Удалить из закладок"
+        aria-label={tr('Удалить из закладок')}
         onClick={() => {
           toggle(id);
-          toast.info('Удалено из закладок', undefined, { label: 'Вернуть', onClick: () => toggle(id) });
+          toast.info(tr('Удалено из закладок'), undefined, { label: tr('Вернуть'), onClick: () => toggle(id) });
         }}
       >
         <BookmarkX />

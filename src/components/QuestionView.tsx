@@ -12,6 +12,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { MathText } from './MathText';
 import { ReportButton } from './ReportButton';
 import { LexiExplain } from './LexiExplain';
+import { tr } from '@/i18n';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
@@ -26,12 +27,12 @@ export function QuestionMeta({ q, className }: { q: Question; className?: string
         {SOURCE_LABEL[q.source]}
       </Badge>
       {(questionLang(q) === 'kk' || (questionLang(q) === 'ru' && entLang === 'kk')) && (
-        <Badge variant="outline" title={`Задание ${LANG_LABEL[questionLang(q)]}`}>
+        <Badge variant="outline" title={tr('Задание {0}', LANG_LABEL[questionLang(q)])}>
           {LANG_SHORT[questionLang(q)]}
         </Badge>
       )}
-      {q.verification === 'reviewed' && <Badge variant="success">Проверен</Badge>}
-      {q.verification === 'needs_review' && <Badge variant="warning">Требует проверки</Badge>}
+      {q.verification === 'reviewed' && <Badge variant="success">{tr('Проверен')}</Badge>}
+      {q.verification === 'needs_review' && <Badge variant="warning">{tr('Требует проверки')}</Badge>}
     </div>
   );
 }
@@ -67,7 +68,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
       {q.audio && <AudioPlayer script={q.audio} groupKey={q.group ?? q.id} reveal={reveal} />}
       {q.passage && (
         <div className={cn('mb-5 overflow-y-auto rounded-xl border bg-surface-2/60 p-4 text-[14px] leading-relaxed scrollbar-thin', q.passage.length > 1500 ? 'max-h-[28rem]' : 'max-h-72')}>
-          <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Текст</div>
+          <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">{tr('Текст')}</div>
           {q.passage.split('\n').map((p, i) => (
             <p key={i} className="mb-2 last:mb-0">
               <MathText text={p} noSub={code} />
@@ -79,7 +80,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
         <MathText text={q.type === 'essay' ? q.question.split('\n\n|')[0] : q.question} noSub={code} />
       </p>
       {q.type === 'essay' && q.question.includes('|') && <MarkdownTable text={q.question} />}
-      {q.type === 'multiple' && <p className="mt-1 text-sm text-muted-foreground">Выберите все верные варианты</p>}
+      {q.type === 'multiple' && <p className="mt-1 text-sm text-muted-foreground">{tr('Выберите все верные варианты')}</p>}
 
       <div className="mt-5">
         {(q.type === 'single' || q.type === 'multiple') && (
@@ -149,7 +150,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
                   )}
                 >
                   {v ? <Check className="size-4" /> : <X className="size-4" />}
-                  {v ? 'Верно' : 'Неверно'}
+                  {v ? tr('Верно') : tr('Неверно')}
                 </button>
               );
             })}
@@ -174,7 +175,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
                     <span className="mr-1.5 font-semibold">{pi + 1}.</span>
                     <MathText text={p} noSub={code} />
                   </div>
-                  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={`Соответствие для пункта ${pi + 1}`}>
+                  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={tr('Соответствие для пункта {0}', pi + 1)}>
                     {q.options.map((_, oi) => {
                       const selected = cur === oi;
                       const isRight = q.correctAnswer[pi] === oi;
@@ -220,9 +221,9 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
               disabled={locked}
               onChange={(e) => onChange(e.target.value.slice(0, 60) || null)}
               className="h-11 text-base"
-              aria-label="Краткий ответ"
+              aria-label={tr('Краткий ответ')}
             />
-            {q.wordLimit && <p className="mt-1.5 text-xs text-muted-foreground">Не более {q.wordLimit} {q.wordLimit === 1 ? 'слова' : 'слов'} / числа</p>}
+            {q.wordLimit && <p className="mt-1.5 text-xs text-muted-foreground">{tr('Не более {0} {1} / числа', q.wordLimit, q.wordLimit === 1 ? tr('слова') : tr('слов'))}</p>}
           </div>
         )}
 
@@ -234,7 +235,7 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
               <Input
                 inputMode="decimal"
                 autoComplete="off"
-                placeholder="Введите число"
+                placeholder={tr('Введите число')}
                 value={typeof value === 'string' ? value : ''}
                 disabled={locked}
                 onChange={(e) => {
@@ -242,18 +243,18 @@ export function QuestionView({ q, value, onChange, reveal, disabled, keyboard = 
                   onChange(v === '' ? null : v);
                 }}
                 className={cn('h-12 text-lg tabular', reveal && 'opacity-100')}
-                aria-label="Числовой ответ"
+                aria-label={tr('Числовой ответ')}
               />
               {q.unit && <span className="whitespace-nowrap text-sm text-muted-foreground">{q.unit}</span>}
             </div>
-            <p className="mt-1.5 text-xs text-muted-foreground">Дробную часть отделяйте запятой или точкой</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">{tr('Дробную часть отделяйте запятой или точкой')}</p>
           </div>
         )}
       </div>
 
       {reveal && (
         <div className="mt-4 rounded-xl border bg-surface-2/60 p-3 text-sm">
-          <span className="text-muted-foreground">Правильный ответ: </span>
+          <span className="text-muted-foreground">{tr('Правильный ответ:')} </span>
           <span className="font-semibold"><MathText text={formatCorrect(q)} noSub={q.subject === 'informatics'} /></span>
         </div>
       )}
@@ -269,7 +270,7 @@ export function Explanation({ q, correct, lexi }: { q: Question; correct: boolea
       <div className="min-w-0 flex-1">
         <div className={cn('flex items-center gap-2 text-sm font-semibold', correct ? 'text-success' : 'text-danger')}>
           {correct ? <Check className="size-4" /> : <X className="size-4" />}
-          {line ? line.text : correct ? 'Верно!' : 'Неверно'}
+          {line ? line.text : correct ? tr('Верно!') : tr('Неверно')}
         </div>
         <p className="mt-1.5 text-sm leading-relaxed text-foreground/90">
           <MathText text={q.explanation} noSub={q.subject === 'informatics'} />
@@ -285,7 +286,7 @@ export function Explanation({ q, correct, lexi }: { q: Question; correct: boolea
               <>
                 {' '}
                 <a href={q.sourceRef} target="_blank" rel="noopener noreferrer nofollow" className="underline hover:text-foreground">
-                  Ссылка на первоисточник
+                  {tr('Ссылка на первоисточник')}
                 </a>
               </>
             )}
@@ -311,10 +312,10 @@ function EssayInput({ value, onChange, disabled, minWords }: { value: string; on
         spellCheck={false}
         placeholder="Write your answer here…"
         className="min-h-[280px] w-full rounded-xl border border-input bg-surface p-4 text-[15px] leading-relaxed focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-        aria-label="Развёрнутый ответ"
+        aria-label={tr('Развёрнутый ответ')}
       />
       <div className={cn('mt-1.5 text-xs tabular', n >= minWords ? 'text-success' : 'text-muted-foreground')}>
-        Слов: {n} / минимум {minWords}
+        {tr('Слов: {0} / минимум {1}', n, minWords)}
       </div>
     </div>
   );
@@ -386,28 +387,28 @@ function AudioPlayer({ script, groupKey, reveal }: { script: string; groupKey: s
   return (
     <div className="mb-5 rounded-xl border border-violet/30 bg-violet/5 p-4">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium">Запись Listening</span>
+        <span className="text-sm font-medium">{tr('Запись Listening')}</span>
         {supported ? (
           <>
             <button type="button" onClick={play} disabled={state === 'playing' || (state === 'done' && !reveal)} className="rounded-lg bg-violet px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50">
-              {state === 'playing' ? 'Воспроизводится…' : state === 'done' ? (reveal ? 'Прослушать снова' : 'Прослушано') : 'Прослушать (1 раз)'}
+              {state === 'playing' ? tr('Воспроизводится…') : state === 'done' ? (reveal ? tr('Прослушать снова') : tr('Прослушано')) : tr('Прослушать (1 раз)')}
             </button>
             {state === 'playing' && (
               <button type="button" onClick={() => (window.speechSynthesis.cancel(), setState('done'))} className="text-sm text-muted-foreground underline">
-                Остановить
+                {tr('Остановить')}
               </button>
             )}
           </>
         ) : (
-          <span className="text-sm text-warning">Браузер не поддерживает озвучку — используйте текст записи.</span>
+          <span className="text-sm text-warning">{tr('Браузер не поддерживает озвучку — используйте текст записи.')}</span>
         )}
         {(reveal || !supported) && (
           <button type="button" onClick={() => setShowText((v) => !v)} className="text-sm text-primary underline">
-            {showText ? 'Скрыть текст записи' : 'Показать текст записи'}
+            {showText ? tr('Скрыть текст записи') : tr('Показать текст записи')}
           </button>
         )}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">Озвучивается синтезатором речи браузера (английский голос). На экзамене запись звучит один раз.</p>
+      <p className="mt-2 text-xs text-muted-foreground">{tr('Озвучивается синтезатором речи браузера (английский голос). На экзамене запись звучит один раз.')}</p>
       {showText && <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-card p-3 font-sans text-sm">{script}</pre>}
     </div>
   );

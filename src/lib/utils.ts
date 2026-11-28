@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { tr, uiLang } from '@/i18n';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,7 +19,9 @@ export function pct(part: number, total: number) {
   return total > 0 ? Math.round((part / total) * 100) : 0;
 }
 
+/** Форма слова после числа: «1 вопрос, 2 вопроса, 5 вопросов». В казахском форма одна (перевод первой). */
 export function plural(n: number, forms: [string, string, string]) {
+  if (uiLang() === 'kk') return tr(forms[0]);
   const a = Math.abs(n) % 100;
   const b = a % 10;
   if (a > 10 && a < 20) return forms[2];

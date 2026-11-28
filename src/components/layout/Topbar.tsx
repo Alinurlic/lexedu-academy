@@ -12,6 +12,8 @@ import { toast } from '@/store/toast';
 import type { ThemeMode } from '@/types';
 import { TRACKS } from '@/data/subjects';
 import { TRACK_DEFAULTS } from '@/hooks/useTrack';
+import { tr } from '@/i18n';
+import { LangSwitch } from '@/components/LangSwitch';
 
 export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void }) {
   const { pathname } = useLocation();
@@ -27,11 +29,11 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
 
   const nextTheme: Record<ThemeMode, ThemeMode> = { dark: 'light', light: 'system', system: 'dark' };
   const ThemeIcon = profile.theme === 'dark' ? Moon : profile.theme === 'light' ? Sun : Monitor;
-  const themeLabel = { dark: 'Тёмная тема', light: 'Светлая тема', system: 'Системная тема' }[profile.theme];
+  const themeLabel = { dark: tr('Тёмная тема'), light: tr('Светлая тема'), system: tr('Системная тема') }[profile.theme];
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md sm:px-6">
-      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenu} aria-label="Открыть меню">
+      <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenu} aria-label={tr('Открыть меню')}>
         <Menu />
       </Button>
       <h1 className="truncate text-[17px] font-semibold tracking-tight">{titleFor(pathname)}</h1>
@@ -43,21 +45,22 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
           className="hidden h-9 w-64 items-center gap-2 rounded-lg border bg-surface px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 md:flex"
         >
           <Search className="size-4" />
-          <span className="flex-1 text-left">Поиск…</span>
+          <span className="flex-1 text-left">{tr('Поиск…')}</span>
           <Kbd>Ctrl K</Kbd>
         </button>
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={onSearch} aria-label="Поиск">
+        <Button variant="ghost" size="icon" className="md:hidden" onClick={onSearch} aria-label={tr('Поиск')}>
           <Search />
         </Button>
 
+        <LangSwitch variant="button" />
         <Button
           variant="ghost"
           size="icon"
           onClick={() => {
             updateProfile({ theme: nextTheme[profile.theme] });
-            toast.info({ dark: 'Светлая тема', light: 'Системная тема', system: 'Тёмная тема' }[profile.theme]);
+            toast.info({ dark: tr('Светлая тема'), light: tr('Системная тема'), system: tr('Тёмная тема') }[profile.theme]);
           }}
-          aria-label={`Сменить тему (сейчас: ${themeLabel})`}
+          aria-label={tr('Сменить тему (сейчас: {0})', themeLabel)}
           title={themeLabel}
         >
           <ThemeIcon />
@@ -66,7 +69,7 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
         <Popover
           className="w-[min(92vw,380px)] p-0"
           trigger={({ toggle }) => (
-            <Button variant="ghost" size="icon" onClick={toggle} aria-label={`Уведомления${unread ? `: ${unread} непрочитанных` : ''}`} className="relative">
+            <Button variant="ghost" size="icon" onClick={toggle} aria-label={tr('Уведомления{0}', unread ? tr(': {0} непрочитанных', unread) : '')} className="relative">
               <Bell />
               {unread > 0 && <span className="absolute right-1.5 top-1.5 grid min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-bold leading-4 text-white">{unread}</span>}
             </Button>
@@ -75,18 +78,18 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
           {(close) => (
             <div>
               <div className="flex items-center justify-between border-b px-4 py-3">
-                <span className="text-sm font-semibold">Уведомления</span>
+                <span className="text-sm font-semibold">{tr('Уведомления')}</span>
                 <div className="flex gap-1">
                   <Button variant="ghost" size="sm" onClick={markAll} disabled={!unread}>
-                    <CheckCheck /> Прочитать все
+                    <CheckCheck /> {tr('Прочитать все')}
                   </Button>
-                  <Button variant="ghost" size="icon-sm" onClick={clearAll} disabled={!notifications.length} aria-label="Очистить уведомления">
+                  <Button variant="ghost" size="icon-sm" onClick={clearAll} disabled={!notifications.length} aria-label={tr('Очистить уведомления')}>
                     <Trash2 />
                   </Button>
                 </div>
               </div>
               <div className="scrollbar-thin max-h-96 overflow-y-auto p-1.5">
-                {notifications.length === 0 && <p className="px-3 py-8 text-center text-sm text-muted-foreground">Уведомлений пока нет</p>}
+                {notifications.length === 0 && <p className="px-3 py-8 text-center text-sm text-muted-foreground">{tr('Уведомлений пока нет')}</p>}
                 {notifications.map((n) => (
                   <button
                     key={n.id}
@@ -99,8 +102,8 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
                   >
                     <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', n.read ? 'bg-transparent' : 'bg-primary')} />
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium">{n.title}</span>
-                      <span className="block text-[13px] text-muted-foreground">{n.body}</span>
+                      <span className="block text-sm font-medium">{tr(n.title)}</span>
+                      <span className="block text-[13px] text-muted-foreground">{tr(n.body)}</span>
                       <span className="mt-1 block text-[11px] text-muted-foreground">{fmtDateTime(n.date)}</span>
                     </span>
                   </button>
@@ -113,7 +116,7 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
         <Popover
           className="w-64"
           trigger={({ toggle }) => (
-            <button onClick={toggle} className="ml-1 rounded-full ring-offset-2 ring-offset-background hover:ring-2 hover:ring-primary/40" aria-label="Меню профиля">
+            <button onClick={toggle} className="ml-1 rounded-full ring-offset-2 ring-offset-background hover:ring-2 hover:ring-primary/40" aria-label={tr('Меню профиля')}>
               <Avatar />
             </button>
           )}
@@ -125,29 +128,29 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold">{profile.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {profile.grade} класс · {stats.xp.toLocaleString('ru-RU')} XP
+                    {tr('{0} класс · {1} XP', profile.grade, stats.xp.toLocaleString('ru-RU'))}
                   </div>
                 </div>
               </div>
               <div className="my-1 h-px bg-border" />
               <MenuItem icon={User} onClick={() => (navigate('/settings'), close())}>
-                Профиль
+                {tr('Профиль')}
               </MenuItem>
               <MenuItem icon={Award} onClick={() => (navigate('/achievements'), close())}>
-                Достижения
+                {tr('Достижения')}
               </MenuItem>
               <MenuItem icon={Settings} onClick={() => (navigate('/settings#data'), close())}>
-                Настройки
+                {tr('Настройки')}
               </MenuItem>
               <MenuItem
                 icon={Download}
                 onClick={() => {
                   downloadJson(exportPayload(), `lexedu-backup-${new Date().toISOString().slice(0, 10)}.json`);
-                  toast.success('Данные экспортированы', 'JSON-файл сохранён');
+                  toast.success(tr('Данные экспортированы'), tr('JSON-файл сохранён'));
                   close();
                 }}
               >
-                Экспорт данных
+                {tr('Экспорт данных')}
               </MenuItem>
               <div className="my-1 h-px bg-border" />
               <MenuItem
@@ -157,7 +160,7 @@ export function Topbar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () 
                   navigate('/account');
                 }}
               >
-                Аккаунт и синхронизация
+                {tr('Аккаунт и синхронизация')}
               </MenuItem>
             </div>
           )}
@@ -172,7 +175,7 @@ function TrackSwitch() {
   const updateProfile = useAppStore((s) => s.updateProfile);
   const tracks = useAppStore((s) => s.profile.tracks);
   return (
-    <div className="ml-2 hidden rounded-lg border bg-secondary/60 p-0.5 sm:inline-flex" role="tablist" aria-label="Экзамен">
+    <div className="ml-2 hidden rounded-lg border bg-secondary/60 p-0.5 sm:inline-flex" role="tablist" aria-label={tr('Экзамен')}>
       {TRACKS.map((t) => (
         <button
           key={t.id}

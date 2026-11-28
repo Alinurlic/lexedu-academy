@@ -7,6 +7,7 @@ import { useAllQuestions, useAppStore } from '@/store/useAppStore';
 import { Kbd } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { fmtDate } from '@/lib/date';
+import { tr } from '@/i18n';
 
 interface Item {
   id: string;
@@ -42,27 +43,27 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     if (!open) return [];
     const qmap = new Map(questions.map((q) => [q.id, q]));
     return [
-      ...NAV.map((n) => ({ id: `nav-${n.to}`, group: 'Разделы', title: n.label, subtitle: n.description, icon: n.icon, to: n.to, keywords: norm(n.label + ' ' + n.description) })),
-      { id: 'act-practice', group: 'Действия', title: 'Начать практику', subtitle: 'Быстрая сессия из 10 вопросов', icon: Zap, to: '/practice', keywords: 'начать практику тест сессия' },
-      { id: 'act-exam', group: 'Действия', title: 'Начать пробный экзамен', subtitle: 'ЕНТ, SAT или IELTS — полный формат с таймером', icon: Zap, to: '/exams', keywords: 'пробный экзамен ент сат sat ielts айлтс тест' },
-      { id: 'act-review', group: 'Действия', title: 'Повторить ошибки', subtitle: 'Режим повторения', icon: Zap, to: '/mistakes?review=1', keywords: 'повторить ошибки' },
-      ...SUBJECTS.map((s) => ({ id: `subj-${s.id}`, group: 'Предметы', title: s.name, subtitle: `${s.topics.length} тем`, icon: BookOpen, to: `/subjects/${s.id}`, keywords: norm(s.name) })),
+      ...NAV.map((n) => ({ id: `nav-${n.to}`, group: tr('Разделы'), title: n.label, subtitle: n.description, icon: n.icon, to: n.to, keywords: norm(n.label + ' ' + n.description) })),
+      { id: 'act-practice', group: tr('Действия'), title: tr('Начать практику'), subtitle: tr('Быстрая сессия из 10 вопросов'), icon: Zap, to: '/practice', keywords: tr('начать практику тест сессия') },
+      { id: 'act-exam', group: tr('Действия'), title: tr('Начать пробный экзамен'), subtitle: tr('ЕНТ, SAT или IELTS — полный формат с таймером'), icon: Zap, to: '/exams', keywords: tr('пробный экзамен ент сат sat ielts айлтс тест') },
+      { id: 'act-review', group: tr('Действия'), title: tr('Повторить ошибки'), subtitle: tr('Режим повторения'), icon: Zap, to: '/mistakes?review=1', keywords: tr('повторить ошибки') },
+      ...SUBJECTS.map((s) => ({ id: `subj-${s.id}`, group: tr('Предметы'), title: s.name, subtitle: tr('{0} тем', s.topics.length), icon: BookOpen, to: `/subjects/${s.id}`, keywords: norm(s.name) })),
       ...SUBJECTS.flatMap((s) =>
-        s.topics.map((t) => ({ id: `topic-${t.id}`, group: 'Темы', title: t.name, subtitle: `${s.name} · ${t.subtopics.join(', ')}`, icon: Hash, to: `/subjects/${s.id}?topic=${t.id}`, keywords: norm(t.name + ' ' + t.subtopics.join(' ') + ' ' + s.name) })),
+        s.topics.map((t) => ({ id: `topic-${t.id}`, group: tr('Темы'), title: t.name, subtitle: `${s.name} · ${t.subtopics.map((x) => tr(x)).join(', ')}`, icon: Hash, to: `/subjects/${s.id}?topic=${t.id}`, keywords: norm(t.name + ' ' + t.subtopics.map((x) => tr(x)).join(' ') + ' ' + s.name) })),
       ),
-      ...questions.map((q) => ({ id: `q-${q.id}`, group: 'Вопросы', title: q.question, subtitle: `${SUBJECT_MAP[q.subject].name} · ${TOPIC_MAP[q.topic]?.name ?? ''}`, icon: FileQuestion, to: `/subjects/${q.subject}?q=${q.id}`, keywords: norm(q.question + ' ' + q.tags.join(' ')) })),
+      ...questions.map((q) => ({ id: `q-${q.id}`, group: tr('Вопросы'), title: q.question, subtitle: `${SUBJECT_MAP[q.subject].name} · ${TOPIC_MAP[q.topic]?.name ?? ''}`, icon: FileQuestion, to: `/subjects/${q.subject}?q=${q.id}`, keywords: norm(q.question + ' ' + q.tags.join(' ')) })),
       ...mistakes.flatMap((m) => {
         const q = qmap.get(m.questionId);
         if (!q) return [];
-        return [{ id: `m-${m.id}`, group: 'Ошибки', title: q.question, subtitle: `${SUBJECT_MAP[q.subject].name} · ${fmtDate(m.date)}`, icon: NotebookPen, to: `/mistakes?focus=${m.id}`, keywords: norm('ошибка ' + q.question) }];
+        return [{ id: `m-${m.id}`, group: tr('Ошибки'), title: q.question, subtitle: `${SUBJECT_MAP[q.subject].name} · ${fmtDate(m.date)}`, icon: NotebookPen, to: `/mistakes?focus=${m.id}`, keywords: norm(tr('ошибка ') + q.question) }];
       }),
-      ...tasks.map((t) => ({ id: `t-${t.id}`, group: 'Задачи плана', title: t.title, subtitle: fmtDate(t.date, { weekday: 'short', day: 'numeric', month: 'short' }), icon: CalendarDays, to: `/planner?date=${t.date}`, keywords: norm(t.title) })),
+      ...tasks.map((t) => ({ id: `t-${t.id}`, group: tr('Задачи плана'), title: t.title, subtitle: fmtDate(t.date, { weekday: 'short', day: 'numeric', month: 'short' }), icon: CalendarDays, to: `/planner?date=${t.date}`, keywords: norm(t.title) })),
     ];
   }, [open, questions, mistakes, tasks]);
 
   const results = useMemo(() => {
     const q = norm(query.trim());
-    if (!q) return items.filter((i) => i.group === 'Разделы' || i.group === 'Действия');
+    if (!q) return items.filter((i) => i.group === tr('Разделы') || i.group === tr('Действия'));
     const words = q.split(/\s+/);
     const perGroup: Record<string, number> = {};
     return items.filter((i) => {
@@ -89,7 +90,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center p-3 pt-[10vh]">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} />
-      <div role="dialog" aria-modal="true" aria-label="Глобальный поиск" className="relative w-full max-w-xl overflow-hidden rounded-2xl border bg-popover shadow-2xl animate-in fade-in-0 zoom-in-95">
+      <div role="dialog" aria-modal="true" aria-label={tr('Глобальный поиск')} className="relative w-full max-w-xl overflow-hidden rounded-2xl border bg-popover shadow-2xl animate-in fade-in-0 zoom-in-95">
         <div className="flex items-center gap-3 border-b px-4">
           <Search className="size-[18px] text-muted-foreground" />
           <input
@@ -109,14 +110,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 go(results[active]);
               } else if (e.key === 'Escape') onClose();
             }}
-            placeholder="Предметы, темы, вопросы, ошибки, задачи…"
+            placeholder={tr('Предметы, темы, вопросы, ошибки, задачи…')}
             className="h-14 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
-            aria-label="Поисковый запрос"
+            aria-label={tr('Поисковый запрос')}
           />
           <Kbd>Esc</Kbd>
         </div>
         <div ref={listRef} className="scrollbar-thin max-h-[60vh] overflow-y-auto p-2">
-          {results.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">Ничего не найдено по запросу «{query}»</p>}
+          {results.length === 0 && <p className="py-10 text-center text-sm text-muted-foreground">{tr('Ничего не найдено по запросу «{0}»', query)}</p>}
           {results.map((r, idx) => {
             const header = r.group !== lastGroup ? r.group : null;
             lastGroup = r.group;
@@ -141,8 +142,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           })}
         </div>
         <div className="flex items-center gap-4 border-t px-4 py-2.5 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1.5"><Kbd>↑</Kbd><Kbd>↓</Kbd> навигация</span>
-          <span className="flex items-center gap-1.5"><Kbd>Enter</Kbd> открыть</span>
+          <span className="flex items-center gap-1.5"><Kbd>↑</Kbd><Kbd>↓</Kbd> {tr('навигация')}</span>
+          <span className="flex items-center gap-1.5"><Kbd>Enter</Kbd> {tr('открыть')}</span>
           <span className="ml-auto">Ctrl + K</span>
         </div>
       </div>

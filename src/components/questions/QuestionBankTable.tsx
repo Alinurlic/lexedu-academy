@@ -17,6 +17,7 @@ import { questionLang } from '@/data/questions/lang';
 import { MathText } from '@/components/MathText';
 import { moderate } from '@/lib/moderation';
 import { isSupabaseConfigured } from '@/lib/supabase';
+import { tr } from '@/i18n';
 
 const PAGE = 40;
 
@@ -41,7 +42,8 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
   const [type, setType] = useState<QuestionType | 'all'>('all');
   const [source, setSource] = useState<QuestionSource | 'all'>('all');
   const [ver, setVer] = useState<VerificationStatus | 'all'>('all');
-  const [lang, setLang] = useState<QuestionLang | 'all'>('all');
+  // ученику, сдающему ЕНТ на казахском, сразу показываем задания на казахском (фильтр можно сменить)
+  const [lang, setLang] = useState<QuestionLang | 'all'>(() => (!admin && useAppStore.getState().profile.entLang === 'kk' ? 'kk' : 'all'));
   const [onlyBm, setOnlyBm] = useState(false);
   const [page, setPage] = useState(0);
   const [preview, setPreview] = useState<Question | null>(null);
@@ -84,7 +86,7 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
 
   const onImport = async (file: File) => {
     try {
-      if (file.size > 5 * 1024 * 1024) throw new Error('Файл больше 5 МБ');
+      if (file.size > 5 * 1024 * 1024) throw new Error(tr('Файл больше 5 МБ'));
       const raw = questionImportSchema.parse(JSON.parse(await file.text()));
       const list = Array.isArray(raw) ? raw : raw.questions;
       const ok: Question[] = [];
@@ -99,11 +101,11 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
         // «демо»-метку носят только оригинальные вопросы LexEdu
         ok.push(qq.source === 'demo' && !isDemoQuestionId(qq.id) ? { ...qq, source: 'user' } : qq);
       }
-      if (!ok.length) return toast.error('Нет корректных вопросов', `Отклонено: ${bad}. Проверьте формат и темы.`);
+      if (!ok.length) return toast.error(tr('Нет корректных вопросов'), tr('Отклонено: {0}. Проверьте формат и темы.', bad));
       const res = importQuestions(ok);
-      toast.success(`Импорт: добавлено ${res.added}, обновлено ${res.updated}`, bad ? `Отклонено ${bad} (ошибки формата, неизвестная тема или официальный без источника)` : undefined);
+      toast.success(tr('Импорт: добавлено {0}, обновлено {1}', res.added, res.updated), bad ? tr('Отклонено {0} (ошибки формата, неизвестная тема или официальный без источника)', bad) : undefined);
     } catch (e) {
-      toast.error('Не удалось прочитать файл', e instanceof Error ? e.message : undefined);
+      toast.error(tr('Не удалось прочитать файл'), e instanceof Error ? e.message : undefined);
     }
   };
 
@@ -116,9 +118,9 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
     try {
       if (globalMode) await moderate(id, { hidden: false });
       else restore(id);
-      toast.success(globalMode ? 'Вопрос снова виден всем ученикам' : 'Вопрос восстановлен');
+      toast.success(globalMode ? tr('Вопрос снова виден всем ученикам') : tr('Вопрос восстановлен'));
     } catch (e) {
-      toast.error('Не удалось восстановить', e instanceof Error ? e.message : undefined);
+      toast.error(tr('Не удалось восстановить'), e instanceof Error ? e.message : undefined);
     }
   };
 
@@ -127,15 +129,15 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-56 flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => (setQ(e.target.value), setPage(0))} placeholder="Поиск по тексту, ID или тегу" className="pl-9" aria-label="Поиск вопросов" />
+          <Input value={q} onChange={(e) => (setQ(e.target.value), setPage(0))} placeholder={tr('Поиск по тексту, ID или тегу')} className="pl-9" aria-label={tr('Поиск вопросов')} />
         </div>
         <Button variant="secondary" onClick={() => downloadJson({ app: 'LexEdu', kind: 'questions', exportedAt: new Date().toISOString(), questions: filtered }, `lexedu-questions-${new Date().toISOString().slice(0, 10)}.json`)}>
-          <Download /> Экспорт ({filtered.length})
+          <Download /> {tr('Экспорт ({0})', filtered.length)}
         </Button>
         {admin && (
           <>
             <Button variant="secondary" onClick={() => fileRef.current?.click()}>
-              <Upload /> Импорт JSON
+              <Upload /> {tr('Импорт JSON')}
             </Button>
             <input
               ref={fileRef}
@@ -149,81 +151,81 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
               }}
             />
             <Button variant="secondary" onClick={() => setAiOpen(true)}>
-              <Sparkles /> ИИ
+              <Sparkles /> {tr('ИИ')}
             </Button>
             <Button onClick={() => setEditing('new')}>
-              <Plus /> Вопрос
+              <Plus /> {tr('Вопрос')}
             </Button>
           </>
         )}
       </div>
 
       <div className="grid gap-2 sm:grid-cols-4 lg:grid-cols-8">
-        <Select value={subject} onChange={(e) => (setSubject(e.target.value as SubjectId | 'all'), setTopic('all'), setPage(0))} aria-label="Предмет">
-          <option value="all">Все предметы</option>
+        <Select value={subject} onChange={(e) => (setSubject(e.target.value as SubjectId | 'all'), setTopic('all'), setPage(0))} aria-label={tr('Предмет')}>
+          <option value="all">{tr('Все предметы')}</option>
           {SUBJECTS.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
           ))}
         </Select>
-        <Select value={topic} onChange={(e) => resetPage(setTopic)(e.target.value)} disabled={!subj} aria-label="Тема">
-          <option value="all">{subj ? 'Все темы' : 'Тема'}</option>
+        <Select value={topic} onChange={(e) => resetPage(setTopic)(e.target.value)} disabled={!subj} aria-label={tr('Тема')}>
+          <option value="all">{subj ? tr('Все темы') : tr('Тема')}</option>
           {subj?.topics.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
             </option>
           ))}
         </Select>
-        <Select value={diff} onChange={(e) => resetPage(setDiff)(e.target.value as Difficulty | 'all')} aria-label="Сложность">
-          <option value="all">Любая сложность</option>
+        <Select value={diff} onChange={(e) => resetPage(setDiff)(e.target.value as Difficulty | 'all')} aria-label={tr('Сложность')}>
+          <option value="all">{tr('Любая сложность')}</option>
           {(['easy', 'medium', 'hard'] as const).map((d) => (
             <option key={d} value={d}>
               {DIFFICULTY_LABEL[d]}
             </option>
           ))}
         </Select>
-        <Select value={type} onChange={(e) => resetPage(setType)(e.target.value as QuestionType | 'all')} aria-label="Тип">
-          <option value="all">Любой тип</option>
+        <Select value={type} onChange={(e) => resetPage(setType)(e.target.value as QuestionType | 'all')} aria-label={tr('Тип')}>
+          <option value="all">{tr('Любой тип')}</option>
           {(Object.keys(TYPE_LABEL) as QuestionType[]).map((t) => (
             <option key={t} value={t}>
               {TYPE_LABEL[t]}
             </option>
           ))}
         </Select>
-        <Select value={source} onChange={(e) => resetPage(setSource)(e.target.value as QuestionSource | 'all')} aria-label="Источник">
-          <option value="all">Все источники</option>
+        <Select value={source} onChange={(e) => resetPage(setSource)(e.target.value as QuestionSource | 'all')} aria-label={tr('Источник')}>
+          <option value="all">{tr('Все источники')}</option>
           {(Object.keys(SOURCE_LABEL) as QuestionSource[]).map((s) => (
             <option key={s} value={s}>
               {SOURCE_LABEL[s]}
             </option>
           ))}
         </Select>
-        <Select value={ver} onChange={(e) => resetPage(setVer)(e.target.value as VerificationStatus | 'all')} aria-label="Проверка">
-          <option value="all">Любой статус</option>
+        <Select value={ver} onChange={(e) => resetPage(setVer)(e.target.value as VerificationStatus | 'all')} aria-label={tr('Проверка')}>
+          <option value="all">{tr('Любой статус')}</option>
           {(Object.keys(VERIFICATION_LABEL) as VerificationStatus[]).map((s) => (
             <option key={s} value={s}>
               {VERIFICATION_LABEL[s]}
             </option>
           ))}
         </Select>
-        <Select value={lang} onChange={(e) => resetPage(setLang)(e.target.value as QuestionLang | 'all')} aria-label="Язык">
-          <option value="all">Любой язык</option>
-          <option value="ru">Русский</option>
-          <option value="kk">Казахский</option>
-          <option value="en">Английский</option>
+        <Select value={lang} onChange={(e) => resetPage(setLang)(e.target.value as QuestionLang | 'all')} aria-label={tr('Язык')}>
+          <option value="all">{tr('Любой язык')}</option>
+          <option value="ru">{tr('Русский')}</option>
+          <option value="kk">{tr('Казахский')}</option>
+          <option value="en">{tr('Английский')}</option>
         </Select>
         <Button variant={onlyBm ? 'default' : 'secondary'} onClick={() => (setOnlyBm((v) => !v), setPage(0))} aria-pressed={onlyBm}>
-          <Bookmark /> Закладки
+          <Bookmark /> {tr('Закладки')}
         </Button>
       </div>
 
       <div className="text-xs text-muted-foreground">
-        Найдено {filtered.length} {plural(filtered.length, ['вопрос', 'вопроса', 'вопросов'])} из {questions.length}. Демо-вопросы — оригинальные учебные задания LexEdu, а не официальные задания ЕНТ.
+        {tr('Найдено {0} {1} из {2}. Демо-вопросы — оригинальные учебные задания LexEdu, а не официальные задания ЕНТ.', filtered.length, plural(filtered.length, ['вопрос', 'вопроса', 'вопросов']), questions.length)}
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState icon={Search} lexi="thinking" title="Ничего не найдено" description="Измените поиск или фильтры." />
+        <EmptyState icon={Search} lexi="thinking" title={tr('Ничего не найдено')} description={tr('Измените поиск или фильтры.')} />
       ) : (
         <div className="divide-y overflow-hidden rounded-xl border">
           {rows.map((x) => {
@@ -237,30 +239,30 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                     <span>{TOPIC_MAP[x.topic]?.name ?? x.topic}</span>·<span>{DIFFICULTY_LABEL[x.difficulty]}</span>·<span>{TYPE_LABEL[x.type]}</span>
                     <Badge variant={x.source === 'verified' ? 'success' : x.source === 'user' ? 'violet' : 'outline'}>{SOURCE_LABEL[x.source]}</Badge>
-                    {x.verification === 'reviewed' && <Badge variant="success">Проверен</Badge>}
-                    {x.verification === 'needs_review' && <Badge variant="warning">Требует проверки</Badge>}
-                    {admin && overrides[x.id] && <Badge variant="secondary">изменён</Badge>}
+                    {x.verification === 'reviewed' && <Badge variant="success">{tr('Проверен')}</Badge>}
+                    {x.verification === 'needs_review' && <Badge variant="warning">{tr('Требует проверки')}</Badge>}
+                    {admin && overrides[x.id] && <Badge variant="secondary">{tr('изменён')}</Badge>}
                     {admin && <span className="font-mono">{x.id}</span>}
                   </div>
                 </button>
                 {st && (
-                  <span className={cn('mt-1 hidden text-xs tabular sm:block', st.c / st.n >= 0.7 ? 'text-success' : 'text-danger')} title="Верно / всего ответов">
+                  <span className={cn('mt-1 hidden text-xs tabular sm:block', st.c / st.n >= 0.7 ? 'text-success' : 'text-danger')} title={tr('Верно / всего ответов')}>
                     {st.c}/{st.n}
                   </span>
                 )}
                 <div className="flex shrink-0 items-center">
-                  <Button variant="ghost" size="icon-sm" aria-label="Просмотр" onClick={() => setPreview(x)}>
+                  <Button variant="ghost" size="icon-sm" aria-label={tr('Просмотр')} onClick={() => setPreview(x)}>
                     <Eye />
                   </Button>
-                  <Button variant="ghost" size="icon-sm" aria-label={bm ? 'Убрать из закладок' : 'В закладки'} onClick={() => toast.success(toggleBookmark(x.id) ? 'Добавлено в закладки' : 'Удалено из закладок')}>
+                  <Button variant="ghost" size="icon-sm" aria-label={bm ? tr('Убрать из закладок') : tr('В закладки')} onClick={() => toast.success(toggleBookmark(x.id) ? tr('Добавлено в закладки') : tr('Удалено из закладок'))}>
                     {bm ? <BookmarkCheck className="text-primary" /> : <Bookmark />}
                   </Button>
                   {admin && (
                     <>
-                      <Button variant="ghost" size="icon-sm" aria-label="Редактировать" onClick={() => setEditing(x)}>
+                      <Button variant="ghost" size="icon-sm" aria-label={tr('Редактировать')} onClick={() => setEditing(x)}>
                         <Pencil />
                       </Button>
-                      <Button variant="ghost" size="icon-sm" aria-label="Удалить" onClick={() => setToDelete(x)}>
+                      <Button variant="ghost" size="icon-sm" aria-label={tr('Удалить')} onClick={() => setToDelete(x)}>
                         <Trash2 />
                       </Button>
                     </>
@@ -274,13 +276,13 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
 
       {pages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <Button variant="secondary" size="icon-sm" disabled={cur === 0} onClick={() => setPage(cur - 1)} aria-label="Предыдущая страница">
+          <Button variant="secondary" size="icon-sm" disabled={cur === 0} onClick={() => setPage(cur - 1)} aria-label={tr('Предыдущая страница')}>
             <ChevronLeft />
           </Button>
           <span className="text-sm tabular text-muted-foreground">
             {cur + 1} / {pages}
           </span>
-          <Button variant="secondary" size="icon-sm" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)} aria-label="Следующая страница">
+          <Button variant="secondary" size="icon-sm" disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)} aria-label={tr('Следующая страница')}>
             <ChevronRight />
           </Button>
         </div>
@@ -288,13 +290,13 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
 
       {admin && deletedDemo.length > 0 && (
         <details className="rounded-xl border p-3 text-sm">
-          <summary className="cursor-pointer font-medium">{globalMode ? 'Скрыты для всех учеников' : 'Скрытые демо-вопросы'} ({deletedDemo.length})</summary>
+          <summary className="cursor-pointer font-medium">{globalMode ? tr('Скрыты для всех учеников') : tr('Скрытые демо-вопросы')} ({deletedDemo.length})</summary>
           <div className="mt-2 space-y-1.5">
             {deletedDemo.map((d) => (
               <div key={d.id} className="flex items-center gap-2">
                 <span className="line-clamp-1 flex-1 text-muted-foreground"><MathText text={d.question} noSub={d.subject === 'informatics'} /></span>
                 <Button size="sm" variant="ghost" onClick={() => void restoreQ(d.id)}>
-                  <RotateCcw /> Восстановить
+                  <RotateCcw /> {tr('Восстановить')}
                 </Button>
               </div>
             ))}
@@ -302,13 +304,13 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
         </details>
       )}
 
-      <Dialog open={!!preview} onClose={() => setPreview(null)} title="Просмотр вопроса" size="lg">
+      <Dialog open={!!preview} onClose={() => setPreview(null)} title={tr('Просмотр вопроса')} size="lg">
         {preview && (
           <div className="pb-4">
             <QuestionMeta q={preview} className="mb-4" />
             <QuestionView q={preview} value={null} onChange={() => undefined} reveal keyboard={false} />
             <Explanation q={preview} correct />
-            {preview.sourceRef && <p className="mt-2 text-xs text-muted-foreground">Источник: {preview.sourceRef}</p>}
+            {preview.sourceRef && <p className="mt-2 text-xs text-muted-foreground">{tr('Источник: {0}', preview.sourceRef)}</p>}
           </div>
         )}
       </Dialog>
@@ -322,12 +324,12 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
           onSave={(qq) => {
             if (globalMode && editing !== 'new' && isDemoQuestionId(qq.id)) {
               void moderate(qq.id, { override: qq })
-                .then(() => (toast.success('Исправление сохранено для всех учеников'), setEditing(null)))
-                .catch((e) => toast.error('Не удалось сохранить', e instanceof Error ? e.message : undefined));
+                .then(() => (toast.success(tr('Исправление сохранено для всех учеников')), setEditing(null)))
+                .catch((e) => toast.error(tr('Не удалось сохранить'), e instanceof Error ? e.message : undefined));
               return;
             }
             upsert(qq);
-            toast.success(editing === 'new' ? 'Вопрос добавлен' : 'Вопрос сохранён');
+            toast.success(editing === 'new' ? tr('Вопрос добавлен') : tr('Вопрос сохранён'));
             setEditing(null);
           }}
         />
@@ -337,19 +339,19 @@ export function QuestionBankTable({ admin }: { admin?: boolean }) {
         open={!!toDelete}
         onClose={() => setToDelete(null)}
         danger
-        title="Удалить вопрос?"
-        description={toDelete && isDemoQuestionId(toDelete.id) ? 'Демо-вопрос будет скрыт из банка. Его можно восстановить ниже. История ответов сохранится.' : 'Пользовательский вопрос будет удалён без возможности восстановления. История ответов сохранится.'}
-        confirmLabel="Удалить"
+        title={tr('Удалить вопрос?')}
+        description={toDelete && isDemoQuestionId(toDelete.id) ? tr('Демо-вопрос будет скрыт из банка. Его можно восстановить ниже. История ответов сохранится.') : tr('Пользовательский вопрос будет удалён без возможности восстановления. История ответов сохранится.')}
+        confirmLabel={tr('Удалить')}
         onConfirm={() => {
           if (!toDelete) return;
           if (globalMode && isDemoQuestionId(toDelete.id)) {
             void moderate(toDelete.id, { hidden: true })
-              .then(() => toast.success('Вопрос скрыт для всех учеников'))
-              .catch((e) => toast.error('Не удалось скрыть', e instanceof Error ? e.message : undefined));
+              .then(() => toast.success(tr('Вопрос скрыт для всех учеников')))
+              .catch((e) => toast.error(tr('Не удалось скрыть'), e instanceof Error ? e.message : undefined));
             return;
           }
           del(toDelete.id);
-          toast.success('Вопрос удалён');
+          toast.success(tr('Вопрос удалён'));
         }}
       />
     </div>

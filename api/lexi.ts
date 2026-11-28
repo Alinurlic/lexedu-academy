@@ -67,16 +67,25 @@ const ANALYST = `Ты — Lexi, наставник LexEdu Academy. По свод
 4) один совет по технике сдачи экзамена.
 Опирайся только на данные из сводки, не выдумывай результаты. До 300 слов.`;
 
+/** Язык интерфейса ученика: при казахском Lexi отвечает и пишет планы и отзывы на казахском. */
+type UiLang = 'ru' | 'kk' | undefined;
+const tutorFor = (lang: UiLang) =>
+  lang === 'kk' ? `${TUTOR}\n- Ученик выбрал казахский язык интерфейса: отвечай на казахском языке (термины можно дублировать по-русски в скобках), если ученик сам не пишет на другом языке.` : TUTOR;
+const analystFor = (lang: UiLang) => (lang === 'kk' ? ANALYST.replace('на русском языке', 'на казахском языке') : ANALYST);
+const graderFor = (lang: UiLang) => (lang === 'kk' ? GRADER.replace('in Russian so a Kazakhstani student', 'in Kazakh so a Kazakhstani student') : GRADER);
+
 /* ---------------------------- схемы ---------------------------- */
 
+const UiLangField = z.enum(['ru', 'kk']).optional();
 const ChatBody = z.object({
   action: z.literal('chat'),
+  lang: UiLangField,
   context: z.string().max(6000).optional(),
   messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1).max(4000) })).min(1).max(24),
 });
-const GradeBody = z.object({ action: z.literal('grade'), task: z.enum(['writing1', 'writing2', 'speaking']), prompt: z.string().min(5).max(4000), answer: z.string().min(1).max(12000) });
+const GradeBody = z.object({ action: z.literal('grade'), lang: UiLangField, task: z.enum(['writing1', 'writing2', 'speaking']), prompt: z.string().min(5).max(4000), answer: z.string().min(1).max(12000) });
 const GenerateBody = z.object({ action: z.literal('generate'), subject: z.string().max(80), topic: z.string().max(120), count: z.number().int().min(1).max(10), language: z.string().max(20), difficulty: z.string().max(20) });
-const AnalyzeBody = z.object({ action: z.literal('analyze'), summary: z.string().min(20).max(8000) });
+const AnalyzeBody = z.object({ action: z.literal('analyze'), lang: UiLangField, summary: z.string().min(20).max(8000) });
 const Body = z.discriminatedUnion('action', [ChatBody, GradeBody, GenerateBody, AnalyzeBody, ExplainBody]);
 
 const Grade = z.object({
@@ -147,11 +156,12 @@ function finishGenerate(out: z.infer<typeof Generated>, count: number) {
 async function viaGemini(body: z.infer<typeof Body>, fetchImpl?: typeof fetch): Promise<Response> {
   try {
     if (body.action === 'chat') {
-      const system = body.context ? `${TUTOR}\n\nДанные ученика (из приложения):\n${body.context}` : TUTOR;
+      const tutor = tutorFor(body.lang);
+      const system = body.context ? `${tutor}\n\nДанные ученика (из приложения):\n${body.context}` : tutor;
       return json({ reply: await gemini({ system, messages: body.messages, maxTokens: 4096, fetchImpl }) });
     }
     if (body.action === 'analyze') {
-      return json({ reply: await gemini({ system: ANALYST, messages: [{ role: 'user', content: body.summary }], maxTokens: 4096, fetchImpl }) });
+      return json({ reply: await gemini({ system: analystFor(body.lang), messages: [{ role: 'user', content: body.summary }], maxTokens: 4096, fetchImpl }) });
     }
     if (body.action === 'explain') {
       const raw = await gemini({ system: EXPLAINER, messages: [{ role: 'user', content: explainPrompt(body) }], schema: EXPLAIN_SCHEMA, maxTokens: 4096, fetchImpl });
@@ -160,7 +170,7 @@ async function viaGemini(body: z.infer<typeof Body>, fetchImpl?: typeof fetch): 
       return clean ? json(clean) : json({ error: 'Не удалось подготовить разбор, попробуйте ещё раз' }, 502);
     }
     if (body.action === 'grade') {
-      const raw = await gemini({ system: GRADER, messages: [{ role: 'user', content: gradePrompt(body) }], schema: GRADE_SCHEMA, fetchImpl });
+      const raw = await gemini({ system: graderFor(body.lang), messages: [{ role: 'user', content: gradePrompt(body) }], schema: GRADE_SCHEMA, fetchImpl });
       const g = Grade.safeParse(JSON.parse(raw));
       return g.success ? finishGrade(g.data) : json({ error: 'Не удалось оценить ответ' }, 422);
     }
@@ -246,14 +256,14 @@ export async function POST(req: Request) {
         max_tokens: 4000,
         ...FALLBACK,
         output_config: { effort: 'low' },
-        system: [{ type: 'text', text: TUTOR, cache_control: { type: 'ephemeral' } }, ...(body.context ? [{ type: 'text' as const, text: `Данные ученика (из приложения):\n${body.context}` }] : [])],
+        system: [{ type: 'text', text: tutorFor(body.lang), cache_control: { type: 'ephemeral' } }, ...(body.context ? [{ type: 'text' as const, text: `Данные ученика (из приложения):\n${body.context}` }] : [])],
         messages: body.messages,
       });
       if (msg.stop_reason === 'refusal') return json({ reply: 'Извини, на этот запрос я ответить не могу. Давай вернёмся к подготовке к экзамену.' });
       return json({ reply: textOf(msg.content) });
     }
     if (body.action === 'analyze') {
-      const msg = await client.beta.messages.create({ model: MODEL, max_tokens: 4000, ...FALLBACK, output_config: { effort: 'medium' }, system: ANALYST, messages: [{ role: 'user', content: body.summary }] });
+      const msg = await client.beta.messages.create({ model: MODEL, max_tokens: 4000, ...FALLBACK, output_config: { effort: 'medium' }, system: analystFor(body.lang), messages: [{ role: 'user', content: body.summary }] });
       if (msg.stop_reason === 'refusal') return json({ error: 'Не удалось составить план' }, 422);
       return json({ reply: textOf(msg.content) });
     }
@@ -263,7 +273,7 @@ export async function POST(req: Request) {
         max_tokens: 8000,
         ...FALLBACK,
         output_config: { effort: 'medium', format: betaZodOutputFormat(Grade) },
-        system: GRADER,
+        system: graderFor(body.lang),
         messages: [{ role: 'user', content: gradePrompt(body) }],
       });
       const g = msg.parsed_output;

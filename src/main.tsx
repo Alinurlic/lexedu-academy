@@ -4,6 +4,7 @@ import { App } from './App';
 import { loadBank } from './data/questions/bank';
 import { useAppStore } from './store/useAppStore';
 import { loadModeration } from './lib/moderation';
+import { loadUiLang } from './i18n';
 import './index.css';
 
 // После выкладки новой версии старые файлы страниц исчезают: если вкладка была открыта во время обновления,
@@ -26,8 +27,11 @@ void loadBank(useAppStore.getState().profile.entLang ?? 'ru');
 // общие правки банка от администратора (скрытые и исправленные задания) — для всех учеников
 void loadModeration();
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// язык интерфейса: казахский словарь скачивается до первой отрисовки (только если выбран казахский)
+const render = () =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+loadUiLang(useAppStore.getState().profile.language === 'kk' ? 'kk' : 'ru').then(render, render);

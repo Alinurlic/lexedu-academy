@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { TooltipProps } from 'recharts';
 import { addDays, dayKey, fmtDate, MONTHS_SHORT, startOfWeek } from '@/lib/date';
 import { cn, plural } from '@/lib/utils';
+import { tr } from '@/i18n';
 
 export const CHART = {
   c1: 'var(--chart-1)',
@@ -96,19 +97,19 @@ export function ActivityHeatmap({ data }: { data: Record<string, { questions: nu
         {hovered ? (
           <span>
             <span className="font-medium text-foreground">{fmtDate(hovered.date, { weekday: 'short', day: 'numeric', month: 'long' })}</span> ·{' '}
-            {hovered.minutes || hovered.questions ? `${hovered.minutes} мин, ${hovered.questions} ${plural(hovered.questions, ['вопрос', 'вопроса', 'вопросов'])}` : 'нет занятий'}
+            {hovered.minutes || hovered.questions ? tr('{0} мин, {1} {2}', hovered.minutes, hovered.questions, plural(hovered.questions, ['вопрос', 'вопроса', 'вопросов'])) : tr('нет занятий')}
           </span>
         ) : (
           <span>
-            {activeDays} {plural(activeDays, ['активный день', 'активных дня', 'активных дней'])} · {Math.round(total / 60)} ч за год
+            {tr('{0} {1} · {2} ч за год', activeDays, plural(activeDays, ['активный день', 'активных дня', 'активных дней']), Math.round(total / 60))}
           </span>
         )}
         <span className="flex items-center gap-1">
-          Меньше
+          {tr('Меньше')}
           {[0, 1, 2, 3, 4].map((l) => (
             <span key={l} className="size-2.5 rounded-[3px]" style={{ backgroundColor: `var(--heat-${l})` }} />
           ))}
-          Больше
+          {tr('Больше')}
         </span>
       </div>
       <div className="scrollbar-thin overflow-x-auto pb-1">
@@ -122,7 +123,7 @@ export function ActivityHeatmap({ data }: { data: Record<string, { questions: nu
           </div>
           <div className="flex gap-[3px]">
             <div className="mr-1 flex w-6 flex-col gap-[3px] text-[10px] text-muted-foreground">
-              {['Пн', '', 'Ср', '', 'Пт', '', ''].map((l, i) => (
+              {[tr('Пн'), '', tr('Ср'), '', tr('Пт'), '', ''].map((l, i) => (
                 <span key={i} className="h-[11px] leading-[11px]">
                   {l}
                 </span>
@@ -138,7 +139,7 @@ export function ActivityHeatmap({ data }: { data: Record<string, { questions: nu
                       key={c.key}
                       onMouseEnter={() => setHover(c.key)}
                       onMouseLeave={() => setHover(null)}
-                      title={`${fmtDate(c.date, { day: 'numeric', month: 'short' })}: ${c.minutes} мин, ${c.questions} вопр.`}
+                      title={tr('{0}: {1} мин, {2} вопр.', fmtDate(c.date, { day: 'numeric', month: 'short' }), c.minutes, c.questions)}
                       className={cn('size-[11px] rounded-[3px] transition-transform hover:scale-125', hover === c.key && 'ring-1 ring-foreground/60')}
                       style={{ backgroundColor: `var(--heat-${c.level})` }}
                     />

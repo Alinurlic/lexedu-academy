@@ -1,5 +1,6 @@
 import type { Attempt, ExamResult, Profile } from '@/types';
 import { addDays, dayKey, startOfWeek } from './date';
+import { tr } from '@/i18n';
 
 export interface WeeklyGoal {
   id: string;
@@ -26,10 +27,10 @@ export function weeklyGoals(s: { profile: Profile; attempts: Attempt[]; studyLog
   const qTarget = Math.max(30, Math.round((s.profile.dailyQuestionGoal * 3.5) / 10) * 10);
   const mTarget = Math.max(60, Math.round((s.profile.dailyGoalMin * 4) / 60) * 60);
   return [
-    { id: 'w-questions', title: `${qTarget} вопросов за неделю`, progress: Math.min(qTarget, weekAttempts.length), target: qTarget, unit: 'вопр.', xp: 60, link: '/practice' },
-    { id: 'w-minutes', title: `${Math.round(mTarget / 60)} ч занятий`, progress: Math.min(mTarget, minutes), target: mTarget, unit: 'мин', xp: 60, link: '/planner' },
-    { id: 'w-days', title: 'Заниматься 5 дней из 7', progress: Math.min(5, activeDays), target: 5, unit: 'дн.', xp: 50, link: '/' },
-    { id: 'w-review', title: 'Повторить 20 ошибок', progress: Math.min(20, reviews), target: 20, unit: 'повт.', xp: 40, link: '/mistakes?review=1' },
-    { id: 'w-exam', title: 'Пройти пробный экзамен', progress: Math.min(1, exams), target: 1, unit: '', xp: 50, link: '/exams' },
+    { id: 'w-questions', title: tr('{0} вопросов за неделю', qTarget), progress: Math.min(qTarget, weekAttempts.length), target: qTarget, unit: tr('вопр.'), xp: 60, link: '/practice' },
+    { id: 'w-minutes', title: tr('{0} ч занятий', Math.round(mTarget / 60)), progress: Math.min(mTarget, minutes), target: mTarget, unit: tr('мин'), xp: 60, link: '/planner' },
+    { id: 'w-days', title: tr('Заниматься 5 дней из 7'), progress: Math.min(5, activeDays), target: 5, unit: tr('дн.'), xp: 50, link: '/' },
+    { id: 'w-review', title: tr('Повторить 20 ошибок'), progress: Math.min(20, reviews), target: 20, unit: tr('повт.'), xp: 40, link: '/mistakes?review=1' },
+    { id: 'w-exam', title: tr('Пройти пробный экзамен'), progress: Math.min(1, exams), target: 1, unit: '', xp: 50, link: '/exams' },
   ];
 }

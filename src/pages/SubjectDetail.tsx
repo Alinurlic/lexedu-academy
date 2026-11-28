@@ -15,11 +15,18 @@ import { cn, fmtNum } from '@/lib/utils';
 import { toast } from '@/store/toast';
 import type { Difficulty, Question, SubjectId, TopicStatus } from '@/types';
 import { MathText } from '@/components/MathText';
+import { tr } from '@/i18n';
 
 const STATUS: Record<TopicStatus, { label: string; icon: typeof Circle; cls: string }> = {
-  not_started: { label: 'Не начата', icon: Circle, cls: 'text-muted-foreground' },
-  in_progress: { label: 'В процессе', icon: CircleDot, cls: 'text-warning' },
-  completed: { label: 'Освоена', icon: CheckCircle2, cls: 'text-success' },
+  not_started: { get label() {
+    return tr('Не начата');
+  }, icon: Circle, cls: 'text-muted-foreground' },
+  in_progress: { get label() {
+    return tr('В процессе');
+  }, icon: CircleDot, cls: 'text-warning' },
+  completed: { get label() {
+    return tr('Освоена');
+  }, icon: CheckCircle2, cls: 'text-success' },
 };
 
 export default function SubjectDetail() {
@@ -27,7 +34,7 @@ export default function SubjectDetail() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const subject = SUBJECT_MAP[id as SubjectId];
-  if (!subject) return <EmptyState icon={Search} title="Предмет не найден" action={<Button onClick={() => navigate('/subjects')}>Все предметы</Button>} />;
+  if (!subject) return <EmptyState icon={Search} title={tr('Предмет не найден')} action={<Button onClick={() => navigate('/subjects')}>{tr('Все предметы')}</Button>} />;
   return <SubjectView key={subject.id} subjectId={subject.id} params={params} setParams={setParams} />;
 }
 
@@ -99,10 +106,10 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
   const notStarted = summary.topics.filter((t) => t.status === 'not_started');
   const weak = summary.topics.filter((t) => t.attempts >= 3 && t.accuracy < 0.65).sort((a, b) => a.accuracy - b.accuracy);
   const recommendations = [
-    ...weak.slice(0, 2).map((t) => ({ text: `«${t.name}»: точность ${Math.round(t.accuracy * 100)}%. Рекомендуем ${TOPIC_MAP[t.id].advice}.`, topic: t.id })),
-    ...notStarted.slice(0, 2).map((t) => ({ text: `Тема «${t.name}» ещё не начата — начните с 5 лёгких вопросов.`, topic: t.id })),
+    ...weak.slice(0, 2).map((t) => ({ text: tr('«{0}»: точность {1}%. Рекомендуем {2}.', t.name, Math.round(t.accuracy * 100), TOPIC_MAP[t.id].advice), topic: t.id })),
+    ...notStarted.slice(0, 2).map((t) => ({ text: tr('Тема «{0}» ещё не начата — начните с 5 лёгких вопросов.', t.name), topic: t.id })),
   ];
-  if (!recommendations.length) recommendations.push({ text: 'Все темы в хорошем состоянии. Закрепите результат пробным экзаменом по предмету.', topic: '' });
+  if (!recommendations.length) recommendations.push({ text: tr('Все темы в хорошем состоянии. Закрепите результат пробным экзаменом по предмету.'), topic: '' });
 
   const closePreview = () => {
     params.delete('q');
@@ -112,7 +119,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
   return (
     <div className="space-y-6">
       <Button variant="ghost" onClick={() => navigate('/subjects')}>
-        <ArrowLeft /> Все предметы
+        <ArrowLeft /> {tr('Все предметы')}
       </Button>
 
       <Card className="p-6">
@@ -122,14 +129,14 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">{subject.name}</h2>
               <p className="text-sm text-muted-foreground">
-                {subject.kind === 'mandatory' ? 'Обязательный предмет ЕНТ' : 'Профильный предмет'} · {subject.topics.length} тем · {questions.length} вопросов
+                {tr('{0} · {1} тем · {2} вопросов', subject.kind === 'mandatory' ? tr('Обязательный предмет ЕНТ') : tr('Профильный предмет'), subject.topics.length, questions.length)}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => navigate(`/practice?subject=${subjectId}`)}>
-                  <Play /> Практика
+                  <Play /> {tr('Практика')}
                 </Button>
                 <Button size="sm" variant="secondary" onClick={() => setAddOpen(true)}>
-                  <Plus /> Добавить вопрос
+                  <Plus /> {tr('Добавить вопрос')}
                 </Button>
               </div>
             </div>
@@ -138,24 +145,24 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
             <RingProgress value={summary.progress / 100} size={96} stroke={8}>
               <div>
                 <div className="text-lg font-semibold tabular">{summary.progress}%</div>
-                <div className="text-[10px] text-muted-foreground">прогресс</div>
+                <div className="text-[10px] text-muted-foreground">{tr('прогресс')}</div>
               </div>
             </RingProgress>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <div>
-                <div className="text-xs text-muted-foreground">Точность</div>
+                <div className="text-xs text-muted-foreground">{tr('Точность')}</div>
                 <div className="font-semibold tabular">{summary.attempts ? `${Math.round(summary.accuracy * 100)}%` : '—'}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Ответов</div>
+                <div className="text-xs text-muted-foreground">{tr('Ответов')}</div>
                 <div className="font-semibold tabular">{fmtNum(summary.attempts)}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Уровень</div>
+                <div className="text-xs text-muted-foreground">{tr('Уровень')}</div>
                 <div className="font-semibold">{summary.level}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Освоено тем</div>
+                <div className="text-xs text-muted-foreground">{tr('Освоено тем')}</div>
                 <div className="font-semibold tabular">
                   {summary.completedTopics}/{subject.topics.length}
                 </div>
@@ -169,8 +176,8 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
         <Card className="xl:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle>Темы и подтемы</CardTitle>
-              <CardDescription>Статус обновляется автоматически, но его можно задать вручную</CardDescription>
+              <CardTitle>{tr('Темы и подтемы')}</CardTitle>
+              <CardDescription>{tr('Статус обновляется автоматически, но его можно задать вручную')}</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -183,7 +190,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                     <st.icon className={cn('size-5 shrink-0', st.cls)} />
                     <div className="min-w-0 flex-1">
                       <div className="font-medium">{t.name}</div>
-                      <div className="text-xs text-muted-foreground">{TOPIC_MAP[t.id].subtopics.join(' · ')}</div>
+                      <div className="text-xs text-muted-foreground">{TOPIC_MAP[t.id].subtopics.map((x) => tr(x)).join(' · ')}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Select
@@ -191,17 +198,17 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                         onChange={(e) => {
                           const v = e.target.value;
                           setTopicStatus(t.id, v === 'auto' ? null : (v as TopicStatus));
-                          toast.success('Статус темы обновлён', t.name);
+                          toast.success(tr('Статус темы обновлён'), t.name);
                         }}
                         className="h-8 w-36 text-xs"
-                        aria-label={`Статус темы ${t.name}`}
+                        aria-label={tr('Статус темы {0}', t.name)}
                       >
-                        <option value="auto">Авто: {st.label.toLowerCase()}</option>
-                        <option value="not_started">Не начата</option>
-                        <option value="in_progress">В процессе</option>
-                        <option value="completed">Освоена</option>
+                        <option value="auto">{tr('Авто: {0}', st.label.toLowerCase())}</option>
+                        <option value="not_started">{tr('Не начата')}</option>
+                        <option value="in_progress">{tr('В процессе')}</option>
+                        <option value="completed">{tr('Освоена')}</option>
                       </Select>
-                      <Button size="icon-sm" variant="secondary" onClick={() => navigate(`/practice?subject=${subjectId}&topic=${t.id}`)} aria-label={`Практика по теме ${t.name}`}>
+                      <Button size="icon-sm" variant="secondary" onClick={() => navigate(`/practice?subject=${subjectId}&topic=${t.id}`)} aria-label={tr('Практика по теме {0}', t.name)}>
                         <Play />
                       </Button>
                     </div>
@@ -209,17 +216,17 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                   <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
                     <div>
                       <div className="mb-1 flex justify-between text-muted-foreground">
-                        <span>Прогресс</span>
+                        <span>{tr('Прогресс')}</span>
                         <span className="tabular">{t.progress}%</span>
                       </div>
                       <Progress value={t.progress} />
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Точность</div>
+                      <div className="text-muted-foreground">{tr('Точность')}</div>
                       <div className={cn('font-semibold tabular', t.attempts ? (t.accuracy >= 0.75 ? 'text-success' : t.accuracy < 0.5 ? 'text-danger' : '') : 'text-muted-foreground')}>{t.attempts ? `${Math.round(t.accuracy * 100)}%` : '—'}</div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">Ответов / вопросов</div>
+                      <div className="text-muted-foreground">{tr('Ответов / вопросов')}</div>
                       <div className="font-semibold tabular">
                         {t.attempts} / {t.questionCount}
                       </div>
@@ -235,8 +242,8 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
           <Card>
             <CardHeader>
               <div>
-                <CardTitle>Сложность</CardTitle>
-                <CardDescription>Ваша точность по уровням сложности</CardDescription>
+                <CardTitle>{tr('Сложность')}</CardTitle>
+                <CardDescription>{tr('Ваша точность по уровням сложности')}</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
@@ -247,7 +254,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                     <XAxis dataKey="name" {...axisProps} />
                     <YAxis domain={[0, 100]} {...axisProps} />
                     <Tooltip cursor={{ fill: 'hsl(var(--secondary))' }} content={<ChartTooltip fmt={(v) => `${v}%`} />} />
-                    <Bar dataKey="accuracy" name="Точность" fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={36} />
+                    <Bar dataKey="accuracy" name={tr('Точность')} fill={CHART.c1} radius={[4, 4, 0, 0]} maxBarSize={36} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -255,7 +262,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                 {diffData.map((d) => (
                   <div key={d.name} className="rounded-lg bg-secondary/60 p-2">
                     <div className="font-semibold tabular">{d.count}</div>
-                    <div className="text-[10px] text-muted-foreground">вопросов · {d.attempts} отв.</div>
+                    <div className="text-[10px] text-muted-foreground">{tr('вопросов · {0} отв.', d.attempts)}</div>
                   </div>
                 ))}
               </div>
@@ -264,7 +271,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
           <Card className="border-violet/30">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Lightbulb className="size-4 text-violet" /> Рекомендации
+                <Lightbulb className="size-4 text-violet" /> {tr('Рекомендации')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -272,7 +279,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                 <div key={i} className="rounded-xl bg-secondary/60 p-3 text-sm">
                   <p className="text-muted-foreground">{r.text}</p>
                   <Button size="sm" variant="link" className="mt-1" onClick={() => navigate(r.topic ? `/practice?subject=${subjectId}&topic=${r.topic}` : '/exams')}>
-                    {r.topic ? 'Тренировать' : 'К экзаменам'}
+                    {r.topic ? tr('Тренировать') : tr('К экзаменам')}
                   </Button>
                 </div>
               ))}
@@ -284,37 +291,37 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
       <Card>
         <CardHeader className="flex-wrap">
           <div>
-            <CardTitle>Банк вопросов</CardTitle>
+            <CardTitle>{tr('Банк вопросов')}</CardTitle>
             <CardDescription>
-              {filtered.length} из {questions.length}. Демо-вопросы — оригинальные учебные задания LexEdu, не официальные задания ЕНТ.
+              {tr('{0} из {1}. Демо-вопросы — оригинальные учебные задания LexEdu, не официальные задания ЕНТ.', filtered.length, questions.length)}
             </CardDescription>
           </div>
           <Button size="sm" onClick={() => setAddOpen(true)}>
-            <Plus /> Свой вопрос
+            <Plus /> {tr('Свой вопрос')}
           </Button>
         </CardHeader>
         <CardContent>
           <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск по тексту" className="pl-9" aria-label="Поиск вопросов" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tr('Поиск по тексту')} className="pl-9" aria-label={tr('Поиск вопросов')} />
             </div>
-            <Select value={fTopic} onChange={(e) => setFTopic(e.target.value)} aria-label="Фильтр по теме">
-              <option value="all">Все темы</option>
+            <Select value={fTopic} onChange={(e) => setFTopic(e.target.value)} aria-label={tr('Фильтр по теме')}>
+              <option value="all">{tr('Все темы')}</option>
               {subject.topics.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name}
                 </option>
               ))}
             </Select>
-            <Select value={fDiff} onChange={(e) => setFDiff(e.target.value as Difficulty | 'all')} aria-label="Фильтр по сложности">
-              <option value="all">Любая сложность</option>
-              <option value="easy">Лёгкие</option>
-              <option value="medium">Средние</option>
-              <option value="hard">Сложные</option>
+            <Select value={fDiff} onChange={(e) => setFDiff(e.target.value as Difficulty | 'all')} aria-label={tr('Фильтр по сложности')}>
+              <option value="all">{tr('Любая сложность')}</option>
+              <option value="easy">{tr('Лёгкие')}</option>
+              <option value="medium">{tr('Средние')}</option>
+              <option value="hard">{tr('Сложные')}</option>
             </Select>
-            <Select value={fSource} onChange={(e) => setFSource(e.target.value as Question['source'] | 'all')} aria-label="Фильтр по источнику">
-              <option value="all">Все источники</option>
+            <Select value={fSource} onChange={(e) => setFSource(e.target.value as Question['source'] | 'all')} aria-label={tr('Фильтр по источнику')}>
+              <option value="all">{tr('Все источники')}</option>
               <option value="demo">{SOURCE_LABEL.demo}</option>
               <option value="user">{SOURCE_LABEL.user}</option>
               <option value="verified">{SOURCE_LABEL.verified}</option>
@@ -322,7 +329,7 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
             </Select>
           </div>
           {filtered.length === 0 ? (
-            <EmptyState icon={Search} lexi="thinking" title="Вопросы не найдены" description="Измените фильтры или добавьте собственный вопрос." />
+            <EmptyState icon={Search} lexi="thinking" title={tr('Вопросы не найдены')} description={tr('Измените фильтры или добавьте собственный вопрос.')} />
           ) : (
             <div className="divide-y rounded-xl border">
               {filtered.slice(0, shown).map((q) => {
@@ -342,11 +349,11 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
                         {st.c}/{st.n}
                       </span>
                     )}
-                    <Button variant="ghost" size="icon-sm" aria-label={bm ? 'Убрать из закладок' : 'В закладки'} onClick={() => toast.success(toggleBookmark(q.id) ? 'Добавлено в закладки' : 'Удалено из закладок')}>
+                    <Button variant="ghost" size="icon-sm" aria-label={bm ? tr('Убрать из закладок') : tr('В закладки')} onClick={() => toast.success(toggleBookmark(q.id) ? tr('Добавлено в закладки') : tr('Удалено из закладок'))}>
                       {bm ? <BookmarkCheck className="text-primary" /> : <Bookmark />}
                     </Button>
                     {q.source === 'user' && (
-                      <Button variant="ghost" size="icon-sm" aria-label="Удалить вопрос" onClick={() => setToDelete(q)}>
+                      <Button variant="ghost" size="icon-sm" aria-label={tr('Удалить вопрос')} onClick={() => setToDelete(q)}>
                         <Trash2 />
                       </Button>
                     )}
@@ -356,10 +363,10 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
               {filtered.length > shown && (
                 <div className="flex items-center justify-between gap-3 p-3 text-sm text-muted-foreground">
                   <span>
-                    Показано {shown} из {filtered.length}
+                    {tr('Показано {0} из {1}', shown, filtered.length)}
                   </span>
                   <Button variant="secondary" size="sm" onClick={() => setShown(shown + 50)}>
-                    Показать ещё
+                    {tr('Показать ещё')}
                   </Button>
                 </div>
               )}
@@ -368,18 +375,18 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
         </CardContent>
       </Card>
 
-      <Dialog open={!!preview} onClose={closePreview} title="Просмотр вопроса" size="lg">
+      <Dialog open={!!preview} onClose={closePreview} title={tr('Просмотр вопроса')} size="lg">
         {preview && (
           <div className="pb-4">
             <QuestionMeta q={preview} className="mb-4" />
             <QuestionView q={preview} value={null} onChange={() => undefined} reveal keyboard={false} />
             <Explanation q={preview} correct />
             <div className="mt-4 flex gap-2">
-              <Button size="sm" variant="secondary" onClick={() => toast.success(toggleBookmark(preview.id) ? 'Добавлено в закладки' : 'Удалено из закладок')}>
-                {bookmarks.includes(preview.id) ? <BookmarkCheck /> : <Bookmark />} {bookmarks.includes(preview.id) ? 'В закладках' : 'В закладки'}
+              <Button size="sm" variant="secondary" onClick={() => toast.success(toggleBookmark(preview.id) ? tr('Добавлено в закладки') : tr('Удалено из закладок'))}>
+                {bookmarks.includes(preview.id) ? <BookmarkCheck /> : <Bookmark />} {bookmarks.includes(preview.id) ? tr('В закладках') : tr('В закладки')}
               </Button>
               <Button size="sm" onClick={() => navigate(`/practice?subject=${subjectId}&topic=${preview.topic}`)}>
-                <Play /> Практика по теме
+                <Play /> {tr('Практика по теме')}
               </Button>
             </div>
           </div>
@@ -391,13 +398,13 @@ function SubjectView({ subjectId, params, setParams }: { subjectId: SubjectId; p
         open={!!toDelete}
         onClose={() => setToDelete(null)}
         danger
-        title="Удалить вопрос?"
-        description="Вопрос будет удалён из банка, закладок и тетради ошибок."
-        confirmLabel="Удалить"
+        title={tr('Удалить вопрос?')}
+        description={tr('Вопрос будет удалён из банка, закладок и тетради ошибок.')}
+        confirmLabel={tr('Удалить')}
         onConfirm={() => {
           if (toDelete) {
             deleteCustom(toDelete.id);
-            toast.success('Вопрос удалён');
+            toast.success(tr('Вопрос удалён'));
           }
         }}
       />

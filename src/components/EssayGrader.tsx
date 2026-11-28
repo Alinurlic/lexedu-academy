@@ -6,18 +6,35 @@ import { wordCount } from '@/components/QuestionView';
 import { toast } from '@/store/toast';
 import type { EssayQuestion } from '@/types';
 import { cn } from '@/lib/utils';
+import { tr } from '@/i18n';
 
 const CRITERIA_W = [
-  { key: 'task', label: 'Task Achievement / Response', hint: 'Полностью ли раскрыто задание, есть ли обзор (Task 1) или чёткая позиция (Task 2)' },
-  { key: 'coherence', label: 'Coherence & Cohesion', hint: 'Логика, абзацы, связки' },
-  { key: 'lexical', label: 'Lexical Resource', hint: 'Разнообразие и точность лексики' },
-  { key: 'grammar', label: 'Grammatical Range & Accuracy', hint: 'Сложные конструкции и ошибки' },
+  { key: 'task', label: 'Task Achievement / Response', get hint() {
+    return tr('Полностью ли раскрыто задание, есть ли обзор (Task 1) или чёткая позиция (Task 2)');
+  } },
+  { key: 'coherence', label: 'Coherence & Cohesion', get hint() {
+    return tr('Логика, абзацы, связки');
+  } },
+  { key: 'lexical', label: 'Lexical Resource', get hint() {
+    return tr('Разнообразие и точность лексики');
+  } },
+  { key: 'grammar', label: 'Grammatical Range & Accuracy', get hint() {
+    return tr('Сложные конструкции и ошибки');
+  } },
 ] as const;
 const CRITERIA_S = [
-  { key: 'task', label: 'Fluency & Coherence', hint: 'Плавность и связность речи' },
-  { key: 'coherence', label: 'Pronunciation', hint: 'Понятность произношения' },
-  { key: 'lexical', label: 'Lexical Resource', hint: 'Словарный запас' },
-  { key: 'grammar', label: 'Grammatical Range & Accuracy', hint: 'Грамматика' },
+  { key: 'task', label: 'Fluency & Coherence', get hint() {
+    return tr('Плавность и связность речи');
+  } },
+  { key: 'coherence', label: 'Pronunciation', get hint() {
+    return tr('Понятность произношения');
+  } },
+  { key: 'lexical', label: 'Lexical Resource', get hint() {
+    return tr('Словарный запас');
+  } },
+  { key: 'grammar', label: 'Grammatical Range & Accuracy', get hint() {
+    return tr('Грамматика');
+  } },
 ] as const;
 
 export type GradeResult = { band: number; feedback: string; criteria: Record<string, number>; source: 'ai' | 'self' };
@@ -36,15 +53,15 @@ export function EssayGrader({ q, text, onGraded, existing }: { q: EssayQuestion;
   }, []);
 
   const runAi = async () => {
-    if (!text.trim()) return toast.error('Нет текста для оценки');
+    if (!text.trim()) return toast.error(tr('Нет текста для оценки'));
     setBusy(true);
     try {
       const g = await aiGradeWriting(q.task, q.question, text);
       setAi(g);
-      onGraded({ band: g.band, feedback: `${g.summary}\n\nСильные стороны: ${g.strengths.join('; ')}\nЧто улучшить: ${g.improvements.join('; ')}`, criteria: g.criteria, source: 'ai' });
-      toast.success(`Оценка ИИ: band ${g.band}`);
+      onGraded({ band: g.band, feedback: tr('{0}\n\nСильные стороны: {1}\nЧто улучшить: {2}', g.summary, g.strengths.join('; '), g.improvements.join('; ')), criteria: g.criteria, source: 'ai' });
+      toast.success(tr('Оценка ИИ: band {0}', g.band));
     } catch (e) {
-      toast.error('ИИ не смог оценить', e instanceof Error ? e.message : undefined);
+      toast.error(tr('ИИ не смог оценить'), e instanceof Error ? e.message : undefined);
     } finally {
       setBusy(false);
     }
@@ -55,17 +72,17 @@ export function EssayGrader({ q, text, onGraded, existing }: { q: EssayQuestion;
   return (
     <div className="space-y-3 rounded-xl border p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium">Оценка ответа</span>
-        <Badge variant="outline">{words} слов{words < q.minWords ? ` · меньше минимума (${q.minWords})` : ''}</Badge>
-        {existing?.band !== undefined && <Badge variant="violet">Сохранено: band {existing.band} {existing.self ? '(самооценка)' : '(ИИ)'}</Badge>}
+        <span className="text-sm font-medium">{tr('Оценка ответа')}</span>
+        <Badge variant="outline">{tr('{0} слов{1}', words, words < q.minWords ? tr(' · меньше минимума ({0})', q.minWords) : '')}</Badge>
+        {existing?.band !== undefined && <Badge variant="violet">{tr('Сохранено: band {0} {1}', existing.band, existing.self ? tr('(самооценка)') : tr('(ИИ)'))}</Badge>}
       </div>
 
       {status?.enabled ? (
         <div>
           <Button onClick={runAi} loading={busy} disabled={!text.trim()}>
-            <Sparkles /> Оценить с помощью ИИ
+            <Sparkles /> {tr('Оценить с помощью ИИ')}
           </Button>
-          <p className="mt-1.5 text-xs text-muted-foreground">Оценка ИИ ориентировочная и не заменяет экзаменатора.</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">{tr('Оценка ИИ ориентировочная и не заменяет экзаменатора.')}</p>
           {ai && (
             <div className="mt-3 space-y-2 text-sm">
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -79,11 +96,11 @@ export function EssayGrader({ q, text, onGraded, existing }: { q: EssayQuestion;
               <p>{ai.summary}</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="rounded-lg border border-success/30 bg-success/5 p-3">
-                  <div className="mb-1 text-xs font-semibold text-success">Сильные стороны</div>
+                  <div className="mb-1 text-xs font-semibold text-success">{tr('Сильные стороны')}</div>
                   <ul className="list-disc space-y-1 pl-4">{ai.strengths.map((s, i) => <li key={i}>{s}</li>)}</ul>
                 </div>
                 <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
-                  <div className="mb-1 text-xs font-semibold text-warning">Что улучшить</div>
+                  <div className="mb-1 text-xs font-semibold text-warning">{tr('Что улучшить')}</div>
                   <ul className="list-disc space-y-1 pl-4">{ai.improvements.map((s, i) => <li key={i}>{s}</li>)}</ul>
                 </div>
               </div>
@@ -92,12 +109,12 @@ export function EssayGrader({ q, text, onGraded, existing }: { q: EssayQuestion;
         </div>
       ) : (
         <p className="flex items-start gap-2 text-xs text-muted-foreground">
-          <Info className="mt-0.5 size-3.5 shrink-0" /> ИИ-проверка недоступна: {status?.reason ?? 'проверяю…'} Оцените ответ сами по критериям IELTS ниже.
+          <Info className="mt-0.5 size-3.5 shrink-0" /> {tr('ИИ-проверка недоступна: {0} Оцените ответ сами по критериям IELTS ниже.', status?.reason ?? tr('проверяю…'))}
         </p>
       )}
 
       <details className="rounded-lg border p-3" open={!status?.enabled}>
-        <summary className="cursor-pointer text-sm font-medium">Самооценка по критериям IELTS</summary>
+        <summary className="cursor-pointer text-sm font-medium">{tr('Самооценка по критериям IELTS')}</summary>
         <div className="mt-3 space-y-3">
           {crit.map((c) => (
             <div key={c.key}>
@@ -110,11 +127,11 @@ export function EssayGrader({ q, text, onGraded, existing }: { q: EssayQuestion;
             </div>
           ))}
           <div className={cn('flex items-center justify-between rounded-lg bg-secondary/60 p-3 text-sm')}>
-            <span>Итог (среднее, округление до 0,5)</span>
+            <span>{tr('Итог (среднее, округление до 0,5)')}</span>
             <span className="text-lg font-semibold tabular">{selfBand}</span>
           </div>
-          <Button variant="secondary" onClick={() => (onGraded({ band: selfBand, feedback: 'Самооценка по критериям IELTS', criteria: self, source: 'self' }), toast.success(`Сохранено: band ${selfBand}`))}>
-            Сохранить самооценку
+          <Button variant="secondary" onClick={() => (onGraded({ band: selfBand, feedback: tr('Самооценка по критериям IELTS'), criteria: self, source: 'self' }), toast.success(tr('Сохранено: band {0}', selfBand)))}>
+            {tr('Сохранить самооценку')}
           </Button>
         </div>
       </details>

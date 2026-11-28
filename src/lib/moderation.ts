@@ -2,6 +2,7 @@ import type { Question } from '@/types';
 import { getSupabase, isSupabaseConfigured } from './supabase';
 import { applyModeration, getModerationRows, type ModerationRow } from '@/data/questions/bank';
 import { useAppStore } from '@/store/useAppStore';
+import { tr } from '@/i18n';
 
 /**
  * Жалобы учеников на задания и общие правки банка.
@@ -13,11 +14,21 @@ export type ReportReason = 'wrong_answer' | 'wording' | 'options' | 'explanation
 export type ReportStatus = 'new' | 'fixed' | 'hidden' | 'rejected';
 
 export const REASON_LABEL: Record<ReportReason, string> = {
-  wrong_answer: 'Неверный правильный ответ',
-  wording: 'Ошибка или опечатка в условии',
-  options: 'Ошибка в вариантах ответа',
-  explanation: 'Ошибка в разборе',
-  other: 'Другое',
+  get wrong_answer() {
+    return tr('Неверный правильный ответ');
+  },
+  get wording() {
+    return tr('Ошибка или опечатка в условии');
+  },
+  get options() {
+    return tr('Ошибка в вариантах ответа');
+  },
+  get explanation() {
+    return tr('Ошибка в разборе');
+  },
+  get other() {
+    return tr('Другое');
+  },
 };
 
 export interface QuestionReport {
@@ -33,16 +44,16 @@ export async function submitReport(questionId: string, reason: ReportReason, com
   const text = comment.trim().slice(0, 1000);
   if (isSupabaseConfigured) {
     const sb = await getSupabase();
-    if (!sb) return { ok: false, message: 'Нет подключения к серверу' };
+    if (!sb) return { ok: false, message: tr('Нет подключения к серверу') };
     const { error } = await sb.from('question_reports').insert({ question_id: questionId, reason, comment: text || null });
     if (!error) return { ok: true };
-    if (error.code === '23505') return { ok: false, message: 'Вы уже сообщили об этом задании — мы его проверим.' };
-    if (error.code === 'P0001') return { ok: false, message: 'Слишком много жалоб за сутки. Попробуйте завтра.' };
-    if (error.code === '42501' || /JWT|auth/i.test(error.message)) return { ok: false, message: 'Войдите в аккаунт, чтобы отправить сообщение.' };
-    return { ok: false, message: 'Не удалось отправить. Попробуйте позже.' };
+    if (error.code === '23505') return { ok: false, message: tr('Вы уже сообщили об этом задании — мы его проверим.') };
+    if (error.code === 'P0001') return { ok: false, message: tr('Слишком много жалоб за сутки. Попробуйте завтра.') };
+    if (error.code === '42501' || /JWT|auth/i.test(error.message)) return { ok: false, message: tr('Войдите в аккаунт, чтобы отправить сообщение.') };
+    return { ok: false, message: tr('Не удалось отправить. Попробуйте позже.') };
   }
   const added = useAppStore.getState().addLocalReport({ questionId, reason, comment: text || undefined });
-  return added ? { ok: true } : { ok: false, message: 'Вы уже сообщили об этом задании — оно ждёт проверки.' };
+  return added ? { ok: true } : { ok: false, message: tr('Вы уже сообщили об этом задании — оно ждёт проверки.') };
 }
 
 /** Открытые жалобы (только для администратора). */
@@ -61,7 +72,7 @@ export async function loadOpenReports(): Promise<QuestionReport[]> {
   // задания, где Lexi при разборе усомнился в ключе ответа
   const { data: sus } = await sb.from('question_explanations').select('question_id, note, created_at').eq('key_suspect', true).order('created_at', { ascending: false }).limit(300);
   for (const r of sus ?? []) {
-    reports.push({ id: `ai-${r.question_id}-${r.created_at}`, questionId: r.question_id, reason: 'wrong_answer', comment: `Lexi (ИИ): ${r.note ?? 'сомневается в правильном ответе'}`, createdAt: r.created_at, status: 'new' });
+    reports.push({ id: `ai-${r.question_id}-${r.created_at}`, questionId: r.question_id, reason: 'wrong_answer', comment: tr('Lexi (ИИ): {0}', r.note ?? tr('сомневается в правильном ответе')), createdAt: r.created_at, status: 'new' });
   }
   return reports;
 }
@@ -110,7 +121,7 @@ export async function moderate(questionId: string, patch: { hidden?: boolean; ov
     return;
   }
   const sb = await getSupabase();
-  if (!sb) throw new Error('Нет подключения к серверу');
+  if (!sb) throw new Error(tr('Нет подключения к серверу'));
   const prev = getModerationRows().find((r) => r.question_id === questionId);
   const row = {
     question_id: questionId,
